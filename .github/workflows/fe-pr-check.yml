@@ -1,0 +1,65 @@
+name: FE CI - PR Check
+
+# feat -> dev PR, hotfix -> main PR: 정적 분석, (단위 테스트 - 테스트 코드 없어 현재 제외), 빌드, Docker Image 빌드(push 없음)
+on:
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - "ktb_agile_frontend/**"
+      - ".github/workflows/fe-pr-check.yml"
+
+# 동일 PR에 연속 Push 발생 시 진행 중이던 이전 실행 자동 취소
+concurrency:
+  group: fe-pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ktb_agile_frontend
+
+jobs:
+  verify:
+    name: 정적 분석 및 빌드
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout # 소스 코드 다운로드
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.21.0"
+          cache: npm
+          cache-dependency-path: ktb_agile_frontend/package-lock.json
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 정적 분석 (ESLint)
+        run: npm run lint
+
+      # 단위 테스트 - 현재 테스트 코드가 없어 생략
+
+      - name: 빌드
+        run: npm run build
+
+  docker-build:
+    name: Docker Image 빌드 (검증용, push 없음)
+    needs: verify
+    # ARM64 전용 GitHub Hosted 러너 사용
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker Image 빌드 (push 없음)
+        uses: docker/build-push-action@v7
+        with:
+          context: ktb_agile_frontend # 빌드 컨텍스트 경로
+          push: false
+          tags: ktb4-1st-fe:pr-${{ github.event.pull_request.number }}
