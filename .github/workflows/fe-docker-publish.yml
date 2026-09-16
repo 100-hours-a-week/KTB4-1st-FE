@@ -1,0 +1,90 @@
+name: FE Docker Image Publish
+
+# dev push(merge), main push(merge): Docker Image 빌드 및 GHCR(100-hours-a-week 조직 소속 패키지) Push
+# - dev  : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용) 태그
+# - main : package.json 기준 Semantic Version 태그만 사용
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - "ktb_agile_frontend/**"
+      - ".github/workflows/fe-docker-publish.yml"
+
+# 동일 브랜치에 연속 Push 발생 시 진행 중이던 이전 실행 자동 취소
+concurrency:
+  group: fe-docker-publish-${{ github.ref }} # dev에 push하면 refs/heads/dev, main에 push하면 refs/heads/main
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  # github.repository는 "100-hours-a-week/KTB4-1st-FE" 형태(docker/metadata-action이 images 값을 자동으로 소문자 변환)
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Docker Image 빌드 및 GHCR Push
+    # ARM64 전용 GitHub Hosted 러너 사용
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: package.json 버전 조회
+        id: pkg
+        working-directory: ktb_agile_frontend
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Docker 메타데이터(태그/라벨) 생성
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # dev  : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용)
+          # main : package.json 기준 Semantic Version을 태그로 사용
+          tags: |
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=sha,format=short,prefix=dev-,enable=${{ github.ref == 'refs/heads/dev' }}
+            type=raw,value=${{ steps.pkg.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
+          labels: |
+            org.opencontainers.image.authors=${{ github.event.head_commit.author.name }}
+
+      - name: Docker Image 빌드 및 Push
+        id: build-push
+        run: |
+          set -e
+
+          # 태그 변환
+          TAG_ARGS=()
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            TAG_ARGS+=(--tag "$tag")
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+          # 라벨 변환
+          LABEL_ARGS=()
+          while IFS= read -r label; do
+            [ -z "$label" ] && continue
+            LABEL_ARGS+=(--label "$label")
+          done <<< "${{ steps.meta.outputs.labels }}"
+
+          # 이미지 빌드 + GHCR push
+          docker buildx build \
+            --push \
+            "${TAG_ARGS[@]}" \
+            "${LABEL_ARGS[@]}" \
+            ./ktb_agile_frontend
