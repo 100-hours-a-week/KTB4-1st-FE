@@ -1,13 +1,15 @@
-FROM node:22-alpine AS builder
+FROM node:24.21.0-alpine AS builder
 
 WORKDIR /app
 
-COPY . .
+# 의존성 파일만 먼저 복사하여 설치
+COPY package.json package-lock.json ./
+RUN npm ci
 
-RUN npm install
+COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:24.21.0-alpine AS runner
 
 WORKDIR /app
 
