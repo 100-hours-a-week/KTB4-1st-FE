@@ -2,6 +2,9 @@
   --outer-background: #fafafa;
   --surface-background: #ffffff;
   --foreground: #171717;
+  --app-shell-tablet-width: 600px;
+  --app-shell-desktop-width: 480px;
+  --app-content-inline-padding: 24px;
 }
 
 * {
@@ -45,7 +48,7 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 48px 24px;
+  padding: 48px var(--app-content-inline-padding);
 }
 
 .home-page {
@@ -113,13 +116,13 @@ a {
 /* Tablet: 680px–1023px */
 @media (min-width: 680px) and (max-width: 1023px) {
   .app-shell {
-    max-width: 600px;
+    max-width: var(--app-shell-tablet-width);
   }
 }
 
 /* Desktop: 1024px and wider */
 @media (min-width: 1024px) {
   .app-shell {
-    max-width: 480px;
+    max-width: var(--app-shell-desktop-width);
   }
 }
