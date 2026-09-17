@@ -23,7 +23,7 @@ export default function Login() {
         <Image
           className={styles.kakaoLoginImage}
           src="/kakao_login_large_wide.png"
-          alt=""
+          alt="kakao-login-btn"
           width={600}
           height={90}
         />
