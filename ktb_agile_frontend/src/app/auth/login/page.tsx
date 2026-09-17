@@ -21,22 +21,22 @@ export default function Login() {
     setIsLoggingIn(true)
 
     try {
-      //로그인 요청 API 호출
-      const response = await axios.post(
-        'http://localhost:8080/api/auth/oauth', 
+      //카카오 state 요청 로직
+      const stateResponse = await axios.get('http://127.0.0.1:8080/auth/oauth/state', 
         {
-          'provider': 'kakao'
-        }, 
-        {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true,
-        }
+        withCredentials: true,
+        headers: {
+          Accept: 'application/json',
+        },
+      },
       );
 
-      //로그인 성공 처리 로직
-      console.log(response.data)
-      
+      //카카오 state 값 추출 
+      const state = stateResponse.data.data.state
 
+      //카카오 소셜 로그인 리다이렉팅 - 환경변수 공개되어 있기 때문에 코드 수정 필요
+      window.location.assign(`https://kauth.kakao.com/oauth/authorize?client_id=${process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID}&redirect_uri=${process.env.NEXT_PUBLIC_KAKAO_REDIRECT_URI}&response_type=code&state=${state}`)
+      
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const status = error.response?.status
