@@ -1,20 +1,23 @@
 name: FE Docker Image Publish
 
-# dev push(merge), main push(merge): Docker Image 빌드 및 GHCR(100-hours-a-week 조직 소속 패키지) Push
-# - dev  : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용) 태그
-# - main : package.json 기준 Semantic Version 태그만 사용
+# dev push(merge): Docker Image 빌드 및 GHCR(100-hours-a-week 조직 소속 패키지) Push
+#   - latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용) 태그
+# release tag(v*.*.*) push: 배포용 Docker Image 빌드 및 GHCR Push
+#   - main으로 dev/hotfix가 merge된 뒤, 릴리즈 담당자가 해당 커밋에 Semantic Version 태그(예: v1.0.1)를 push하면 트리거됨
+#   - Semantic Version 태그(v 접두어 제외)만 이미지 태그로 사용
 on:
   push:
     branches:
       - dev
-      - main
+    tags:
+      - "v*.*.*"
     paths:
       - "ktb_agile_frontend/**"
       - ".github/workflows/fe-docker-publish.yml"
 
-# 동일 브랜치에 연속 Push 발생 시 진행 중이던 이전 실행 자동 취소
+# 동일 브랜치/태그에 연속 Push 발생 시 진행 중이던 이전 실행 자동 취소
 concurrency:
-  group: fe-docker-publish-${{ github.ref }} # dev에 push하면 refs/heads/dev, main에 push하면 refs/heads/main
+  group: fe-docker-publish-${{ github.ref }} # dev에 push하면 refs/heads/dev, 태그 push하면 refs/tags/v1.0.1
   cancel-in-progress: true
 
 env:
@@ -34,11 +37,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: package.json 버전 조회
-        id: pkg
-        working-directory: ktb_agile_frontend
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -54,14 +52,14 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # dev  : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용)
-          # main : package.json 기준 Semantic Version을 태그로 사용
+          # dev          : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용)
+          # release tag  : push된 태그(v1.0.1)에서 v를 뗀 Semantic Version을 그대로 태그로 사용
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
             type=sha,format=short,prefix=dev-,enable=${{ github.ref == 'refs/heads/dev' }}
-            type=raw,value=${{ steps.pkg.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
           labels: |
-            org.opencontainers.image.authors=${{ github.event.head_commit.author.name }}
+            org.opencontainers.image.authors=${{ github.actor }}
 
       - name: Docker Image 빌드 및 Push
         id: build-push
