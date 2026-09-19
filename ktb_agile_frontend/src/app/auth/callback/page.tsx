@@ -12,6 +12,7 @@ type RefreshResponse = {
     accessToken: string
     tokenType: string
     expiresIn: number
+    needsPreferenceSetup:boolean
   }
   error: null
 }
@@ -48,8 +49,14 @@ export default function LoginCallback() {
         }
 
         window.sessionStorage.setItem('accessToken', accessToken)
+       
+        const needsPreferenceSetup = response.data.data.needsPreferenceSetup;
 
         if (isActive) {
+          if(needsPreferenceSetup){ 
+            router.replace('/pages/favor')
+            return
+          }
           router.replace('/pages/items')
         }
       } catch {
