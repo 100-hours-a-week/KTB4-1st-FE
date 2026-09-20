@@ -4,7 +4,12 @@
   --foreground: #171717;
   --app-shell-tablet-width: 600px;
   --app-shell-desktop-width: 480px;
+  --app-shell-max-width: 100%;
   --app-content-inline-padding: 24px;
+  --app-content-block-padding: 48px;
+  --app-header-height: 65px;
+  --app-navbar-content-height: 68px;
+  --app-navbar-height: calc(var(--app-navbar-content-height) + 1px);
 }
 
 * {
@@ -37,6 +42,7 @@ body {
 .app-shell {
   display: flex;
   width: 100%;
+  max-width: var(--app-shell-max-width);
   min-width: 0;
   min-height: 100vh;
   min-height: 100dvh;
@@ -48,7 +54,7 @@ body {
   display: flex;
   flex: 1;
   flex-direction: column;
-  padding: 48px var(--app-content-inline-padding);
+  padding: var(--app-content-block-padding) var(--app-content-inline-padding);
 }
 
 .home-page {
@@ -99,6 +105,12 @@ a {
   text-decoration: none;
 }
 
+@media (max-width: 359px) {
+  :root {
+    --app-navbar-content-height: 62px;
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   .join-button:hover {
     background: #343434;
@@ -115,14 +127,14 @@ a {
 
 /* Tablet: 680px–1023px */
 @media (min-width: 680px) and (max-width: 1023px) {
-  .app-shell {
-    max-width: var(--app-shell-tablet-width);
+  :root {
+    --app-shell-max-width: var(--app-shell-tablet-width);
   }
 }
 
 /* Desktop: 1024px and wider */
 @media (min-width: 1024px) {
-  .app-shell {
-    max-width: var(--app-shell-desktop-width);
+  :root {
+    --app-shell-max-width: var(--app-shell-desktop-width);
   }
 }
