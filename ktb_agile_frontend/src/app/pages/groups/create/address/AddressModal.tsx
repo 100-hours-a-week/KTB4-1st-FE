@@ -1,66 +1,25 @@
 'use client'
 
 import { useEffect, useState, type AnimationEvent, type FormEvent } from 'react'
+import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
-
-const sampleAddresses = [
-  {
-    postalCode: '06236',
-    road: '서울특별시 강남구 테헤란로 123',
-    lot: '서울특별시 강남구 역삼동 735-1',
-  },
-  {
-    postalCode: '06224',
-    road: '서울특별시 강남구 테헤란로 152',
-    lot: '서울특별시 강남구 역삼동 736-1',
-  },
-  {
-    postalCode: '06221',
-    road: '서울특별시 강남구 테헤란로 218',
-    lot: '서울특별시 강남구 역삼동 719-2',
-  },
-  {
-    postalCode: '06211',
-    road: '서울특별시 강남구 테헤란로 302',
-    lot: '서울특별시 강남구 역삼동 707-1',
-  },
-  {
-    postalCode: '06141',
-    road: '서울특별시 강남구 테헤란로 312',
-    lot: '서울특별시 강남구 역삼동 707-2',
-  },
-  {
-    postalCode: '06142',
-    road: '서울특별시 강남구 테헤란로 345',
-    lot: '서울특별시 강남구 역삼동 708-1',
-  },
-]
-
-type Address = (typeof sampleAddresses)[number]
 
 export default function AddressModal({
   onClose,
   onSelect,
 }: {
   onClose: () => void
-  onSelect: (address: Address) => void
+  onSelect: (address: GroupAddressResult) => void
 }) {
   const [isClosing, setIsClosing] = useState(false)
   const [query, setQuery] = useState('')
   const [searchedQuery, setSearchedQuery] = useState<string | null>(null)
-  const [selectedPostalCode, setSelectedPostalCode] = useState<string | null>(
-    null,
-  )
-  const results =
-    searchedQuery === null
-      ? []
-      : sampleAddresses.filter((address) =>
-          [address.postalCode, address.road, address.lot].some((value) =>
-            value.includes(searchedQuery),
-          ),
-        )
-  const selectedAddress =
-    results.find((address) => address.postalCode === selectedPostalCode) ?? null
+  const [apiResult, setApiResult] = useState<GroupAddressResponse['results'] | null>(null)
+  const [selectedAddress, setSelectedAddress] =useState<GroupAddressResult | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
+
+  const results = apiResult ?? []
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow
@@ -71,10 +30,30 @@ export default function AddressModal({
     }
   }, [])
 
-  function handleSearch(event: FormEvent<HTMLFormElement>) {
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setSelectedPostalCode(null)
-    setSearchedQuery(query.trim() || null)
+
+    const keyword = query.trim()
+    if (!keyword) return
+
+    setSelectedAddress(null)
+    setSearchError(null)
+    setSearchedQuery(keyword)
+    setIsSearching(true)
+
+    try {
+      const data = await getAddress(keyword)
+      setApiResult(data.results)
+    } catch (error) {
+      setApiResult([])
+      setSearchError(
+        error instanceof Error
+          ? error.message
+          : '주소 검색 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsSearching(false)
+    }
   }
 
   function handleAnimationEnd(event: AnimationEvent<HTMLDivElement>) {
@@ -85,26 +64,34 @@ export default function AddressModal({
 
   function handleSelect() {
     if (selectedAddress === null) return
+
     onSelect(selectedAddress)
     setIsClosing(true)
   }
 
+  async function getAddress(keyword: string): Promise<GroupAddressResponse> {
+    const response = await fetch(
+      `/api/group?query=${encodeURIComponent(keyword)}`,
+    )
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string }
+      throw new Error(error.message ?? '주소 검색에 실패했습니다.')
+    }
+
+    return (await response.json()) as GroupAddressResponse
+  }
+
   return (
-    <div
-      className={`${styles.overlay} ${isClosing ? styles.overlayClosing : ''}`}
-    >
+    <div className={`${styles.overlay} ${isClosing ? styles.overlayClosing : ''}`}>
       <div className={styles.sheetPosition}>
-        <div
-          className={`${styles.sheet} ${isClosing ? styles.sheetClosing : ''}`}
-          onAnimationEnd={handleAnimationEnd}
-        >
+        <div className={`${styles.sheet} ${isClosing ? styles.sheetClosing : ''}`}
+          onAnimationEnd={handleAnimationEnd}>
           <div className={styles.sheetHeader}>
             <h2>주소 검색</h2>
-            <button
-              className={styles.sheetCloseButton}
+            <button className={styles.sheetCloseButton}
               type="button"
-              onClick={() => setIsClosing(true)}
-            >
+              onClick={() => setIsClosing(true)}>
               <svg viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="8" />
                 <path d="m9.5 9.5 5 5m0-5-5 5" />
@@ -125,7 +112,8 @@ export default function AddressModal({
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setSearchedQuery(null)
-                  setSelectedPostalCode(null)
+                  setSelectedAddress(null)
+                  setSearchError(null)
                 }}
               />
             </div>
@@ -137,44 +125,60 @@ export default function AddressModal({
           <div className={styles.addressResults}>
             {searchedQuery !== null && (
               <>
-                <p className={styles.resultCount}>
-                  검색 결과 <span>{results.length}</span>건
-                </p>
-                {results.length > 0 ? (
-                  <ul className={styles.resultList}>
-                    {results.map((address) => {
-                      const isSelected =
-                        selectedPostalCode === address.postalCode
-
-                      return (
-                        <li key={address.postalCode}>
-                          <button
-                            className={`${styles.resultItem} ${isSelected ? styles.resultItemSelected : ''}`}
-                            type="button"
-                            onClick={() =>
-                              setSelectedPostalCode(address.postalCode)
-                            }
-                          >
-                            <span className={styles.postalCode}>
-                              {address.postalCode}
-                            </span>
-                            <span className={styles.roadAddress}>
-                              {address.road}
-                            </span>
-                            <span className={styles.lotAddress}>
-                              <span className={styles.lotBadge}>지번</span>
-                              {address.lot}
-                            </span>
-                            {isSelected && (
-                              <span className={styles.selectedCheck}>✓</span>
-                            )}
-                          </button>
-                        </li>
-                      )
-                    })}
-                  </ul>
+                {isSearching ? (
+                  <p className={styles.emptyResults}>
+                    주소를 검색하고 있습니다.
+                  </p>
+                ) : searchError !== null ? (
+                  <p className={styles.emptyResults}>{searchError}</p>
                 ) : (
-                  <p className={styles.emptyResults}>검색 결과가 없습니다.</p>
+                  <>
+                    <p className={styles.resultCount}>
+                      검색 결과 <span>{results.length}</span>건
+                    </p>
+                    {results.length > 0 ? (
+                      <ul className={styles.resultList}>
+                        {results.map((address, index) => {
+                          const isSelected = selectedAddress === address
+                          const roadAddress =
+                            address.roadAddress ?? address.addressName
+
+                          return (
+                            <li
+                              key={`${address.addressName}-${address.latitude}-${address.longitude}-${index}`}
+                            >
+                              <button
+                                className={`${styles.resultItem} ${isSelected ? styles.resultItemSelected : ''}`}
+                                type="button"
+                                onClick={() => setSelectedAddress(address)}
+                              >
+                                <span className={styles.roadAddress}>
+                                  {roadAddress}
+                                </span>
+                                {address.roadAddress !== null && (
+                                  <span className={styles.lotAddress}>
+                                    <span className={styles.lotBadge}>
+                                      지번
+                                    </span>
+                                    {address.addressName}
+                                  </span>
+                                )}
+                                {isSelected && (
+                                  <span className={styles.selectedCheck}>
+                                    ✓
+                                  </span>
+                                )}
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    ) : (
+                      <p className={styles.emptyResults}>
+                        검색 결과가 없습니다.
+                      </p>
+                    )}
+                  </>
                 )}
               </>
             )}

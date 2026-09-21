@@ -73,7 +73,9 @@ export default function CreateGroup() {
       {isSheetMounted && (
         <AddressModal
           onClose={() => setIsSheetMounted(false)}
-          onSelect={(address) => setGroupAddress(address.road)}
+          onSelect={(address) =>
+            setGroupAddress(address.roadAddress ?? address.addressName)
+          }
         />
       )}
     </>
