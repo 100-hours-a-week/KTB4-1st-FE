@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type AnimationEvent, type FormEvent } from 'react'
+import { useEffect, useState, type AnimationEvent, type SubmitEvent } from 'react'
 import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
 
@@ -30,7 +30,7 @@ export default function AddressModal({
     }
   }, [])
 
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
+  async function handleSearch(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const keyword = query.trim()
