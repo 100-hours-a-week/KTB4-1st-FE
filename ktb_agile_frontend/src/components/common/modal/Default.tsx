@@ -7,6 +7,7 @@ type ModalDefaultProps = {
   message: string
   onConfirm: () => void
   confirmLabel?: string
+
 }
 
 export default function ModalDefault({
