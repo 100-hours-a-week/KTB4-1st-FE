@@ -34,7 +34,7 @@ export default function CreateGroup() {
     }
 
     try{
-      const response = await axios.post(
+      await axios.post(
         `${API_BASE_URL}/groups`,
         {
           groupName : groupName,
@@ -51,6 +51,8 @@ export default function CreateGroup() {
           },
         },
       )
+      
+      router.push('/pages/groups')
     }catch(error:unknown){
       console.error(error)
     }
