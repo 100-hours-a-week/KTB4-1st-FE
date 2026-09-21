@@ -8,6 +8,7 @@ import AddressModal from './address/AddressModal'
 import styles from './creategroup.module.css'
 import axios from 'axios'
 import ModalDefault from '@/components/common/modal/Default'
+import ModalGroupCreate from '@/components/common/modal/GroupCreate'
 
 const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
@@ -24,8 +25,9 @@ export default function CreateGroup() {
   const [groupDescriptionHelperText, setGroupDescriptionHelperText] =
     useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isGroupCreateModalOpen, setIsGroupCreateModalOpen] = useState<boolean>(false);
 
-  async function handleCreate(){
+  async function createProcess(){
     const accessToken = window.sessionStorage.getItem('accessToken')
     if (!accessToken) {
       setErrorMessage('로그인이 필요합니다.')
@@ -57,7 +59,6 @@ export default function CreateGroup() {
       console.error(error)
     }
   }
-
 
   return (
     <>
@@ -139,7 +140,7 @@ export default function CreateGroup() {
           </div>
 
           <div className={styles.createArea}>
-            <button className={styles.createButton} type="button" onClick={()=>handleCreate()}>
+            <button className={styles.createButton} type="button" onClick={()=>setIsGroupCreateModalOpen(true)}>
               그룹 생성
             </button>
             <p className={styles.notice}>
@@ -158,6 +159,15 @@ export default function CreateGroup() {
             setGroupAddressInfo(address)
           }
         />
+      )}
+      {isGroupCreateModalOpen &&(
+        <ModalGroupCreate
+          groupName={groupName}
+          location = {groupAddressInfo?.roadAddress}
+          groupDescription = {groupDescription}
+          onCancel ={()=>setIsGroupCreateModalOpen(false)}
+          onConfirm={()=>createProcess()}
+          />
       )}
       {errorMessage !== null && (
           <ModalDefault
