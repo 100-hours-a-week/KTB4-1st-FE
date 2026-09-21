@@ -2,17 +2,20 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { GroupAddressResult } from '@/types/group'
 import Navbar from '@/components/common/navbar/Navbar'
 import AddressModal from './address/AddressModal'
 import styles from './creategroup.module.css'
+import axios from 'axios'
+import ModalDefault from '@/components/common/modal/Default'
 
 const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
-
+const API_BASE_URL = 'http://127.0.0.1:8080'
 export default function CreateGroup() {
   const router = useRouter()
   const [isSheetMounted, setIsSheetMounted] = useState(false)
-  const [groupAddress, setGroupAddress] = useState<string | null>(null)
+  const [groupAddressInfo, setGroupAddressInfo] = useState<GroupAddressResult | null>(null)
   const [groupName, setGroupName] = useState('')
   const [groupDescription, setGroupDescription] = useState('')
   const [groupNameHelperText, setGroupNameHelperText] = useState<string | null>(
@@ -20,6 +23,39 @@ export default function CreateGroup() {
   )
   const [groupDescriptionHelperText, setGroupDescriptionHelperText] =
     useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function handleCreate(){
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      setErrorMessage('로그인이 필요합니다.')
+      router.replace('/auth/login')
+      return
+    }
+
+    try{
+      const response = await axios.post(
+        `${API_BASE_URL}/groups`,
+        {
+          groupName : groupName,
+          roadAddress : groupAddressInfo?.roadAddress,
+          latitude : groupAddressInfo?.latitude?.toFixed(6),
+          longitude : groupAddressInfo?.longitude?.toFixed(6),
+          groupContent : groupDescription
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        },
+      )
+    }catch(error:unknown){
+      console.error(error)
+    }
+  }
+
 
   return (
     <>
@@ -71,7 +107,7 @@ export default function CreateGroup() {
             </button>
             <div className={styles.locationInfo}>
               <strong>그룹 주소 :</strong>
-              <span>{groupAddress ?? '주소를 가져오면 표시됩니다'}</span>
+              <span>{groupAddressInfo?.roadAddress ?? '주소를 가져오면 표시됩니다'}</span>
             </div>
           </div>
 
@@ -101,7 +137,7 @@ export default function CreateGroup() {
           </div>
 
           <div className={styles.createArea}>
-            <button className={styles.createButton} type="button">
+            <button className={styles.createButton} type="button" onClick={()=>handleCreate()}>
               그룹 생성
             </button>
             <p className={styles.notice}>
@@ -112,13 +148,22 @@ export default function CreateGroup() {
 
         <Navbar />
       </section>
+      
       {isSheetMounted && (
         <AddressModal
           onClose={() => setIsSheetMounted(false)}
           onSelect={(address) =>
-            setGroupAddress(address.roadAddress ?? address.addressName)
+            setGroupAddressInfo(address)
           }
         />
+      )}
+      {errorMessage !== null && (
+          <ModalDefault
+            message={errorMessage}
+            onConfirm={() => {
+              setErrorMessage(null)
+              if(errorMessage.includes('로그인')) router.replace('/auth/login')
+            }}/>
       )}
     </>
   )
