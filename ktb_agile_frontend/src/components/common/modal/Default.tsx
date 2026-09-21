@@ -5,7 +5,7 @@ import styles from './Default.module.css'
 
 type ModalDefaultProps = {
   message: string
-  onConfirm: () => void
+  onConfirm?: () => void
   confirmLabel?: string
 
 }

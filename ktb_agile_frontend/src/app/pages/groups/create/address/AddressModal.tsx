@@ -43,6 +43,7 @@ export default function AddressModal({
 
     try {
       const data = await getAddress(keyword)
+      
       setApiResult(data.results)
     } catch (error) {
       setApiResult([])
