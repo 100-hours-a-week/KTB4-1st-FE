@@ -31,7 +31,7 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
     .mockRejectedValueOnce(new Error('Temporary server error'))
     .mockResolvedValueOnce({ status: 201 } as AxiosResponse)
 
-  render(<PreferenceSetup />)
+  const { container } = render(<PreferenceSetup />)
 
   fireEvent.click(screen.getByRole('button', { name: '담백하게' }))
   fireEvent.click(screen.getByRole('button', { name: '적당히' }))
@@ -47,10 +47,12 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
       '서버 오류로 저장에 실패했습니다. 다시 시도해주세요',
     ),
   ).toBeDefined()
+  expect(container.querySelector('section[inert]')).not.toBeNull()
   expect(replace).not.toHaveBeenCalled()
 
   fireEvent.click(within(errorDialog).getByRole('button', { name: '확인' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  expect(container.querySelector('section[inert]')).toBeNull()
 
   for (const option of ['담백하게', '적당히', '완곡하게']) {
     expect(
