@@ -6,10 +6,20 @@ import Navbar from '@/components/common/navbar/Navbar'
 import AddressModal from './address/AddressModal'
 import styles from './creategroup.module.css'
 
+const GROUP_NAME_MAX_LENGTH = 30
+const GROUP_DESCRIPTION_MAX_LENGTH = 300
+
 export default function CreateGroup() {
   const router = useRouter()
   const [isSheetMounted, setIsSheetMounted] = useState(false)
   const [groupAddress, setGroupAddress] = useState<string | null>(null)
+  const [groupName, setGroupName] = useState('')
+  const [groupDescription, setGroupDescription] = useState('')
+  const [groupNameHelperText, setGroupNameHelperText] = useState<string | null>(
+    null,
+  )
+  const [groupDescriptionHelperText, setGroupDescriptionHelperText] =
+    useState<string | null>(null)
 
   return (
     <>
@@ -30,8 +40,24 @@ export default function CreateGroup() {
             <input
               className={styles.textInput}
               type="text"
+              value={groupName}
+              maxLength={GROUP_NAME_MAX_LENGTH}
               placeholder="그룹명을 입력하세요"
+              onChange={(event) => {
+                const value = event.target.value
+                setGroupName(value)
+                setGroupNameHelperText(
+                  value.length > GROUP_NAME_MAX_LENGTH
+                    ? `그룹명은 ${GROUP_NAME_MAX_LENGTH}자 이내로 입력해주세요.`
+                    : null,
+                )
+              }}
             />
+            {groupNameHelperText !== null && (
+              <p className={styles.helperText}>
+                {groupNameHelperText}
+              </p>
+            )}
           </div>
 
           <div className={styles.fieldSection}>
@@ -54,8 +80,24 @@ export default function CreateGroup() {
             <p className={styles.optional}>선택사항</p>
             <textarea
               className={styles.descriptionInput}
+              value={groupDescription}
+              maxLength={GROUP_DESCRIPTION_MAX_LENGTH}
               placeholder="그룹 설명을 입력하세요"
+              onChange={(event) => {
+                const value = event.target.value
+                setGroupDescription(value)
+                setGroupDescriptionHelperText(
+                  value.length > GROUP_DESCRIPTION_MAX_LENGTH
+                    ? `그룹 설명은 ${GROUP_DESCRIPTION_MAX_LENGTH}자 이내로 입력해주세요.`
+                    : null,
+                )
+              }}
             />
+            {groupDescriptionHelperText !== null && (
+              <p className={styles.helperText}>
+                {groupDescriptionHelperText}
+              </p>
+            )}
           </div>
 
           <div className={styles.createArea}>

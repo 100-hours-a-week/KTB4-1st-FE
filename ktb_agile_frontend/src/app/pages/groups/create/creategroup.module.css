@@ -146,6 +146,14 @@
   letter-spacing: -0.02em;
 }
 
+.helperText {
+  margin: -4px 0 0;
+  color: #dc2626;
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+
 .createArea {
   display: flex;
   width: 100%;
