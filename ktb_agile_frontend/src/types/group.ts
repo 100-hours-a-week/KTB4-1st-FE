@@ -38,3 +38,14 @@ export type GroupAddressResponse = {
   meta: AddressSearchMeta
   results: GroupAddressResult[]
 }
+
+export type GroupCardData = {
+  groupId:number
+  groupName: string
+  memberCount: number
+  roadAddress: string
+  itemCount: number
+  lastItemCreatedAt: string
+  groupContent: string
+  isJoined: boolean
+}

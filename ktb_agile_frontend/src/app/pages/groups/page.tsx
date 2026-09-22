@@ -2,9 +2,59 @@
 import Navbar from '@/components/common/navbar/Navbar'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
+import { useEffect } from 'react'
+import type { GroupCardData } from '@/types/group'
+import GroupCard from '@/components/groups/GroupCard'
+import axios from 'axios'
+
+const API_BASE_URL = 'http://127.0.0.1:8080'
+
 
 export default function GroupList() {
+    const [errorMessage, setErrorMessage] = useState<string|null>(null);
+    const [inputKeyword, setInputKeyword] = useState<string|null>(null);
+    const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null);
     const router = useRouter()
+  
+    type GroupListResponse = {
+      data: {
+        groups: GroupCardData[]
+      }
+    }
+
+    useEffect(()=>{
+      async function groupListViewProcess() {
+        const accessToken = window.sessionStorage.getItem('accessToken')
+
+        if (!accessToken) {
+          setErrorMessage('로그인이 필요합니다.')
+          router.replace('/auth/login')
+          return
+        }   
+        
+        try {
+          const response = await axios.get<GroupListResponse>(
+            `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json',
+              },
+            },
+          )
+
+          setMyGroupList(response.data)
+        } catch (error) {
+          console.error(error)
+        }
+      }
+
+      groupListViewProcess()
+    },[])
+   
+
+
 
   return (
     <section className={styles.page}>
@@ -26,12 +76,21 @@ export default function GroupList() {
           className={styles.searchInput}
           type="search"
           placeholder="그룹명을 검색"
+          onChange={(event)=>setInputKeyword(event.target.value)}
         />
         <button className={styles.searchButton} type="button">
+
           그룹검색
         </button>
       </div>
-
+       {
+        myGroupList?.data.groups.map((group)=> (
+          <GroupCard 
+            group={group}
+            key={group.groupId}
+           />
+        ))
+       }     
       <Navbar />
     </section>
   )
