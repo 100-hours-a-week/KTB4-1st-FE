@@ -6,6 +6,8 @@ import { useCallback, useState } from 'react'
 import { useEffect } from 'react'
 import type { GroupCardData } from '@/types/group'
 import GroupCard from '@/components/groups/GroupCard'
+import LeaveConfirmModal from './modal/LeaveConfirmModal'
+import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
@@ -17,8 +19,10 @@ export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
     const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
     const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
-
     const [isSearchMode, setIsSearchMode] = useState(false)
+    const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
+    const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
+    const [isLeaving, setIsLeaving] = useState(false)
     const router = useRouter()
   
     type GroupListResponse = {
@@ -114,7 +118,14 @@ export default function GroupList() {
       fetchGroupList(inputKeyword)
     }
   
-    async function handleLeave(groupId : number, memberCount:number) {
+    function handleLeave(group: GroupCardData) {
+      setLeaveTarget(group)
+      setLeaveModalStep(1)
+    }
+
+    async function confirmLeave() {
+      if (!leaveTarget || isLeaving) return
+
       const accessToken = window.sessionStorage.getItem('accessToken')
 
       if (!accessToken) {
@@ -122,9 +133,10 @@ export default function GroupList() {
         return
       }
 
+      setIsLeaving(true)
       try {
         await axios.delete(
-          `${API_BASE_URL}/groups/${groupId}/members/me`,
+          `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -132,9 +144,16 @@ export default function GroupList() {
             },
           },
         )
+        setLeaveModalStep(null)
+        setLeaveTarget(null)
+        setInputKeyword('')
+        setTimeout(()=>location.reload(), 1500)
         
+        await fetchGroupList()
       } catch (error) {
         console.error(error)
+      } finally {
+        setIsLeaving(false)
       }
     }
 
@@ -186,16 +205,41 @@ export default function GroupList() {
 
                 <div className={styles.recommendationList}>
                   {recommendGroupsList?.data.groups.map((group) => (
-                    <GroupCard key={group.groupId} group={group} onLeave={()=>handleLeave(group.groupId, group.memberCount)}/>
+                    <GroupCard key={group.groupId} group={group} />
                   ))}
                 </div>
               </section>
             </div>
           ) : (
             curGroupList.data.groups.map((group) => (
-              <GroupCard key={group.groupId} group={group} onLeave={()=>handleLeave(group.groupId, group.memberCount)} />
+              <GroupCard key={group.groupId} group={group} onLeave={() => handleLeave(group)} />
             ))
           ))}
+
+        {leaveTarget && leaveModalStep === 1 && (
+          <LeaveConfirmModal
+            groupName={leaveTarget.groupName}
+            onCancel={() => {
+              setLeaveModalStep(null)
+              setLeaveTarget(null)
+            }}
+            onConfirm={() => setLeaveModalStep(2)}
+          />
+        )}
+
+        {leaveTarget && leaveModalStep === 2 && (
+          <LeaveFinalConfirmModal
+            groupName={leaveTarget.groupName}
+            isLastMember={leaveTarget.memberCount === 1}
+            isLoading={isLeaving}
+            onCancel={() => {
+              if (isLeaving) return
+              setLeaveModalStep(null)
+              setLeaveTarget(null)
+            }}
+            onConfirm={confirmLeave}
+          />
+        )}
         <Navbar />
       </section>
     )
