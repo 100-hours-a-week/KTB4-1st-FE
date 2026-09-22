@@ -27,7 +27,6 @@ export default function GroupCard({
   onShare,
 }: GroupCardProps) {
   const {
-    groupId,
     groupName,
     memberCount,
     roadAddress,

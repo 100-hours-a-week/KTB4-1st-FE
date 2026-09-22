@@ -2,38 +2,39 @@
 import Navbar from '@/components/common/navbar/Navbar'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useEffect } from 'react'
 import type { GroupCardData } from '@/types/group'
 import GroupCard from '@/components/groups/GroupCard'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
-
+const NO_GROUP_MSG = '참여하고 있는 그룹이 없어요!\n새로운 그룹에 참여해보세요!'
 
 export default function GroupList() {
-    const [errorMessage, setErrorMessage] = useState<string|null>(null);
-    const [inputKeyword, setInputKeyword] = useState<string|null>(null);
-    const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null);
+    const [inputKeyword, setInputKeyword] = useState('')
+    const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
     const router = useRouter()
   
     type GroupListResponse = {
       data: {
         groups: GroupCardData[]
+        nextCursor?: string | null
       }
     }
 
-    useEffect(()=>{
-      async function groupListViewProcess() {
-        const accessToken = window.sessionStorage.getItem('accessToken')
+    const fetchGroupList = useCallback(async (keyword = '') => {
+      const accessToken = window.sessionStorage.getItem('accessToken')
 
-        if (!accessToken) {
-          setErrorMessage('로그인이 필요합니다.')
-          router.replace('/auth/login')
-          return
-        }   
-        
-        try {
+      if (!accessToken) {
+        router.replace('/auth/login')
+        return
+      }
+
+      try {
+        const trimmedKeyword = keyword.trim()
+
+        if (!trimmedKeyword) {
           const response = await axios.get<GroupListResponse>(
             `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
             {
@@ -44,15 +45,39 @@ export default function GroupList() {
             },
           )
 
-          setMyGroupList(response.data)
-        } catch (error) {
-          console.error(error)
+          setCurGroupList(response.data)
+          return
         }
+
+        const response = await axios.get<GroupListResponse>(
+          `${API_BASE_URL}/groups?keyword=${encodeURIComponent(trimmedKeyword)}&size=30&cursor=`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+
+        setCurGroupList(response.data)
+      } catch (error) {
+        console.error(error)
+      }
+    }, [router])
+
+
+    useEffect(() => {
+      async function initializeGroupList() {
+        await fetchGroupList()
       }
 
-      groupListViewProcess()
-    },[])
-   
+      initializeGroupList()
+    }, [fetchGroupList])
+
+    function handleSearch() {
+      fetchGroupList(inputKeyword)
+    }
+  
 
 
 
@@ -77,20 +102,22 @@ export default function GroupList() {
           type="search"
           placeholder="그룹명을 검색"
           onChange={(event)=>setInputKeyword(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') handleSearch()
+          }}
         />
-        <button className={styles.searchButton} type="button">
-
+        <button className={styles.searchButton} type="button" onClick={handleSearch}>
           그룹검색
         </button>
       </div>
-       {
-        myGroupList?.data.groups.map((group)=> (
-          <GroupCard 
-            group={group}
-            key={group.groupId}
-           />
-        ))
-       }     
+      {curGroupList &&
+        (curGroupList.data.groups.length === 0 ? (
+          <p className={styles.emptyMessage}>{NO_GROUP_MSG}</p>
+        ) : (
+          curGroupList.data.groups.map((group) => (
+            <GroupCard key={group.groupId} group={group} />
+          ))
+        ))}
       <Navbar />
     </section>
   )
