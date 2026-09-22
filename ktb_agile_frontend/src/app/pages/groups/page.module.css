@@ -120,6 +120,16 @@
   background: #30394b;
 }
 
+.emptyMessage {
+  margin: 24px 0 0;
+  color: #686868;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-line;
+}
+
 @media (hover: hover) and (pointer: fine) {
   .backButton:hover,
   .createButton:hover {
