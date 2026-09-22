@@ -4,7 +4,7 @@ import styles from './GroupCreate.module.css'
 
 export type GroupCreateProps = {
   groupName: string
-  location: string | null
+  location: string | null | undefined
   groupDescription: string | null
   onCancel?: () => void
   onConfirm?: () => void
