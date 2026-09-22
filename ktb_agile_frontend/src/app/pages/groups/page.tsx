@@ -9,11 +9,16 @@ import GroupCard from '@/components/groups/GroupCard'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
-const NO_GROUP_MSG = '검색된 그룹이 없어요!\n원하는 그룹을 찾을 수 없어요. 새로운 그룹을 만들어보세요!'
+const NO_SEARCH_RESULT_MSG = '검색된 그룹이 없어요!\n원하는 그룹을 찾을 수 없어요. 새로운 그룹을 만들어보세요!'
+const NO_GROUP_MSG = '참여하고 있는 그룹이 없어요! 새로운 그룹에 참여해보세요!'
+const RECOMMENDED_GROUP_DESCRIPTION = '가입된 사용자가 많은 순서대로 보여드려요'
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
     const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
+    const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
+
+    const [isSearchMode, setIsSearchMode] = useState(false)
     const router = useRouter()
   
     type GroupListResponse = {
@@ -45,6 +50,7 @@ export default function GroupList() {
             },
           )
 
+          setIsSearchMode(false)
           setCurGroupList(response.data)
           return
         }
@@ -59,12 +65,12 @@ export default function GroupList() {
           },
         )
 
+        setIsSearchMode(true)
         setCurGroupList(response.data)
       } catch (error) {
         console.error(error)
       }
     }, [router])
-
 
     useEffect(() => {
       async function initializeGroupList() {
@@ -74,10 +80,41 @@ export default function GroupList() {
       initializeGroupList()
     }, [fetchGroupList])
 
+    useEffect(() => {
+      async function recommendGroupListViewProcess() {
+        const accessToken = window.sessionStorage.getItem('accessToken')
+
+        if (!accessToken) {
+          router.replace('/auth/login')
+          return
+        }
+
+        try {
+          const response = axios.get<GroupListResponse>(
+            `${API_BASE_URL}/groups/recommendations?latitude=37.3948&longitude=127.1112&size=10&cursor=`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json',
+              },
+            },
+          )
+
+          const data = (await response).data
+          setRecommendGroupsList(data)
+        } catch (error) {
+          console.error(error)
+        }
+      }
+
+      recommendGroupListViewProcess()
+    }, [router])
+
     function handleSearch() {
       fetchGroupList(inputKeyword)
     }
   
+  const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
 
 
@@ -110,9 +147,26 @@ export default function GroupList() {
           그룹검색
         </button>
       </div>
+
       {curGroupList &&
-        (curGroupList.data.groups.length === 0 ? (
-          <p className={styles.emptyMessage}>{NO_GROUP_MSG}</p>
+        (curGroupList.data.groups.length === 0
+          ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyMessage}>{emptyMessage}</p>
+
+            <section className={styles.recommendations}>
+              <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
+              <p className={styles.recommendationsDescription}>
+                {RECOMMENDED_GROUP_DESCRIPTION}
+              </p>
+
+              <div className={styles.recommendationList}>
+                {recommendGroupsList?.data.groups.map((group) => (
+                  <GroupCard key={group.groupId} group={group} />
+                ))}
+              </div>
+            </section>
+          </div>
         ) : (
           curGroupList.data.groups.map((group) => (
             <GroupCard key={group.groupId} group={group} />
