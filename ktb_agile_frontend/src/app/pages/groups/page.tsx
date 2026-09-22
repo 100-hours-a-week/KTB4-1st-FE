@@ -6,6 +6,8 @@ import { useCallback, useState } from 'react'
 import { useEffect } from 'react'
 import type { GroupCardData } from '@/types/group'
 import GroupCard from '@/components/groups/GroupCard'
+import LeaveConfirmModal from './modal/LeaveConfirmModal'
+import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
@@ -17,8 +19,10 @@ export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
     const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
     const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
-
     const [isSearchMode, setIsSearchMode] = useState(false)
+    const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
+    const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
+    const [isLeaving, setIsLeaving] = useState(false)
     const router = useRouter()
   
     type GroupListResponse = {
@@ -114,65 +118,129 @@ export default function GroupList() {
       fetchGroupList(inputKeyword)
     }
   
-  const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
+    function handleLeave(group: GroupCardData) {
+      setLeaveTarget(group)
+      setLeaveModalStep(1)
+    }
+
+    async function confirmLeave() {
+      if (!leaveTarget || isLeaving) return
+
+      const accessToken = window.sessionStorage.getItem('accessToken')
+
+      if (!accessToken) {
+        router.replace('/auth/login')
+        return
+      }
+
+      setIsLeaving(true)
+      try {
+        await axios.delete(
+          `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        setLeaveModalStep(null)
+        setLeaveTarget(null)
+        setInputKeyword('')
+        setTimeout(()=>location.reload(), 1500)
+        
+        await fetchGroupList()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsLeaving(false)
+      }
+    }
+
+    const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
 
 
-  return (
-    <section className={styles.page}>
-      <header className={styles.header}>
-        <button className={styles.backButton} onClick={()=>router.back()}>
-            {/* 뒤로가기 아이콘 */}
-          <svg viewBox="0 0 24 24">
-            <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
-          </svg>
-        </button>
-        <h1 className={styles.title}>그룹</h1>
-        <button className={styles.createButton} type="button" onClick={()=>router.push('/pages/groups/create')}>
-          그룹 생성하기
-        </button>
-      </header>
+    return (
+      <section className={styles.page}>
+        <header className={styles.header}>
+          <button className={styles.backButton} onClick={()=>router.back()}>
+              {/* 뒤로가기 아이콘 */}
+            <svg viewBox="0 0 24 24">
+              <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
+            </svg>
+          </button>
+          <h1 className={styles.title}>그룹</h1>
+          <button className={styles.createButton} type="button" onClick={()=>router.push('/pages/groups/create')}>
+            그룹 생성하기
+          </button>
+        </header>
 
-      <div className={styles.search}>
-        <input
-          className={styles.searchInput}
-          type="search"
-          placeholder="그룹명을 검색"
-          onChange={(event)=>setInputKeyword(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') handleSearch()
-          }}
-        />
-        <button className={styles.searchButton} type="button" onClick={handleSearch}>
-          그룹검색
-        </button>
-      </div>
+        <div className={styles.search}>
+          <input
+            className={styles.searchInput}
+            type="search"
+            placeholder="그룹명을 검색"
+            onChange={(event)=>setInputKeyword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleSearch()
+            }}
+          />
+          <button className={styles.searchButton} type="button" onClick={handleSearch}>
+            그룹검색
+          </button>
+        </div>
 
-      {curGroupList &&
-        (curGroupList.data.groups.length === 0
-          ? (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyMessage}>{emptyMessage}</p>
+        {curGroupList &&
+          (curGroupList.data.groups.length === 0
+            ? (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyMessage}>{emptyMessage}</p>
 
-            <section className={styles.recommendations}>
-              <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
-              <p className={styles.recommendationsDescription}>
-                {RECOMMENDED_GROUP_DESCRIPTION}
-              </p>
+              <section className={styles.recommendations}>
+                <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
+                <p className={styles.recommendationsDescription}>
+                  {RECOMMENDED_GROUP_DESCRIPTION}
+                </p>
 
-              <div className={styles.recommendationList}>
-                {recommendGroupsList?.data.groups.map((group) => (
-                  <GroupCard key={group.groupId} group={group} />
-                ))}
-              </div>
-            </section>
-          </div>
-        ) : (
-          curGroupList.data.groups.map((group) => (
-            <GroupCard key={group.groupId} group={group} />
-          ))
-        ))}
-      <Navbar />
-    </section>
-  )
-}
+                <div className={styles.recommendationList}>
+                  {recommendGroupsList?.data.groups.map((group) => (
+                    <GroupCard key={group.groupId} group={group} />
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : (
+            curGroupList.data.groups.map((group) => (
+              <GroupCard key={group.groupId} group={group} onLeave={() => handleLeave(group)} />
+            ))
+          ))}
+
+        {leaveTarget && leaveModalStep === 1 && (
+          <LeaveConfirmModal
+            groupName={leaveTarget.groupName}
+            onCancel={() => {
+              setLeaveModalStep(null)
+              setLeaveTarget(null)
+            }}
+            onConfirm={() => setLeaveModalStep(2)}
+          />
+        )}
+
+        {leaveTarget && leaveModalStep === 2 && (
+          <LeaveFinalConfirmModal
+            groupName={leaveTarget.groupName}
+            isLastMember={leaveTarget.memberCount === 1}
+            isLoading={isLeaving}
+            onCancel={() => {
+              if (isLeaving) return
+              setLeaveModalStep(null)
+              setLeaveTarget(null)
+            }}
+            onConfirm={confirmLeave}
+          />
+        )}
+        <Navbar />
+      </section>
+    )
+  }
