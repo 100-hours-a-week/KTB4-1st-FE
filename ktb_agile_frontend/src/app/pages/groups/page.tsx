@@ -114,65 +114,89 @@ export default function GroupList() {
       fetchGroupList(inputKeyword)
     }
   
-  const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
+    async function handleLeave(groupId : number, memberCount:number) {
+      const accessToken = window.sessionStorage.getItem('accessToken')
+
+      if (!accessToken) {
+        router.replace('/auth/login')
+        return
+      }
+
+      try {
+        await axios.delete(
+          `${API_BASE_URL}/groups/${groupId}/members/me`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
 
 
-  return (
-    <section className={styles.page}>
-      <header className={styles.header}>
-        <button className={styles.backButton} onClick={()=>router.back()}>
-            {/* 뒤로가기 아이콘 */}
-          <svg viewBox="0 0 24 24">
-            <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
-          </svg>
-        </button>
-        <h1 className={styles.title}>그룹</h1>
-        <button className={styles.createButton} type="button" onClick={()=>router.push('/pages/groups/create')}>
-          그룹 생성하기
-        </button>
-      </header>
+    return (
+      <section className={styles.page}>
+        <header className={styles.header}>
+          <button className={styles.backButton} onClick={()=>router.back()}>
+              {/* 뒤로가기 아이콘 */}
+            <svg viewBox="0 0 24 24">
+              <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
+            </svg>
+          </button>
+          <h1 className={styles.title}>그룹</h1>
+          <button className={styles.createButton} type="button" onClick={()=>router.push('/pages/groups/create')}>
+            그룹 생성하기
+          </button>
+        </header>
 
-      <div className={styles.search}>
-        <input
-          className={styles.searchInput}
-          type="search"
-          placeholder="그룹명을 검색"
-          onChange={(event)=>setInputKeyword(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') handleSearch()
-          }}
-        />
-        <button className={styles.searchButton} type="button" onClick={handleSearch}>
-          그룹검색
-        </button>
-      </div>
+        <div className={styles.search}>
+          <input
+            className={styles.searchInput}
+            type="search"
+            placeholder="그룹명을 검색"
+            onChange={(event)=>setInputKeyword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') handleSearch()
+            }}
+          />
+          <button className={styles.searchButton} type="button" onClick={handleSearch}>
+            그룹검색
+          </button>
+        </div>
 
-      {curGroupList &&
-        (curGroupList.data.groups.length === 0
-          ? (
-          <div className={styles.emptyState}>
-            <p className={styles.emptyMessage}>{emptyMessage}</p>
+        {curGroupList &&
+          (curGroupList.data.groups.length === 0
+            ? (
+            <div className={styles.emptyState}>
+              <p className={styles.emptyMessage}>{emptyMessage}</p>
 
-            <section className={styles.recommendations}>
-              <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
-              <p className={styles.recommendationsDescription}>
-                {RECOMMENDED_GROUP_DESCRIPTION}
-              </p>
+              <section className={styles.recommendations}>
+                <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
+                <p className={styles.recommendationsDescription}>
+                  {RECOMMENDED_GROUP_DESCRIPTION}
+                </p>
 
-              <div className={styles.recommendationList}>
-                {recommendGroupsList?.data.groups.map((group) => (
-                  <GroupCard key={group.groupId} group={group} />
-                ))}
-              </div>
-            </section>
-          </div>
-        ) : (
-          curGroupList.data.groups.map((group) => (
-            <GroupCard key={group.groupId} group={group} />
-          ))
-        ))}
-      <Navbar />
-    </section>
-  )
-}
+                <div className={styles.recommendationList}>
+                  {recommendGroupsList?.data.groups.map((group) => (
+                    <GroupCard key={group.groupId} group={group} onLeave={()=>handleLeave(group.groupId, group.memberCount)}/>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ) : (
+            curGroupList.data.groups.map((group) => (
+              <GroupCard key={group.groupId} group={group} onLeave={()=>handleLeave(group.groupId, group.memberCount)} />
+            ))
+          ))}
+        <Navbar />
+      </section>
+    )
+  }
