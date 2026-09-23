@@ -37,14 +37,18 @@
   white-space: pre-line;
 }
 
-.confirmButton {
+.buttonGroup {
+  display: flex;
+  gap: 10px;
+}
+
+.confirmButton,
+.cancelButton {
   width: 100%;
   min-height: 52px;
   padding: 0 20px;
   border: 0;
   border-radius: 14px;
-  color: #ffffff;
-  background: #000000;
   font: inherit;
   font-size: 17px;
   font-weight: 700;
@@ -54,18 +58,28 @@
     transform 160ms ease;
 }
 
-.confirmButton:focus-visible {
-  outline: 3px solid #7c7c7c;
-  outline-offset: 3px;
+.confirmButton {
+  color: #ffffff;
+  background: #000000;
 }
 
-.confirmButton:active {
+.cancelButton {
+  color: #171717;
+  background: #eeeeee;
+}
+
+.confirmButton:active,
+.cancelButton:active {
   transform: scale(0.99);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .confirmButton:hover {
     background: #2d2d2d;
+  }
+
+  .cancelButton:hover {
+    background: #e2e2e2;
   }
 }
 
@@ -81,7 +95,8 @@
     font-size: 24px;
   }
 
-  .confirmButton {
+  .confirmButton,
+  .cancelButton {
     min-height: 56px;
     font-size: 18px;
   }
@@ -99,7 +114,8 @@
     font-size: 22px;
   }
 
-  .confirmButton {
+  .confirmButton,
+  .cancelButton {
     min-height: 54px;
     font-size: 18px;
   }

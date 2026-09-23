@@ -9,6 +9,7 @@ import GroupCard from '@/components/groups/GroupCard'
 import LeaveConfirmModal from './modal/LeaveConfirmModal'
 import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
 import axios from 'axios'
+import ModalDefault from '@/components/common/modal/Default'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
 const NO_SEARCH_RESULT_MSG = '검색된 그룹이 없어요!\n원하는 그룹을 찾을 수 없어요. 새로운 그룹을 만들어보세요!'
@@ -23,6 +24,9 @@ export default function GroupList() {
     const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
     const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
     const [isLeaving, setIsLeaving] = useState(false)
+    const [joinTarget, setJoinTarget] = useState<GroupCardData |null>(null)
+    const [isJoining, setIsJoining] = useState(false)
+    const [openErrorModal, setOpenErrorModal] = useState(false);
     const router = useRouter()
   
     type GroupListResponse = {
@@ -123,6 +127,45 @@ export default function GroupList() {
       setLeaveModalStep(1)
     }
 
+    function handleJoin(group: GroupCardData){
+      setJoinTarget(group)
+    } 
+
+    async function confirmJoin(){
+      if (!joinTarget || isJoining) return
+
+      const accessToken = window.sessionStorage.getItem('accessToken')
+
+      if (!accessToken) {
+        router.replace('/auth/login')
+        return
+      }
+
+      setIsJoining(true)
+      try {
+        await axios.post(
+          `${API_BASE_URL}/groups/${joinTarget?.groupId}/members`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        setJoinTarget(null)
+        window.location.reload()
+      } catch (error) {
+        console.error(error)        
+        setOpenErrorModal(true)
+        setJoinTarget(null)
+
+      } finally {
+        setIsJoining(false)
+      }
+    }
+   
+    
     async function confirmLeave() {
       if (!leaveTarget || isLeaving) return
 
@@ -205,16 +248,34 @@ export default function GroupList() {
 
                 <div className={styles.recommendationList}>
                   {recommendGroupsList?.data.groups.map((group) => (
-                    <GroupCard key={group.groupId} group={group} />
+                    <GroupCard key={group.groupId} group={group} 
+                    onLeave={() => handleLeave(group)} 
+                    onJoin={()=>handleJoin(group)}/>
                   ))}
                 </div>
               </section>
             </div>
           ) : (
             curGroupList.data.groups.map((group) => (
-              <GroupCard key={group.groupId} group={group} onLeave={() => handleLeave(group)} />
+              <GroupCard key={group.groupId} group={group}
+               onLeave={() => handleLeave(group)} 
+               onJoin={()=>handleJoin(group)}/>
             ))
           ))}
+
+        {joinTarget 
+          && (
+            <ModalDefault
+              message='참여 하시겠습니까?'
+              onConfirm={confirmJoin}
+              onCancel={() => setJoinTarget(null)}
+              />
+          )}
+          {openErrorModal&&(
+            <ModalDefault
+            message='오류가 발생했습니다'
+            onConfirm={() =>setOpenErrorModal(false)}/>
+          )}
 
         {leaveTarget && leaveModalStep === 1 && (
           <LeaveConfirmModal
