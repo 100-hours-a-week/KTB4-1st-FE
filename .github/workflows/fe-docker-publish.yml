@@ -66,6 +66,9 @@ jobs:
 
       - name: Docker Image 빌드 및 Push
         id: build-push
+        env:
+          # 빌드 시 주입할 NEXT_PUBLIC_* 값 묶음(.env 형식). 브라우저에 노출되는 값만 넣을 것
+          FE_ENV: ${{ secrets.FE_ENV }}
         run: |
           set -e
 
@@ -85,10 +88,12 @@ jobs:
 
           # 이미지 빌드 + GHCR push
           # --provenance=false --sbom=false: 이미지 빌드 시 SBOM 생성 및 Provenance 서명 생성을 건너뜀(불필요한 증명서 생성 방지)
+          # --secret: FE_ENV를 이미지 레이어에 남기지 않고 빌드 중에만 전달 (Dockerfile의 RUN --mount=type=secret,id=fe_env)
           docker buildx build \
             --push \
             --provenance=false \
             --sbom=false \
+            --secret id=fe_env,env=FE_ENV \
             "${TAG_ARGS[@]}" \
             "${LABEL_ARGS[@]}" \
             ./ktb_agile_frontend
