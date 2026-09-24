@@ -1,0 +1,193 @@
+.section {
+  padding: 18px 20px 24px;
+  border-bottom: 8px solid #f4f5f7;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.sectionHeading h2 {
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.3;
+  letter-spacing: -0.035em;
+}
+
+.sectionHeading span {
+  display: inline-flex;
+  height: 19px;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: #4b5563;
+  background: #eef0f3;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.sectionHeading p {
+  margin-left: auto;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.helperText {
+  margin: -2px 0 8px;
+  color: #ef4444;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadArea {
+  display: flex;
+  width: 100%;
+  height: 166px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  border: 1px dashed #d8dce2;
+  border-radius: 12px;
+  color: #111827;
+  background: #fafbfc;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.uploadArea:disabled {
+  color: #6b7280;
+  cursor: default;
+}
+
+.cameraIcon {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  border: 1px solid #d7dbe2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.cameraIcon svg,
+.emptyPreview svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.cameraIcon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.uploadArea strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.uploadArea small {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.previewList {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.preview,
+.emptyPreview {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  overflow: hidden;
+  border: 1px solid #d8dce2;
+  border-radius: 9px;
+  background-color: #eef0f3;
+}
+
+.preview {
+  background-position: center;
+  background-size: cover;
+}
+
+.preview button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(17, 24, 39, 0.72);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emptyPreview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.emptyPreview svg {
+  width: 19px;
+  height: 19px;
+}
+
+.fillFromPhotoButton {
+  width: 100%;
+  height: 42px;
+  margin-top: 14px;
+  border: 1px solid #d8dce2;
+  border-radius: 10px;
+  color: #374151;
+  background: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fillFromPhotoButton:disabled {
+  color: #9ca3af;
+  background: #f5f6f8;
+  cursor: default;
+}
+
+@media (max-width: 359px) {
+  .section {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+  .previewList {
+    grid-template-columns: repeat(3, 52px);
+  }
+  .preview,
+  .emptyPreview {
+    width: 52px;
+    height: 52px;
+  }
+}
