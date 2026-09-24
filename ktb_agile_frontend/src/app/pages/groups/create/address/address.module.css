@@ -1,0 +1,309 @@
+.overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  background: rgb(17 24 39 / 48%);
+  animation: fadeIn 280ms ease-out both;
+}
+
+.overlayClosing {
+  animation: fadeOut 240ms ease-in both;
+}
+
+.sheetPosition {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sheet {
+  display: flex;
+  width: 100%;
+  max-width: var(--app-shell-max-width);
+  height: 75vh;
+  height: 75dvh;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 12%);
+  pointer-events: auto;
+  animation: slideUp 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.sheetClosing {
+  animation: slideDown 240ms ease-in both;
+}
+
+.sheetHeader {
+  position: relative;
+  display: flex;
+  min-height: 45px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #e8e9ec;
+}
+
+.sheetHeader h2 {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sheetCloseButton {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sheetCloseButton svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: #111827;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.addressSearchForm {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  padding: 12px 11px;
+}
+
+.addressSearchField {
+  display: flex;
+  min-width: 0;
+  height: 42px;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #e2e5e9;
+  border-radius: 11px;
+  background: #f8f9fa;
+}
+
+.addressSearchField svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: #6b7280;
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.addressSearchField input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  color: #111827;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+}
+
+.addressSearchField input::placeholder {
+  color: #858b95;
+  opacity: 1;
+}
+
+.addressSearchButton {
+  width: 54px;
+  height: 42px;
+  flex: none;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #111827;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.addressResults {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.resultCount {
+  margin: 0 11px 8px;
+  color: #777e89;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.resultCount span {
+  color: #2878ed;
+  font-weight: 700;
+}
+
+.resultList {
+  padding: 0 11px;
+  list-style: none;
+}
+
+.resultList li + li {
+  border-top: 1px solid #e2e5e9;
+}
+
+.resultItem {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 84px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 9px;
+  border: 0;
+  border-radius: 9px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultItemSelected {
+  background: #f6faff;
+}
+
+.postalCode {
+  padding: 3px 6px;
+  border-radius: 5px;
+  color: #26313f;
+  background: #f0f2f5;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.resultItemSelected .postalCode {
+  color: #2878ed;
+  background: #e8f2ff;
+}
+
+.roadAddress {
+  color: #111827;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.lotAddress {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #717884;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.lotBadge {
+  padding: 1px 3px;
+  border: 1px solid #d9dde3;
+  border-radius: 3px;
+  color: #9ca3af;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.selectedCheck {
+  position: absolute;
+  top: 15px;
+  right: 11px;
+  color: #2878ed;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.emptyResults {
+  padding: 24px 11px;
+  color: #777e89;
+  font-size: 13px;
+  text-align: center;
+}
+
+.sheetFooter {
+  flex: none;
+  padding: 12px 11px calc(20px + env(safe-area-inset-bottom));
+  border-top: 1px solid #edf0f3;
+  background: #fff;
+}
+
+.selectButton {
+  width: 100%;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #111827;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.selectButton:disabled {
+  color: #8f96a1;
+  background: #e8ebef;
+  cursor: default;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}

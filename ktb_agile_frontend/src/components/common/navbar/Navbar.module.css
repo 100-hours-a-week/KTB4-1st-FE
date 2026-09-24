@@ -1,0 +1,129 @@
+.navbar {
+  position: fixed;
+  z-index: 100;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: var(--app-shell-max-width);
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid #e9e9e9;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -6px 20px rgba(17, 17, 17, 0.04);
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+
+.navList {
+  display: flex;
+  width: 100%;
+  min-height: var(--app-navbar-content-height);
+  margin: 0;
+  padding: 0 8px;
+  list-style: none;
+}
+
+.navItem {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 0;
+}
+
+.navLink {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px 7px;
+  border-radius: 12px;
+  color: #929292;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.navLink::before {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 22px;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: transparent;
+  content: '';
+  transform: translateX(-50%);
+  transition: background-color 160ms ease;
+}
+
+.icon {
+  display: inline-flex;
+  width: 25px;
+  height: 25px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active {
+  color: #171717;
+  background: #f7f7f7;
+}
+
+.active::before {
+  background: #171717;
+}
+
+.navLink:active {
+  background: #eeeeee;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .navLink:hover {
+    color: #3d3d3d;
+    background: #f7f7f7;
+  }
+}
+
+@media (max-width: 359px) {
+  .navList {
+    padding-inline: 4px;
+  }
+
+  .navLink {
+    gap: 3px;
+    padding-inline: 2px;
+  }
+
+  .icon {
+    width: 23px;
+    height: 23px;
+  }
+
+  .label {
+    font-size: 11px;
+  }
+}
