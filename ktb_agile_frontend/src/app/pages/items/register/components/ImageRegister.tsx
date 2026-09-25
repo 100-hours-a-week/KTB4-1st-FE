@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useFormContext } from 'react-hook-form'
 import axios from 'axios'
 import ModalDefault from '@/components/common/modal/Default'
+import { uploadImagesToS3 } from '../imageUpload'
 import type {
   ItemRegisterFormValues,
   SelectedImage,
@@ -20,21 +21,9 @@ const API_BASE_URL = 'http://127.0.0.1:8080'
 type ImageRegisterProps = {
   images: SelectedImage[]
   setImages: Dispatch<SetStateAction<SelectedImage[]>>
-}
-
-type PresignedUrlData = {
-  uploadUrl: string
-  objectKey: string
-  expiresInSeconds: number
-  requiredHeaders: {
-    'Content-Type': string
-    'x-amz-tagging': string
-  }
-}
-
-type ApiResponse<T> = {
-  data: T
-  error: null
+  isSubmitting: boolean
+  onAnalysisStateChange: (isAnalyzing: boolean) => void
+  onRejectionChange: (isRejected: boolean) => void
 }
 
 type ImageAnalysisResult = {
@@ -80,6 +69,9 @@ function readImage(file: File): Promise<SelectedImage> {
 export default function ImageRegister({
   images,
   setImages,
+  isSubmitting,
+  onAnalysisStateChange,
+  onRejectionChange,
 }: ImageRegisterProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [imageError, setImageError] = useState('')
@@ -91,7 +83,7 @@ export default function ImageRegister({
   const { setValue } = useFormContext<ItemRegisterFormValues>()
 
   function openFilePicker() {
-    if (rejectionReason !== null || isAnalyzing) return
+    if (rejectionReason !== null || isAnalyzing || isSubmitting) return
     fileInputRef.current?.click()
   }
 
@@ -105,11 +97,18 @@ export default function ImageRegister({
       setRejectionReason(null)
       setIsRejectionModalOpen(false)
       setImageError('')
+      onRejectionChange(false)
     }
   }
 
   async function handleFillFromPhoto() {
-    if (isAnalyzing || rejectionReason !== null || images.length === 0) return
+    if (
+      isAnalyzing ||
+      isSubmitting ||
+      rejectionReason !== null ||
+      images.length === 0
+    )
+      return
 
     const accessToken = window.sessionStorage.getItem('accessToken')
     if (!accessToken) {
@@ -118,11 +117,11 @@ export default function ImageRegister({
     }
 
     setIsAnalyzing(true)
+    onAnalysisStateChange(true)
     setImageError('')
 
     try {
-      const presignedUrls = await getPresignedUrls(accessToken)
-      const objectKeys = await uploadImagesToS3(presignedUrls)
+      const objectKeys = await uploadImagesToS3(images, setImages, accessToken)
       const analysis = await requestAIAnalysis(accessToken, objectKeys)
 
       if (!analysis.isAppropriate) {
@@ -131,6 +130,7 @@ export default function ImageRegister({
         )
         setIsRejectionModalOpen(true)
         setImageError('사진을 모두 삭제한 뒤 다시 선택해주세요.')
+        onRejectionChange(true)
         return
       }
       if (!analysis.title || !analysis.content) {
@@ -155,47 +155,8 @@ export default function ImageRegister({
       setImageError('이미지 분석에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsAnalyzing(false)
+      onAnalysisStateChange(false)
     }
-  }
-
-  async function getPresignedUrls(
-    accessToken: string,
-  ): Promise<PresignedUrlData[]> {
-    const imageContentTypes = images.map(function toContentType(image) {
-      return { contentType: image.file.type }
-    })
-    const response = await axios.post<ApiResponse<PresignedUrlData[]>>(
-      `${API_BASE_URL}/images/presigned-urls`,
-      { images: imageContentTypes },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-      },
-    )
-
-    if (response.data.data.length !== images.length) {
-      throw new Error('발급된 업로드 URL 개수가 이미지 개수와 다릅니다.')
-    }
-    return response.data.data
-  }
-
-  async function uploadImagesToS3(
-    presignedUrls: PresignedUrlData[],
-  ): Promise<string[]> {
-    const objectKeys: string[] = []
-
-    for (let i = 0; i < presignedUrls.length; i++) {
-      const upload = presignedUrls[i]
-      await axios.put(upload.uploadUrl, images[i].file, {
-        headers: upload.requiredHeaders,
-      })
-      objectKeys.push(upload.objectKey)
-    }
-
-    return objectKeys
   }
 
   async function requestAIAnalysis(
@@ -220,7 +181,7 @@ export default function ImageRegister({
   async function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? [])
     event.target.value = ''
-    if (rejectionReason !== null || isAnalyzing) return
+    if (rejectionReason !== null || isAnalyzing || isSubmitting) return
 
     if (
       files.some(function isNotSupportedImage(file) {
@@ -271,7 +232,7 @@ export default function ImageRegister({
         type="file"
         accept="image/jpeg,image/png,image/webp"
         multiple
-        disabled={rejectionReason !== null || isAnalyzing}
+        disabled={rejectionReason !== null || isAnalyzing || isSubmitting}
         onChange={handleImageChange}
       />
       <button
@@ -280,6 +241,7 @@ export default function ImageRegister({
         disabled={
           images.length === MAX_IMAGES ||
           isAnalyzing ||
+          isSubmitting ||
           rejectionReason !== null
         }
         onClick={openFilePicker}
@@ -309,7 +271,7 @@ export default function ImageRegister({
               >
                 <button
                   type="button"
-                  disabled={isAnalyzing}
+                  disabled={isAnalyzing || isSubmitting}
                   onClick={function handleRemoveImage() {
                     removeImage(image.id)
                   }}
@@ -322,7 +284,9 @@ export default function ImageRegister({
                 className={styles.emptyPreview}
                 type="button"
                 key={`empty-${index}`}
-                disabled={isAnalyzing || rejectionReason !== null}
+                disabled={
+                  isAnalyzing || isSubmitting || rejectionReason !== null
+                }
                 onClick={openFilePicker}
               >
                 <ImageIcon />
@@ -334,7 +298,12 @@ export default function ImageRegister({
       <button
         className={styles.fillFromPhotoButton}
         type="button"
-        disabled={!isPhotoUploaded || isAnalyzing || rejectionReason !== null}
+        disabled={
+          !isPhotoUploaded ||
+          isAnalyzing ||
+          isSubmitting ||
+          rejectionReason !== null
+        }
         onClick={handleFillFromPhoto}
       >
         사진으로 내용 채우기
