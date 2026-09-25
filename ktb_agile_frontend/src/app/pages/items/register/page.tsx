@@ -4,11 +4,15 @@ import { useState } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 import ImageRegister from './components/ImageRegister'
 import ItemInfoRegister from './components/ItemInfoRegister'
-import type { ItemRegisterFormValues, SelectedImage } from '../../../../types/item'
+import type {
+  ItemRegisterFormValues,
+  SelectedImage,
+} from '../../../../types/item'
 import styles from './page.module.css'
 
 export default function ItemRegister() {
   const [images, setImages] = useState<SelectedImage[]>([])
+
   const methods = useForm<ItemRegisterFormValues>({
     mode: 'onChange',
     defaultValues: {
