@@ -20,7 +20,7 @@ export async function uploadImagesToS3(
     throw new Error('이미지는 1장 이상 3장 이하로 선택해야 합니다.')
   }
 
-  const pendingImages = images.filter(function needsUpload(image) {
+  const pendingImages = images.filter((image) => {
     return !image.objectKey
   })
   let presignedUploads: PresignedUpload[] = []
@@ -30,7 +30,7 @@ export async function uploadImagesToS3(
     const response = await axios.post<{ data: PresignedUpload[] }>(
       `${API_BASE_URL}/images/presigned-urls`,
       {
-        images: pendingImages.map(function toUploadRequest(image) {
+        images: pendingImages.map((image) => {
           return { contentType: image.file.type }
         }),
       },
@@ -68,7 +68,7 @@ export async function uploadImagesToS3(
 
     // 업로드 성공을 기억해 두면 재시도할 때 같은 사진을 다시 올리지 않습니다.
     setImages(function saveUploadedImage(currentImages) {
-      return currentImages.map(function updateImage(currentImage) {
+      return currentImages.map((currentImage) => {
         if (currentImage.id === image.id) {
           return { ...currentImage, objectKey: upload.objectKey }
         }

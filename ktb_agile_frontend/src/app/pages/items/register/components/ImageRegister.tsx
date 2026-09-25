@@ -260,40 +260,36 @@ export default function ImageRegister({
       </button>
 
       <div className={styles.previewList}>
-        {Array.from({ length: MAX_IMAGES }).map(
-          function renderPreview(_, index) {
-            const image = images[index]
-            return image ? (
-              <div
-                className={styles.preview}
-                key={image.id}
-                style={{ backgroundImage: `url(${image.preview})` }}
-              >
-                <button
-                  type="button"
-                  disabled={isAnalyzing || isSubmitting}
-                  onClick={function handleRemoveImage() {
-                    removeImage(image.id)
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            ) : (
+        {Array.from({ length: MAX_IMAGES }).map((_, index) => {
+          const image = images[index]
+          return image ? (
+            <div
+              className={styles.preview}
+              key={image.id}
+              style={{ backgroundImage: `url(${image.preview})` }}
+            >
               <button
-                className={styles.emptyPreview}
                 type="button"
-                key={`empty-${index}`}
-                disabled={
-                  isAnalyzing || isSubmitting || rejectionReason !== null
-                }
-                onClick={openFilePicker}
+                disabled={isAnalyzing || isSubmitting}
+                onClick={() => {
+                  removeImage(image.id)
+                }}
               >
-                <ImageIcon />
+                ×
               </button>
-            )
-          },
-        )}
+            </div>
+          ) : (
+            <button
+              className={styles.emptyPreview}
+              type="button"
+              key={`empty-${index}`}
+              disabled={isAnalyzing || isSubmitting || rejectionReason !== null}
+              onClick={openFilePicker}
+            >
+              <ImageIcon />
+            </button>
+          )
+        })}
       </div>
       <button
         className={styles.fillFromPhotoButton}
