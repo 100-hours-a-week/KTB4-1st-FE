@@ -128,8 +128,7 @@ export default function ItemRegister() {
   return (
     <section className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.backButton} type="button">
-          <svg viewBox="0 0 24 24">
+        <button className={styles.backButton} type="button" onClick={()=>router.back()}>          <svg viewBox="0 0 24 24">
             <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
           </svg>
         </button>
