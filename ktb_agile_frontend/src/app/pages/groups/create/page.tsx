@@ -7,12 +7,12 @@ import Navbar from '@/components/common/navbar/Navbar'
 import AddressModal from './address/AddressModal'
 import styles from './creategroup.module.css'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import ModalGroupCreate from '@/components/common/modal/GroupCreate'
 
 const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
-const API_BASE_URL = 'http://127.0.0.1:8080'
 export default function CreateGroup() {
   const router = useRouter()
   const [isSheetMounted, setIsSheetMounted] = useState(false)
