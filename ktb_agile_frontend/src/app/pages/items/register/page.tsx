@@ -3,15 +3,11 @@
 import { useState } from 'react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
-import { FormProvider, useForm } from 'react-hook-form'
 import ModalDefault from '@/components/common/modal/Default'
-import ImageRegister from './components/ImageRegister'
-import ItemInfoRegister from './components/ItemInfoRegister'
+import ItemRegisterForm from '@/components/items/ItemRegisterForm'
+import type { ItemRegisterSubmitContext } from '@/components/items/ItemRegisterForm'
 import { uploadImagesToS3 } from './imageUpload'
-import type {
-  ItemRegisterFormValues,
-  SelectedImage,
-} from '../../../../types/item'
+import type { ItemRegisterFormValues } from '../../../../types/item'
 import styles from './page.module.css'
 
 const API_BASE_URL = 'http://127.0.0.1:8080'
@@ -25,33 +21,15 @@ type ModerationResponse = {
 }
 
 export default function ItemRegister() {
-  const [images, setImages] = useState<SelectedImage[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [isImageRejected, setIsImageRejected] = useState(false)
   const [modalMessage, setModalMessage] = useState<string | null>(null)
   const router = useRouter()
 
-  const methods = useForm<ItemRegisterFormValues>({
-    mode: 'onChange',
-    defaultValues: {
-      title: '',
-      content: '',
-      itemState: 'AVAILABLE',
-      quantity: undefined,
-      groupIds: [1],
-      pace: 55,
-      condition: 28,
-    },
-  })
-
-  async function handleItemSubmit(values: ItemRegisterFormValues) {
-    if (isSubmitting || isAnalyzing || isImageRejected) return
-    if (images.length === 0 || values.quantity === undefined) {
-      setModalMessage('사진과 필수 정보를 입력해주세요.')
-      return
-    }
-
+  async function handleItemSubmit(
+    values: ItemRegisterFormValues,
+    { images, setImages }: ItemRegisterSubmitContext,
+  ) {
+    if (isSubmitting) return
     const accessToken = window.sessionStorage.getItem('accessToken')
     if (!accessToken) {
       router.replace('/auth/login')
@@ -128,43 +106,24 @@ export default function ItemRegister() {
   return (
     <section className={styles.page}>
       <header className={styles.header}>
-        <button className={styles.backButton} type="button" onClick={()=>router.back()}>          <svg viewBox="0 0 24 24">
+        <button
+          className={styles.backButton}
+          type="button"
+          onClick={() => router.back()}
+        >
+          {' '}
+          <svg viewBox="0 0 24 24">
             <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
           </svg>
         </button>
         <h1>물건 등록</h1>
       </header>
 
-      <FormProvider {...methods}>
-        <form
-          className={styles.form}
-          onSubmit={methods.handleSubmit(handleItemSubmit)}
-        >
-          <ImageRegister
-            images={images}
-            setImages={setImages}
-            isSubmitting={isSubmitting}
-            onAnalysisStateChange={setIsAnalyzing}
-            onRejectionChange={setIsImageRejected}
-          />
-          <ItemInfoRegister />
-
-          <div className={styles.submitBar}>
-            <button
-              type="submit"
-              disabled={
-                !methods.formState.isValid ||
-                images.length === 0 ||
-                isSubmitting ||
-                isAnalyzing ||
-                isImageRejected
-              }
-            >
-              {isSubmitting ? '등록 중...' : '등록 완료'}
-            </button>
-          </div>
-        </form>
-      </FormProvider>
+      <ItemRegisterForm
+        isSubmitting={isSubmitting}
+        onSubmit={handleItemSubmit}
+        onValidationError={setModalMessage}
+      />
       {modalMessage !== null && (
         <ModalDefault
           message={modalMessage}

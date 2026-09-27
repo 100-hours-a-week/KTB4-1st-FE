@@ -81,6 +81,7 @@ export default function ImageRegister({
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false)
   const router = useRouter()
   const { setValue } = useFormContext<ItemRegisterFormValues>()
+  const hasExistingImages = images.some((image) => image.imageId !== undefined)
 
   function openFilePicker() {
     if (rejectionReason !== null || isAnalyzing || isSubmitting) return
@@ -106,6 +107,7 @@ export default function ImageRegister({
       isAnalyzing ||
       isSubmitting ||
       rejectionReason !== null ||
+      hasExistingImages ||
       images.length === 0
     )
       return
@@ -296,6 +298,7 @@ export default function ImageRegister({
         type="button"
         disabled={
           !isPhotoUploaded ||
+          hasExistingImages ||
           isAnalyzing ||
           isSubmitting ||
           rejectionReason !== null

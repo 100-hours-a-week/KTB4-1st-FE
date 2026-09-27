@@ -1,7 +1,9 @@
+export type ItemState = 'AVAILABLE' | 'UNAVAILABLE'
+
 export type ItemRegisterFormValues = {
   title: string
   content: string
-  itemState: 'AVAILABLE' | 'COMPLETED'
+  itemState: ItemState
   quantity: number | undefined
   groupIds: number[]
   pace: number
@@ -10,12 +12,11 @@ export type ItemRegisterFormValues = {
 
 export type SelectedImage = {
   id: string
-  file: File
+  file?: File
+  imageId?: number
   preview: string
   objectKey?: string
 }
-
-export type ItemState = 'AVAILABLE' | 'UNAVAILABLE'
 
 export type ItemListItem = {
   itemId: number
@@ -43,10 +44,45 @@ export type ItemListResponse = {
   error: null
 }
 
+export type ItemDetail = {
+  itemId: number
+  groups: {
+    groupId: number
+    groupName: string
+  }[]
+  title: string
+  content: string
+  quantity: number
+  itemState: ItemState
+  owner: {
+    userId: number
+    nickname: string
+    profileImageUrl: string | null
+  }
+  images: {
+    imageId: number
+    imageUrl: string
+    displayOrder: number
+  }[]
+  likeCount: number
+  viewCount: number
+  exchangeRequestCount: number
+  isLiked: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type ItemDetailResponse = {
+  data: ItemDetail
+  error: null
+}
+
 export type MockItem = ItemListItem & {
   content: string
   exchangeUrgencyScore: number
   valueGapToleranceScore: number
   groupIds: number[]
   objectKeys: string[]
+  imageUrls?: string[]
+  updatedAt?: string
 }

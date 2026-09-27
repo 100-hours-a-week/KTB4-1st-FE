@@ -23,6 +23,11 @@ export async function uploadImagesToS3(
   const pendingImages = images.filter((image) => {
     return !image.objectKey
   })
+  if (pendingImages.some((image) => !image.file)) {
+    throw new Error(
+      '기존 사진은 이미지 ID를 사용하는 수정 API로 처리해야 합니다.',
+    )
+  }
   let presignedUploads: PresignedUpload[] = []
 
   // 아직 S3에 올리지 않은 사진의 업로드 URL만 발급받습니다.
@@ -31,7 +36,7 @@ export async function uploadImagesToS3(
       `${API_BASE_URL}/images/presigned-urls`,
       {
         images: pendingImages.map((image) => {
-          return { contentType: image.file.type }
+          return { contentType: image.file!.type }
         }),
       },
       {

@@ -1,6 +1,16 @@
-import type { ItemListResponse, MockItem } from '@/types/item'
+import type {
+  ItemDetailResponse,
+  ItemListResponse,
+  MockItem,
+  ItemRegisterFormValues,
+  SelectedImage,
+} from '@/types/item'
 
-export const mockItems: readonly MockItem[] = [
+const mockGroupNames: Record<number, string> = {
+  1: '카카오테크 부트캠프 4기',
+}
+
+const mockItemStore: MockItem[] = [
   {
     itemId: 1,
     title: '아이폰 15',
@@ -12,7 +22,7 @@ export const mockItems: readonly MockItem[] = [
     valueGapToleranceScore: 0.3,
     groupIds: [1],
     objectKeys: ['images/12/iphone-15.jpg'],
-    owner: { userId: 12, nickname: '민지' },
+    owner: { userId: 1, nickname: '민지' },
     thumbnailImageUrl: null,
     likeCount: 4,
     exchangeRequestCount: 1,
@@ -183,6 +193,16 @@ export const mockItems: readonly MockItem[] = [
   },
 ]
 
+export const mockItems: readonly MockItem[] = mockItemStore
+
+export function deleteMockItem(itemId: number) {
+  const itemIndex = mockItemStore.findIndex((item) => item.itemId === itemId)
+  if (itemIndex === -1) return false
+
+  mockItemStore.splice(itemIndex, 1)
+  return true
+}
+
 export async function fetchMockItemsByGroup(
   groupId: number,
 ): Promise<ItemListResponse> {
@@ -212,4 +232,68 @@ export async function fetchMockItemsByGroup(
     },
     error: null,
   }
+}
+
+export function getMockItemDetail(itemId: number): ItemDetailResponse | null {
+  const item = mockItems.find((mockItem) => mockItem.itemId === itemId)
+  if (!item) return null
+
+  return {
+    data: {
+      itemId: item.itemId,
+      groups: item.groupIds.map((groupId) => ({
+        groupId,
+        groupName: mockGroupNames[groupId] ?? `그룹 ${groupId}`,
+      })),
+      title: item.title,
+      content: item.content,
+      quantity: item.quantity,
+      itemState: item.itemState,
+      owner: {
+        ...item.owner,
+        profileImageUrl: null,
+      },
+      images: item.objectKeys.map((_, index) => ({
+        imageId: item.itemId * 100 + index + 1,
+        imageUrl: item.imageUrls?.[index] ?? '/images/mock-item.svg',
+        displayOrder: index + 1,
+      })),
+      likeCount: item.likeCount,
+      viewCount: item.itemId * 10,
+      exchangeRequestCount: item.exchangeRequestCount,
+      isLiked: item.isLiked,
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt ?? item.createdAt,
+    },
+    error: null,
+  }
+}
+
+export function updateMockItem(
+  itemId: number,
+  values: ItemRegisterFormValues,
+  images: SelectedImage[],
+) {
+  const item = mockItemStore.find((mockItem) => mockItem.itemId === itemId)
+  if (!item) throw new Error('수정할 물품을 찾을 수 없습니다.')
+  if (values.quantity === undefined || images.length === 0) {
+    throw new Error('사진과 필수 정보를 입력해주세요.')
+  }
+
+  Object.assign(item, {
+    title: values.title,
+    content: values.content,
+    contentPreview: values.content.slice(0, 100),
+    quantity: values.quantity,
+    itemState: values.itemState,
+    groupIds: [...values.groupIds],
+    exchangeUrgencyScore: Number((values.pace / 100).toFixed(2)),
+    valueGapToleranceScore: Number((values.condition / 100).toFixed(2)),
+    objectKeys: images.map(
+      (image) => image.objectKey ?? `mock/${itemId}/${image.id}`,
+    ),
+    imageUrls: images.map((image) => image.preview),
+    thumbnailImageUrl: images[0].preview,
+    updatedAt: new Date().toISOString(),
+  })
 }
