@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import styles from './login.module.css'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import { useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 
@@ -22,7 +23,7 @@ export default function Login() {
 
     try {
       //카카오 state 요청 로직
-      const stateResponse = await axios.get('http://127.0.0.1:8080/auth/oauth/state', 
+      const stateResponse = await axios.get(`${API_BASE_URL}/auth/oauth/state`,
         {
         withCredentials: true,
         headers: {
