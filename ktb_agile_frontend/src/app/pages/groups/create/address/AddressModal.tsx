@@ -72,7 +72,7 @@ export default function AddressModal({
 
   async function getAddress(keyword: string): Promise<GroupAddressResponse> {
     const response = await fetch(
-      `/api/group?query=${encodeURIComponent(keyword)}`,
+      `/bff/group?query=${encodeURIComponent(keyword)}`,
     )
 
     if (!response.ok) {
