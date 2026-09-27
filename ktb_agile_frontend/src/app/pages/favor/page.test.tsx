@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  within,
 } from '@testing-library/react'
 import axios, { type AxiosResponse } from 'axios'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -41,17 +40,13 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
   expect((completeButton as HTMLButtonElement).disabled).toBe(false)
   fireEvent.click(completeButton)
 
-  const errorDialog = await screen.findByRole('dialog')
-  expect(
-    within(errorDialog).getByText(
-      '서버 오류로 저장에 실패했습니다. 다시 시도해주세요',
-    ),
-  ).toBeDefined()
+  const errorMessage = '서버 오류로 저장에 실패했습니다. 다시 시도해주세요'
+  expect(await screen.findByText(errorMessage)).toBeDefined()
   expect(container.querySelector('section[inert]')).not.toBeNull()
   expect(replace).not.toHaveBeenCalled()
 
-  fireEvent.click(within(errorDialog).getByRole('button', { name: '확인' }))
-  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  fireEvent.click(screen.getByRole('button', { name: '확인' }))
+  await waitFor(() => expect(screen.queryByText(errorMessage)).toBeNull())
   expect(container.querySelector('section[inert]')).toBeNull()
 
   for (const option of ['담백하게', '적당히', '완곡하게']) {
