@@ -1,0 +1,338 @@
+.page {
+  display: flex;
+  flex: 0 0 100dvh;
+  flex-direction: column;
+  min-width: 0;
+  height: 100dvh;
+  overflow: hidden;
+  margin: calc(-1 * var(--app-content-block-padding))
+    calc(-1 * var(--app-content-inline-padding));
+  padding-bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom));
+  background: #fff;
+  color: #111827;
+}
+
+.header {
+  position: relative;
+  display: flex;
+  flex: 0 0 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header h1 {
+  position: absolute;
+  left: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  transform: translateX(-50%);
+}
+
+.iconButton {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.menuAnchor {
+  position: relative;
+}
+.menu {
+  position: absolute;
+  z-index: 5;
+  top: 34px;
+  right: 0;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 8px 24px #1118271a;
+}
+.menu button {
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  padding: 16px;
+}
+
+.productCard {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 88px;
+  gap: 12px;
+  align-items: center;
+  padding: 11px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+}
+.productImage {
+  display: grid;
+  flex: 0 0 64px;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #d1d5db;
+}
+.actualProductImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.productDetails {
+  min-width: 0;
+  flex: 1;
+  font-size: 13px;
+  line-height: 18px;
+  color: #6b7280;
+}
+.productTitleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+.productTitleRow strong {
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 20px;
+  color: #111827;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.productTitleRow span {
+  color: #000;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.exchangeActions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+.exchangeActions button {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+}
+.systemGroup {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.systemGroup > time {
+  color: #9ca3af;
+  font-size: 12px;
+}
+.systemCard {
+  width: min(420px, 100%);
+  padding: 16px;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+.systemCard > strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 20px;
+}
+.systemCard > p {
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 18px;
+}
+.systemCard > p + p {
+  margin-top: 4px;
+}
+.exchangeDetails {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.exchangeItem {
+  display: flex;
+  flex: 0 1 120px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.exchangeItem strong {
+  overflow: hidden;
+  width: 100%;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exchangeItem span {
+  color: #6b7280;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.exchangeArrows {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+.systemCard .systemExplanation {
+  margin-top: 12px;
+  line-height: 18px;
+}
+
+.messageRow {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+.messageRow.mine {
+  justify-content: flex-end;
+}
+.messageRow time {
+  flex: 0 0 auto;
+  color: #9ca3af;
+  font-size: 11px;
+}
+.avatar {
+  display: grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 16px;
+  background: #e5e7eb;
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+}
+.bubble {
+  max-width: min(360px, 72%);
+  padding: 10px 12px;
+  border-radius: 12px 12px 12px 4px;
+  background: #f3f4f6;
+  font-size: 14px;
+  line-height: 22px;
+  overflow-wrap: anywhere;
+}
+.mine .bubble {
+  border-radius: 12px 12px 4px 12px;
+  background: #111827;
+  color: #fff;
+}
+
+.composer {
+  display: flex;
+  flex: 0 0 82px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #fff;
+}
+.composer input {
+  min-width: 0;
+  flex: 1;
+  height: 48px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 24px;
+  outline: none;
+  background: #f3f4f6;
+  color: #111827;
+  font: inherit;
+  font-size: 15px;
+}
+.composer input::placeholder {
+  color: #9ca3af;
+}
+.composer input:focus-visible {
+  outline: 2px solid #111827;
+}
+.composer button {
+  display: grid;
+  flex: 0 0 56px;
+  width: 56px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 24px;
+  background: #111827;
+  cursor: pointer;
+}
+.composer button:disabled {
+  cursor: default;
+}
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .productCard {
+    flex-wrap: wrap;
+  }
+  .exchangeActions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .exchangeDetails {
+    gap: 4px;
+  }
+  .exchangeArrows {
+    gap: 0;
+  }
+  .bubble {
+    max-width: 70%;
+  }
+}
