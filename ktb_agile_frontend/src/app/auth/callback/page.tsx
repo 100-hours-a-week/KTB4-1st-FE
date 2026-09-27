@@ -1,10 +1,10 @@
 'use client'
 
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const API_BASE_URL = 'http://127.0.0.1:8080'
 const MINIMUM_LOADING_TIME_MS = 3_000
 
 type RefreshResponse = {

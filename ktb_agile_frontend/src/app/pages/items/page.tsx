@@ -4,14 +4,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/items/ItemCard'
 import { fetchMockItemsByGroup } from '@/data/mockItems'
 import type { ItemListItem } from '@/types/item'
 import styles from './page.module.css'
-
-const API_BASE_URL = 'http://127.0.0.1:8080'
 
 type JoinedGroup = {
   groupId: number

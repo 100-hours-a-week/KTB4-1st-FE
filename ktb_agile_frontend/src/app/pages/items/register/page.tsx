@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/items/ItemRegisterForm'
@@ -9,8 +10,6 @@ import type { ItemRegisterSubmitContext } from '@/components/items/ItemRegisterF
 import { uploadImagesToS3 } from './imageUpload'
 import type { ItemRegisterFormValues } from '../../../../types/item'
 import styles from './page.module.css'
-
-const API_BASE_URL = 'http://127.0.0.1:8080'
 
 type ModerationResponse = {
   data: {
