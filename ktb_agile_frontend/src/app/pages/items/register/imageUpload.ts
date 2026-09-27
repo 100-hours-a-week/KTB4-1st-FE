@@ -1,8 +1,7 @@
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import type { Dispatch, SetStateAction } from 'react'
 import type { SelectedImage } from '../../../../types/item'
-
-const API_BASE_URL = 'http://127.0.0.1:8080'
 
 type PresignedUpload = {
   uploadUrl: string

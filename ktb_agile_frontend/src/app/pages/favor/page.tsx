@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './favor.module.css'
 import axios from 'axios'
-
-const API_BASE_URL = 'http://127.0.0.1:8080'
+import { API_BASE_URL } from '@/config/api'
 
 const preferenceQuestions = [
   {

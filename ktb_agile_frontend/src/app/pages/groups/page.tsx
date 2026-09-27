@@ -9,9 +9,9 @@ import GroupCard from '@/components/groups/GroupCard'
 import LeaveConfirmModal from './modal/LeaveConfirmModal'
 import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 
-const API_BASE_URL = 'http://127.0.0.1:8080'
 const NO_SEARCH_RESULT_MSG = '검색된 그룹이 없어요!\n원하는 그룹을 찾을 수 없어요. 새로운 그룹을 만들어보세요!'
 const NO_GROUP_MSG = '참여하고 있는 그룹이 없어요! 새로운 그룹에 참여해보세요!'
 const RECOMMENDED_GROUP_DESCRIPTION = '가입된 사용자가 많은 순서대로 보여드려요'
@@ -201,7 +201,6 @@ export default function GroupList() {
     }
 
     const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
-
 
 
     return (

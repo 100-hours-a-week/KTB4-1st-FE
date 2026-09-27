@@ -5,6 +5,7 @@ import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import { useFormContext } from 'react-hook-form'
 import axios from 'axios'
+import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import { uploadImagesToS3 } from '../imageUpload'
 import type {
@@ -16,7 +17,6 @@ import styles from './ImageRegister.module.css'
 const MAX_IMAGES = 3
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const API_BASE_URL = 'http://127.0.0.1:8080'
 
 type ImageRegisterProps = {
   images: SelectedImage[]
