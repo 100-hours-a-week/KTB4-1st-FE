@@ -43,6 +43,40 @@ export type ItemListResponse = {
   error: null
 }
 
+
+export type ItemDetail = {
+  itemId: number
+  groups: {
+    groupId: number
+    groupName: string
+  }[]
+  title: string
+  content: string
+  quantity: number
+  itemState: ItemState
+  owner: {
+    userId: number
+    nickname: string
+    profileImageUrl: string | null
+  }
+  images: {
+    imageId: number
+    imageUrl: string
+    displayOrder: number
+  }[]
+  likeCount: number
+  viewCount: number
+  exchangeRequestCount: number
+  isLiked: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type ItemDetailResponse = {
+  data: ItemDetail
+  error: null
+}
+
 export type MockItem = ItemListItem & {
   content: string
   exchangeUrgencyScore: number
