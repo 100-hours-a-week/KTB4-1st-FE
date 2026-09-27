@@ -15,8 +15,6 @@ import styles from './page.module.css'
 const DEFAULT_ERROR_MESSAGE =
   '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.'
 
-
-
 function getUserIdFromAccessToken(accessToken: string) {
   try {
     const payloadPart = accessToken.split('.')[1]
@@ -218,7 +216,13 @@ export default function ItemDetailsPage() {
             <div className={styles.actions}>
               {isOwner ? (
                 <>
-                  <button className={styles.primaryButton} type="button">
+                  <button
+                    className={styles.primaryButton}
+                    type="button"
+                    onClick={() =>
+                      router.push(`/pages/items/${item.itemId}/edit`)
+                    }
+                  >
                     수정하기
                   </button>
                   <button

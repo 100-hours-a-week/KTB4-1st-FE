@@ -12,7 +12,8 @@ export type ItemRegisterFormValues = {
 
 export type SelectedImage = {
   id: string
-  file: File
+  file?: File
+  imageId?: number
   preview: string
   objectKey?: string
 }
@@ -82,4 +83,6 @@ export type MockItem = ItemListItem & {
   valueGapToleranceScore: number
   groupIds: number[]
   objectKeys: string[]
+  imageUrls?: string[]
+  updatedAt?: string
 }

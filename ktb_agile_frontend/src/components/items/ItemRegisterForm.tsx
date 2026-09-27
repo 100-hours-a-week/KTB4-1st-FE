@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
 import ImageRegister from '@/app/pages/items/register/components/ImageRegister'
@@ -17,6 +17,7 @@ type ItemRegisterFormProps = {
   initialValues?: Partial<ItemRegisterFormValues>
   initialImages?: SelectedImage[]
   isSubmitting: boolean
+  requireChanges?: boolean
   submitLabel?: string
   submittingLabel?: string
   onSubmit: (
@@ -40,6 +41,7 @@ export default function ItemRegisterForm({
   initialValues,
   initialImages = [],
   isSubmitting,
+  requireChanges = false,
   submitLabel = '등록 완료',
   submittingLabel = '등록 중...',
   onSubmit,
@@ -57,8 +59,29 @@ export default function ItemRegisterForm({
     },
   })
 
+  const { isValid, isDirty, isValidating } = methods.formState
+  const { trigger } = methods
+
+  useEffect(() => {
+    void trigger()
+  }, [trigger])
+
+  const imagesChanged =
+    images.length !== initialImages.length ||
+    images.some((image, index) => image.id !== initialImages[index]?.id)
+  const hasChanges = isDirty || imagesChanged
+  const canSubmit =
+    isValid &&
+    !isValidating &&
+    images.length > 0 &&
+    !isSubmitting &&
+    !isAnalyzing &&
+    !isImageRejected &&
+    (!requireChanges || hasChanges)
+
   async function handleSubmit(values: ItemRegisterFormValues) {
     if (isSubmitting || isAnalyzing || isImageRejected) return
+    if (requireChanges && !hasChanges) return
     if (images.length === 0 || values.quantity === undefined) {
       onValidationError('사진과 필수 정보를 입력해주세요.')
       return
@@ -83,16 +106,7 @@ export default function ItemRegisterForm({
         <ItemInfoRegister />
 
         <div className={styles.submitBar}>
-          <button
-            type="submit"
-            disabled={
-              !methods.formState.isValid ||
-              images.length === 0 ||
-              isSubmitting ||
-              isAnalyzing ||
-              isImageRejected
-            }
-          >
+          <button type="submit" disabled={!canSubmit}>
             {isSubmitting ? submittingLabel : submitLabel}
           </button>
         </div>

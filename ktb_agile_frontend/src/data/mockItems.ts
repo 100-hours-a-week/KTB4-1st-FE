@@ -2,6 +2,8 @@ import type {
   ItemDetailResponse,
   ItemListResponse,
   MockItem,
+  ItemRegisterFormValues,
+  SelectedImage,
 } from '@/types/item'
 
 const mockGroupNames: Record<number, string> = {
@@ -251,14 +253,47 @@ export function getMockItemDetail(itemId: number): ItemDetailResponse | null {
         ...item.owner,
         profileImageUrl: null,
       },
-      images: [],
+      images: item.objectKeys.map((_, index) => ({
+        imageId: item.itemId * 100 + index + 1,
+        imageUrl: item.imageUrls?.[index] ?? '/images/mock-item.svg',
+        displayOrder: index + 1,
+      })),
       likeCount: item.likeCount,
       viewCount: item.itemId * 10,
       exchangeRequestCount: item.exchangeRequestCount,
       isLiked: item.isLiked,
       createdAt: item.createdAt,
-      updatedAt: item.createdAt,
+      updatedAt: item.updatedAt ?? item.createdAt,
     },
     error: null,
   }
+}
+
+export function updateMockItem(
+  itemId: number,
+  values: ItemRegisterFormValues,
+  images: SelectedImage[],
+) {
+  const item = mockItemStore.find((mockItem) => mockItem.itemId === itemId)
+  if (!item) throw new Error('수정할 물품을 찾을 수 없습니다.')
+  if (values.quantity === undefined || images.length === 0) {
+    throw new Error('사진과 필수 정보를 입력해주세요.')
+  }
+
+  Object.assign(item, {
+    title: values.title,
+    content: values.content,
+    contentPreview: values.content.slice(0, 100),
+    quantity: values.quantity,
+    itemState: values.itemState,
+    groupIds: [...values.groupIds],
+    exchangeUrgencyScore: Number((values.pace / 100).toFixed(2)),
+    valueGapToleranceScore: Number((values.condition / 100).toFixed(2)),
+    objectKeys: images.map(
+      (image) => image.objectKey ?? `mock/${itemId}/${image.id}`,
+    ),
+    imageUrls: images.map((image) => image.preview),
+    thumbnailImageUrl: images[0].preview,
+    updatedAt: new Date().toISOString(),
+  })
 }
