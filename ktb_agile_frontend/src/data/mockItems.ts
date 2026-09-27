@@ -8,7 +8,7 @@ const mockGroupNames: Record<number, string> = {
   1: '카카오테크 부트캠프 4기',
 }
 
-export const mockItems: readonly MockItem[] = [
+const mockItemStore: MockItem[] = [
   {
     itemId: 1,
     title: '아이폰 15',
@@ -190,6 +190,16 @@ export const mockItems: readonly MockItem[] = [
     createdAt: '2026-09-18T10:00:00+09:00',
   },
 ]
+
+export const mockItems: readonly MockItem[] = mockItemStore
+
+export function deleteMockItem(itemId: number) {
+  const itemIndex = mockItemStore.findIndex((item) => item.itemId === itemId)
+  if (itemIndex === -1) return false
+
+  mockItemStore.splice(itemIndex, 1)
+  return true
+}
 
 export async function fetchMockItemsByGroup(
   groupId: number,

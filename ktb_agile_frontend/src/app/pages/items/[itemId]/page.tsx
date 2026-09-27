@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
-import { getMockItemDetail } from '@/data/mockItems'
+import { deleteMockItem, getMockItemDetail } from '@/data/mockItems'
 import type { ItemDetail } from '@/types/item'
 // import type { ItemDetailResponse } from '@/types/item'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
@@ -14,6 +14,8 @@ import styles from './page.module.css'
 // const API_BASE_URL = 'http://127.0.0.1:8080'
 const DEFAULT_ERROR_MESSAGE =
   '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.'
+
+
 
 function getUserIdFromAccessToken(accessToken: string) {
   try {
@@ -42,6 +44,8 @@ export default function ItemDetailsPage() {
   const [item, setItem] = useState<ItemDetail | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -112,6 +116,53 @@ export default function ItemDetailsPage() {
   )
   const groupNames = item?.groups.map((group) => group.groupName).join(', ')
 
+  async function handleDeleteItem() {
+    if (!item || isDeleting) return
+
+    const accessToken = sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    setIsDeleting(true)
+
+    try {
+      // 실제 API 연결 시 아래 주석을 해제합니다.
+      //    await axios.delete(`${API_BASE_URL}/items/${itemId}`, {
+      //     headers: {
+      //       Authorization: `Bearer ${accessToken}`,
+      //       Accept: 'application/json',
+      //     },
+      //   })
+
+      const isDeleted = deleteMockItem(item.itemId)
+      if (!isDeleted) {
+        throw new Error('삭제할 물품을 찾을 수 없습니다.')
+      }
+
+      setIsDeleteModalOpen(false)
+      router.replace('/pages/items')
+    } catch (error) {
+      setIsDeleteModalOpen(false)
+
+      // 실제 API 연결 시 401 오류를 로그인 화면으로 처리합니다.
+      // if (axios.isAxiosError(error) && error.response?.status === 401) {
+      //   sessionStorage.removeItem('accessToken')
+      //   router.replace('/auth/login')
+      //   return
+      // }
+
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : '물품 삭제에 실패했습니다. 다시 시도해주세요.',
+      )
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <>
       <div className={styles.page}>
@@ -170,7 +221,11 @@ export default function ItemDetailsPage() {
                   <button className={styles.primaryButton} type="button">
                     수정하기
                   </button>
-                  <button className={styles.deleteButton} type="button">
+                  <button
+                    className={styles.deleteButton}
+                    type="button"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                  >
                     삭제하기
                   </button>
                 </>
@@ -196,6 +251,15 @@ export default function ItemDetailsPage() {
         <ModalDefault
           message={errorMessage}
           onConfirm={() => setErrorMessage(null)}
+        />
+      )}
+      {isDeleteModalOpen && !errorMessage && (
+        <ModalDefault
+          message="물품을 삭제하시겠습니까?"
+          confirmLabel={isDeleting ? '삭제 중...' : '삭제하기'}
+          cancelLabel="취소"
+          onConfirm={handleDeleteItem}
+          onCancel={() => setIsDeleteModalOpen(false)}
         />
       )}
     </>
