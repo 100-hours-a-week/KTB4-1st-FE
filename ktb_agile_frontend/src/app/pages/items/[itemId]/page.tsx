@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 import { deleteMockItem, getMockItemDetail } from '@/data/mockItems'
 import type { ItemDetail } from '@/types/item'
+import { getUserIdFromAccessToken } from '@/utils/auth'
 // import type { ItemDetailResponse } from '@/types/item'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
 import styles from './page.module.css'
@@ -14,27 +15,6 @@ import styles from './page.module.css'
 // const API_BASE_URL = 'http://127.0.0.1:8080'
 const DEFAULT_ERROR_MESSAGE =
   '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.'
-
-function getUserIdFromAccessToken(accessToken: string) {
-  try {
-    const payloadPart = accessToken.split('.')[1]
-    if (!payloadPart) return null
-
-    const normalizedPayload = payloadPart.replace(/-/g, '+').replace(/_/g, '/')
-    const paddedPayload = normalizedPayload.padEnd(
-      Math.ceil(normalizedPayload.length / 4) * 4,
-      '=',
-    )
-    const payload = JSON.parse(window.atob(paddedPayload)) as {
-      sub?: string
-    }
-    const userId = Number(payload.sub)
-
-    return Number.isInteger(userId) && userId > 0 ? userId : null
-  } catch {
-    return null
-  }
-}
 
 export default function ItemDetailsPage() {
   const { itemId } = useParams<{ itemId: string }>()
@@ -238,6 +218,9 @@ export default function ItemDetailsPage() {
                   className={styles.primaryButton}
                   type="button"
                   disabled={item.itemState === 'UNAVAILABLE'}
+                  onClick={() =>
+                    router.push(`/pages/chat/exchange?itemId=${item.itemId}`)
+                  }
                 >
                   {item.itemState === 'UNAVAILABLE' ? '거래 완료' : '제안하기'}
                 </button>
