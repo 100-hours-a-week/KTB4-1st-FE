@@ -110,7 +110,7 @@ export default function ItemInfoRegister() {
             })}
           >
             <option value="AVAILABLE">거래 가능</option>
-            <option value="COMPLETED">거래 완료</option>
+            <option value="UNAVAILABLE">거래 완료</option>
           </select>
           <svg viewBox="0 0 20 20">
             <path d="m5 7.5 5 5 5-5" />

@@ -1,7 +1,9 @@
+export type ItemState = 'AVAILABLE' | 'UNAVAILABLE'
+
 export type ItemRegisterFormValues = {
   title: string
   content: string
-  itemState: 'AVAILABLE' | 'COMPLETED'
+  itemState: ItemState
   quantity: number | undefined
   groupIds: number[]
   pace: number
@@ -14,8 +16,6 @@ export type SelectedImage = {
   preview: string
   objectKey?: string
 }
-
-export type ItemState = 'AVAILABLE' | 'UNAVAILABLE'
 
 export type ItemListItem = {
   itemId: number
@@ -42,7 +42,6 @@ export type ItemListResponse = {
   }
   error: null
 }
-
 
 export type ItemDetail = {
   itemId: number
