@@ -1,20 +1,136 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import axios from 'axios'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import Navbar from '@/components/common/navbar/Navbar'
-import { mockJoinedGroups } from '@/data/mockGroups'
+import ItemCard from '@/components/items/ItemCard'
+import { fetchMockItemsByGroup } from '@/data/mockItems'
+import type { ItemListItem } from '@/types/item'
 import styles from './page.module.css'
 
+const API_BASE_URL = 'http://127.0.0.1:8080'
+
+type JoinedGroup = {
+  groupId: number
+  groupName: string
+}
+
+type GroupListResponse = {
+  data: {
+    groups: JoinedGroup[]
+  }
+}
+
 export default function ItemList() {
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
-    mockJoinedGroups[0]?.id ?? null,
-  )
+  const [joinedGroups, setJoinedGroups] = useState<JoinedGroup[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const [itemResult, setItemResult] = useState<{
+    groupId: number
+    items: ItemListItem[]
+  } | null>(null)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
+  const [nextData, setNextData] = useState<{
+    hasNext : boolean | null,
+    nextCursor : string | null
+  } | null>(null)
+
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
   const selectedGroup =
-    mockJoinedGroups.find((group) => group.id === selectedGroupId) ?? null
+    joinedGroups.find((group) => group.groupId === selectedGroupId) ?? null
+  const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
+  const isLoadingItems =
+    selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+
+  useEffect(() => {
+    const accessToken = window.sessionStorage.getItem('accessToken')
+
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    const controller = new AbortController()
+
+    async function fetchJoinedGroups() {
+      try {
+        const response = await axios.get<GroupListResponse>(
+          `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        const groups = response.data.data.groups.map(
+          ({ groupId, groupName }) => ({
+            groupId,
+            groupName,
+          }),
+        )
+
+        setJoinedGroups(groups)
+        setSelectedGroupId(groups[0]?.groupId ?? null)
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          console.error(error)
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsLoadingGroups(false)
+        }
+      }
+    }
+
+    fetchJoinedGroups()
+
+    return () => controller.abort()
+  }, [router])
+
+  useEffect(() => {
+    if (selectedGroupId === null) return
+
+    const groupId = selectedGroupId
+    let isActive = true
+
+    async function fetchItems() {
+      //const response = await axios.get<GroupListResponse>(
+        //   `${API_BASE_URL}/groups/{groupId}/items?size=10&cursor={nextData.hasNext ?? ''}`,
+        //   {
+        //     headers: {
+        //       Authorization: `Bearer ${accessToken}`,
+        //       Accept: 'application/json',
+        //     },
+        //     signal: controller.signal,
+        //   },
+        // )
+      const response = await fetchMockItemsByGroup(groupId)
+
+      if (isActive) {
+        setItemResult({
+          groupId,
+          items: response.data.items,
+        })
+
+        setNextData({
+          nextCursor : response.data.nextCursor,
+          hasNext :  response.data.hasNext
+        })
+      }
+    }
+
+    fetchItems()
+
+    return () => {
+      isActive = false
+    }
+  }, [selectedGroupId])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -36,31 +152,35 @@ export default function ItemList() {
     <section className={styles.page}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
-          {selectedGroup ? (
+          {isLoadingGroups ? null : selectedGroup ? (
             <div className={styles.groupDropdown} ref={dropdownRef}>
               <button
                 className={styles.groupTrigger}
                 type="button"
                 onClick={() => setGroupMenuOpen((open) => !open)}
               >
-                <span className={styles.groupName}>{selectedGroup.name}</span>
+                <span className={styles.groupName}>
+                  {selectedGroup.groupName}
+                </span>
               </button>
               {isGroupMenuOpen && (
                 <div className={styles.groupMenu}>
                   <ul className={styles.groupList}>
-                    {mockJoinedGroups.map((group) => (
-                      <li key={group.id}>
+                    {joinedGroups.map((group) => (
+                      <li key={group.groupId}>
                         <button
                           className={`${styles.groupOption} ${
-                            group.id === selectedGroup.id ? styles.selected : ''
+                            group.groupId === selectedGroup.groupId
+                              ? styles.selected
+                              : ''
                           }`}
                           type="button"
                           onClick={() => {
-                            setSelectedGroupId(group.id)
+                            setSelectedGroupId(group.groupId)
                             setGroupMenuOpen(false)
                           }}
                         >
-                          {group.name}
+                          {group.groupName}
                         </button>
                       </li>
                     ))}
@@ -78,24 +198,33 @@ export default function ItemList() {
           )}
         </div>
       </header>
-      <div className={styles.emptyState}>
-        <h1 className={styles.emptyTitle}>
-          {selectedGroup
-            ? '등록된 물건이 없습니다.'
-            : '그룹에 가입하지 않았습니다.'}
-        </h1>
-        <p className={styles.emptyDescription}>
-          {selectedGroup
-            ? `${selectedGroup.name}에 첫 물건을 등록해보세요.`
-            : '그룹에 가입해서 물품들을 구경해보아요.'}
-        </p>
-      </div>
+      {selectedGroup && !isLoadingItems && items.length > 0 ? (
+        <div className={styles.itemList}>
+          {items.map((item) => (
+            <ItemCard item={item} key={item.itemId} />
+          ))}
+        </div>
+      ) : (
+        <div className={styles.emptyState}>
+          <h1 className={styles.emptyTitle}>
+            {isLoadingGroups || isLoadingItems
+              ? '물품 목록을 불러오는 중입니다.'
+              : selectedGroup
+                ? '등록된 물건이 없습니다.'
+                : '그룹에 가입하지 않았습니다.'}
+          </h1>
+          <p className={styles.emptyDescription}>
+            {isLoadingGroups || isLoadingItems
+              ? '잠시만 기다려주세요.'
+              : selectedGroup
+                ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
+                : '그룹에 가입해서 물품들을 구경해보아요.'}
+          </p>
+        </div>
+      )}
       {selectedGroup && (
         <div className={styles.registerArea}>
-          <Link
-            className={styles.registerButton}
-            href="/pages/items/register"
-          >
+          <Link className={styles.registerButton} href="/pages/items/register">
             <span className={styles.registerIcon}>
               <RegisterIcon />
             </span>
