@@ -1,4 +1,12 @@
-import type { ItemListResponse, MockItem } from '@/types/item'
+import type {
+  ItemDetailResponse,
+  ItemListResponse,
+  MockItem,
+} from '@/types/item'
+
+const mockGroupNames: Record<number, string> = {
+  1: '카카오테크 부트캠프 4기',
+}
 
 export const mockItems: readonly MockItem[] = [
   {
@@ -12,7 +20,7 @@ export const mockItems: readonly MockItem[] = [
     valueGapToleranceScore: 0.3,
     groupIds: [1],
     objectKeys: ['images/12/iphone-15.jpg'],
-    owner: { userId: 12, nickname: '민지' },
+    owner: { userId: 1, nickname: '민지' },
     thumbnailImageUrl: null,
     likeCount: 4,
     exchangeRequestCount: 1,
@@ -209,6 +217,37 @@ export async function fetchMockItemsByGroup(
       items,
       nextCursor: null,
       hasNext: false,
+    },
+    error: null,
+  }
+}
+
+export function getMockItemDetail(itemId: number): ItemDetailResponse | null {
+  const item = mockItems.find((mockItem) => mockItem.itemId === itemId)
+  if (!item) return null
+
+  return {
+    data: {
+      itemId: item.itemId,
+      groups: item.groupIds.map((groupId) => ({
+        groupId,
+        groupName: mockGroupNames[groupId] ?? `그룹 ${groupId}`,
+      })),
+      title: item.title,
+      content: item.content,
+      quantity: item.quantity,
+      itemState: item.itemState,
+      owner: {
+        ...item.owner,
+        profileImageUrl: null,
+      },
+      images: [],
+      likeCount: item.likeCount,
+      viewCount: item.itemId * 10,
+      exchangeRequestCount: item.exchangeRequestCount,
+      isLiked: item.isLiked,
+      createdAt: item.createdAt,
+      updatedAt: item.createdAt,
     },
     error: null,
   }
