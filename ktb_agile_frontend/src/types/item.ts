@@ -54,6 +54,8 @@ export type ItemDetail = {
   content: string
   quantity: number
   itemState: ItemState
+  exchangeUrgencyScore: number
+  valueGapToleranceScore: number
   owner: {
     userId: number
     nickname: string
@@ -75,14 +77,4 @@ export type ItemDetail = {
 export type ItemDetailResponse = {
   data: ItemDetail
   error: null
-}
-
-export type MockItem = ItemListItem & {
-  content: string
-  exchangeUrgencyScore: number
-  valueGapToleranceScore: number
-  groupIds: number[]
-  objectKeys: string[]
-  imageUrls?: string[]
-  updatedAt?: string
 }

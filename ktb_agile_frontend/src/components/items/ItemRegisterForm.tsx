@@ -35,8 +35,8 @@ const DEFAULT_VALUES: ItemRegisterFormValues = {
   itemState: 'AVAILABLE',
   quantity: undefined,
   groupIds: [],
-  pace: 55,
-  condition: 28,
+  pace: 50,
+  condition: 50,
 }
 
 export default function ItemRegisterForm({

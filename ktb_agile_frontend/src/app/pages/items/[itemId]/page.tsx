@@ -1,18 +1,16 @@
 'use client'
 
-// import axios from 'axios'
+import axios from 'axios'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
-import { deleteMockItem, getMockItemDetail } from '@/data/mockItems'
-import type { ItemDetail } from '@/types/item'
+import { API_BASE_URL } from '@/config/api'
+import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
-// import type { ItemDetailResponse } from '@/types/item'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
 import styles from './page.module.css'
 
-// const API_BASE_URL = 'http://127.0.0.1:8080'
 const DEFAULT_ERROR_MESSAGE =
   '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.'
 
@@ -37,27 +35,18 @@ export default function ItemDetailsPage() {
       }
     }
 
-    const loadItemDetails = () => {
+    const loadItemDetails = async () => {
       try {
-        // 실제 API 연결 시 아래 호출을 사용하면 됩니다.
-        // const response = await axios.get<ItemDetailResponse>(
-        //   `${API_BASE_URL}/items/${itemId}`,
-        //   {
-        //     headers: {
-        //       Authorization: `Bearer ${accessToken}`,
-        //       Accept: 'application/json',
-        //     },
-        //   },
-        // )
-        // const itemDetails = response.data.data
-
-        const response = getMockItemDetail(Number(itemId))
-
-        if (!response) {
-          throw new Error('물품을 찾을 수 없습니다.')
-        }
-
-        const itemDetails = response.data
+        const response = await axios.get<ItemDetailResponse>(
+          `${API_BASE_URL}/items/${itemId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        const itemDetails = response.data.data
 
         if (isMounted) {
           setItem(itemDetails)
@@ -68,8 +57,16 @@ export default function ItemDetailsPage() {
       } catch (error) {
         if (!isMounted) return
 
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+          sessionStorage.removeItem('accessToken')
+          router.replace('/auth/login')
+          return
+        }
+
         setErrorMessage(
-          error instanceof Error ? error.message : DEFAULT_ERROR_MESSAGE,
+          axios.isAxiosError(error) && error.response?.status === 404
+            ? '물품을 찾을 수 없습니다.'
+            : DEFAULT_ERROR_MESSAGE,
         )
       } finally {
         if (isMounted) {
@@ -106,34 +103,27 @@ export default function ItemDetailsPage() {
     setIsDeleting(true)
 
     try {
-      // 실제 API 연결 시 아래 주석을 해제합니다.
-      //    await axios.delete(`${API_BASE_URL}/items/${itemId}`, {
-      //     headers: {
-      //       Authorization: `Bearer ${accessToken}`,
-      //       Accept: 'application/json',
-      //     },
-      //   })
-
-      const isDeleted = deleteMockItem(item.itemId)
-      if (!isDeleted) {
-        throw new Error('삭제할 물품을 찾을 수 없습니다.')
-      }
+      await axios.delete(`${API_BASE_URL}/items/${item.itemId}`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json',
+        },
+      })
 
       setIsDeleteModalOpen(false)
       router.replace('/pages/items')
     } catch (error) {
       setIsDeleteModalOpen(false)
 
-      // 실제 API 연결 시 401 오류를 로그인 화면으로 처리합니다.
-      // if (axios.isAxiosError(error) && error.response?.status === 401) {
-      //   sessionStorage.removeItem('accessToken')
-      //   router.replace('/auth/login')
-      //   return
-      // }
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        sessionStorage.removeItem('accessToken')
+        router.replace('/auth/login')
+        return
+      }
 
       setErrorMessage(
-        error instanceof Error
-          ? error.message
+        axios.isAxiosError(error) && error.response?.status === 404
+          ? '삭제할 물품을 찾을 수 없습니다.'
           : '물품 삭제에 실패했습니다. 다시 시도해주세요.',
       )
     } finally {
