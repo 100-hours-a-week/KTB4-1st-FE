@@ -38,6 +38,8 @@ type ExchangeFormProps = {
   itemId: number
   submitLabel: string
   onSubmit: (values: ExchangeFormValues, accessToken: string) => Promise<void>
+  initialValues?: ExchangeFormValues
+  closeHref?: string
 }
 
 export default function ExchangeForm(props: ExchangeFormProps) {
@@ -48,15 +50,28 @@ function ExchangeFormContent({
   itemId,
   submitLabel,
   onSubmit,
+  initialValues,
+  closeHref,
 }: ExchangeFormProps) {
   const router = useRouter()
   const [item, setItem] = useState<ItemDetail | null>(null)
   const [myItems, setMyItems] = useState<Omit<ItemListItem, 'owner'>[]>([])
-  const [requestedQuantity, setRequestedQuantity] = useState(1)
+  const [requestedQuantity, setRequestedQuantity] = useState(
+    initialValues?.requestedQuantity ?? 1,
+  )
   const [offeredQuantities, setOfferedQuantities] = useState<
     Record<number, number>
-  >({})
-  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  >(() =>
+    Object.fromEntries(
+      initialValues?.offeredItems.map((offered) => [
+        offered.itemId,
+        offered.quantity,
+      ]) ?? [],
+    ),
+  )
+  const [selectedIds, setSelectedIds] = useState<number[]>(
+    () => initialValues?.offeredItems.map((offered) => offered.itemId) ?? [],
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitting = useRef(false)
@@ -192,10 +207,12 @@ function ExchangeFormContent({
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>교환 요청</h1>
+        <h1>{initialValues ? '교환 요청 수정' : '교환 요청'}</h1>
         <Link
           className={styles.close}
-          href={item ? `/pages/items/${item.itemId}` : '/pages/items'}
+          href={
+            closeHref ?? (item ? `/pages/items/${item.itemId}` : '/pages/items')
+          }
         >
           ×
         </Link>

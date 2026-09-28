@@ -59,6 +59,8 @@ export default function ChatRoomCard({ room }: { room: ChatRoom }) {
             userId: room.otherUser.userId,
             direction: room.direction,
             status: room.chatRoomStatus,
+            itemId: room.targetItem.itemId,
+            exchangeRequestId: room.exchangeRequestId,
             ...(room.targetItem.thumbnailImageUrl
               ? { image: room.targetItem.thumbnailImageUrl }
               : {}),

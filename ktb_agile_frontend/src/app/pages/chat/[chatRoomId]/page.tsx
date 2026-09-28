@@ -1,31 +1,40 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useRef, useState, type FormEvent } from 'react'
+import axios from 'axios'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
+import { API_BASE_URL } from '@/config/api'
+import { getUserIdFromAccessToken } from '@/utils/auth'
 import styles from './page.module.css'
 
 type Message = {
-  id: string
+  id: number
   side: 'mine' | 'theirs'
   content: string
   time: string
+  senderName: string
 }
 
-const sampleMessages: Message[] = [
-  {
-    id: 'sample-1',
-    side: 'theirs',
-    content: '(사용자2) 게시글 관련 메시지1',
-    time: '10:06',
-  },
-  {
-    id: 'sample-2',
-    side: 'mine',
-    content: '(사용자1) 게시글 관련 메시지2',
-    time: '10:08',
-  },
-]
+type ChatMessageDto = {
+  messageId: number
+  sender?: { userId: number; nickname: string }
+  userId?: number
+  content: string
+  messageType: string
+  isMine?: boolean
+  createdAt: string
+}
+
+type ChatMessageResponse = {
+  data: {
+    chatRoomId?: number
+    messages: ChatMessageDto[]
+    nextCursor: string | null
+    hasNext: boolean
+  } | null
+  error: { code: string; message: string } | null
+}
 
 function timeLabel(date: Date) {
   if (Number.isNaN(date.getTime())) return ''
@@ -36,63 +45,275 @@ function timeLabel(date: Date) {
   }).format(date)
 }
 
+function toMessage(
+  message: ChatMessageDto,
+  userId: number | null,
+  otherUser: string,
+): Message {
+  const mine =
+    message.isMine ??
+    (userId !== null && (message.sender?.userId ?? message.userId) === userId)
+  return {
+    id: message.messageId,
+    side: mine ? 'mine' : 'theirs',
+    content: message.content,
+    time: timeLabel(new Date(message.createdAt)),
+    senderName: message.sender?.nickname ?? otherUser,
+  }
+}
+
 export default function ChatRoomPage() {
   const router = useRouter()
+  const { chatRoomId } = useParams<{ chatRoomId: string }>()
   const searchParams = useSearchParams()
   const title = searchParams.get('title') ?? '게시글 제목1'
   const group = searchParams.get('group') ?? '그룹1'
   const otherUser = searchParams.get('user') ?? '사용자2'
   const image = searchParams.get('image')
   const isSeller = searchParams.get('direction') !== 'SENT'
-  const [draft, setDraft] = useState('')
+  const itemId = Number(searchParams.get('itemId'))
+  const exchangeRequestId = Number(searchParams.get('exchangeRequestId'))
+  const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const lastMessage = searchParams.get('lastMessage')
-    if (!lastMessage) return searchParams.has('title') ? [] : sampleMessages
-    const sentByOtherUser =
-      searchParams.get('senderId') === searchParams.get('userId')
-    const sentAt = searchParams.get('lastMessageAt')
-    return [
-      {
-        id: 'last-message',
-        side: sentByOtherUser ? 'theirs' : 'mine',
-        content: lastMessage,
-        time: sentAt ? timeLabel(new Date(sentAt)) : '',
-      },
-    ]
-  })
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [hasNext, setHasNext] = useState(false)
+  const [messageError, setMessageError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [exchangeStatus, setExchangeStatus] = useState<
-    'available' | 'completed' | 'rejected'
+    'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
   >(() => {
     const status = searchParams.get('status')
     return status === 'COMPLETED'
       ? 'completed'
       : status === 'REJECTED'
         ? 'rejected'
-        : 'available'
+        : status === 'CANCELED'
+          ? 'canceled'
+          : status === 'CLOSED'
+            ? 'closed'
+            : 'available'
   })
 
-  function sendMessage(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const content = draft.trim()
-    if (!content) return
-    setMessages((current) => [
-      ...current,
-      {
-        id: `local-${Date.now()}`,
-        side: 'mine',
-        content,
-        time: timeLabel(new Date()),
-      },
-    ])
-    setDraft('')
-    requestAnimationFrame(() => {
-      messagesRef.current?.scrollTo({
-        top: messagesRef.current.scrollHeight,
-        behavior: 'smooth',
-      })
-    })
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+    const controller = new AbortController()
+    async function loadMessages() {
+      try {
+        if (
+          !Number.isSafeInteger(Number(chatRoomId)) ||
+          Number(chatRoomId) < 1
+        ) {
+          throw new Error('올바른 채팅방 ID가 필요합니다.')
+        }
+        const response = await axios.get<ChatMessageResponse>(
+          `${API_BASE_URL}/chat/rooms/${chatRoomId}/messages`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (!response.data.data || response.data.error) {
+          throw new Error(
+            response.data.error?.message || '메시지를 불러오지 못했습니다.',
+          )
+        }
+        const page = response.data.data
+        setMessages(
+          page.messages.map((message) =>
+            toMessage(message, getUserIdFromAccessToken(token!), otherUser),
+          ),
+        )
+        setNextCursor(page.nextCursor)
+        setHasNext(page.hasNext)
+        setMessageError(null)
+      } catch (cause) {
+        if (axios.isCancel(cause) || controller.signal.aborted) return
+        if (axios.isAxiosError(cause) && cause.response?.status === 401) {
+          router.replace('/auth/login')
+          return
+        }
+        setMessageError(
+          axios.isAxiosError<ChatMessageResponse>(cause)
+            ? cause.response?.data?.error?.message ||
+                '메시지를 불러오지 못했습니다.'
+            : cause instanceof Error
+              ? cause.message
+              : '메시지를 불러오지 못했습니다.',
+        )
+      } finally {
+        if (!controller.signal.aborted) setIsLoading(false)
+      }
+    }
+    void loadMessages()
+    return () => controller.abort()
+  }, [chatRoomId, otherUser, retryCount, router])
+
+  async function loadOlderMessages() {
+    if (!nextCursor || isLoadingMore) return
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+    setIsLoadingMore(true)
+    setMessageError(null)
+    try {
+      const response = await axios.get<ChatMessageResponse>(
+        `${API_BASE_URL}/chat/rooms/${chatRoomId}/messages`,
+        {
+          params: { cursor: nextCursor },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      )
+      if (!response.data.data || response.data.error) {
+        throw new Error(
+          response.data.error?.message || '이전 메시지를 불러오지 못했습니다.',
+        )
+      }
+      const page = response.data.data
+      const older = page.messages.map((message) =>
+        toMessage(message, getUserIdFromAccessToken(token), otherUser),
+      )
+      setMessages((current) => [
+        ...older.filter(
+          (message) => !current.some((entry) => entry.id === message.id),
+        ),
+        ...current,
+      ])
+      setNextCursor(page.nextCursor)
+      setHasNext(page.hasNext)
+    } catch (cause) {
+      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
+        router.replace('/auth/login')
+        return
+      }
+      setMessageError(
+        axios.isAxiosError<ChatMessageResponse>(cause)
+          ? cause.response?.data?.error?.message ||
+              '이전 메시지를 불러오지 못했습니다.'
+          : cause instanceof Error
+            ? cause.message
+            : '이전 메시지를 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  async function leaveChatRoom() {
+    if (!window.confirm('채팅방을 나가시겠습니까?')) return
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+    setIsLeaving(true)
+    setActionError(null)
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/chat-rooms/${chatRoomId}/members/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      )
+      router.replace('/pages/chat')
+    } catch (cause) {
+      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
+        router.replace('/auth/login')
+        return
+      }
+      setActionError(
+        axios.isAxiosError<ChatMessageResponse>(cause)
+          ? cause.response?.data?.error?.message ||
+              '채팅방을 나가지 못했습니다.'
+          : '채팅방을 나가지 못했습니다.',
+      )
+      setIsLeaving(false)
+      setMenuOpen(false)
+    }
+  }
+
+  async function changeExchangeStatus(
+    status: 'COMPLETED' | 'REJECTED' | 'CANCELED',
+  ) {
+    if (!Number.isSafeInteger(exchangeRequestId) || exchangeRequestId < 1)
+      return
+    const action =
+      status === 'COMPLETED' ? '완료' : status === 'REJECTED' ? '거절' : '취소'
+    if (!window.confirm(`교환 제안을 ${action}하시겠습니까?`)) return
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+    setIsUpdatingExchange(true)
+    setActionError(null)
+    try {
+      if (status === 'CANCELED') {
+        await axios.delete(
+          `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+      } else {
+        await axios.patch(
+          `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
+          { status },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+          },
+        )
+      }
+      setExchangeStatus(
+        status === 'COMPLETED'
+          ? 'completed'
+          : status === 'REJECTED'
+            ? 'rejected'
+            : 'canceled',
+      )
+      setMenuOpen(false)
+    } catch (cause) {
+      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
+        router.replace('/auth/login')
+        return
+      }
+      setActionError(
+        axios.isAxiosError<ChatMessageResponse>(cause)
+          ? cause.response?.data?.error?.message ||
+              `교환 제안을 ${action}하지 못했습니다.`
+          : `교환 제안을 ${action}하지 못했습니다.`,
+      )
+    } finally {
+      setIsUpdatingExchange(false)
+    }
   }
 
   return (
@@ -120,11 +341,24 @@ export default function ChatRoomPage() {
             </button>
             {menuOpen && (
               <div className={styles.menu}>
+                {!isSeller &&
+                  exchangeStatus === 'available' &&
+                  Number.isSafeInteger(exchangeRequestId) &&
+                  exchangeRequestId > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => void changeExchangeStatus('CANCELED')}
+                      disabled={isUpdatingExchange}
+                    >
+                      제안 취소
+                    </button>
+                  )}
                 <button
                   type="button"
-                  onClick={() => router.push('/pages/chat')}
+                  onClick={() => void leaveChatRoom()}
+                  disabled={isLeaving}
                 >
-                  채팅 목록으로 이동
+                  {isLeaving ? '나가는 중...' : '채팅방 나가기'}
                 </button>
               </div>
             )}
@@ -153,23 +387,56 @@ export default function ChatRoomPage() {
                     ? '거래 가능'
                     : exchangeStatus === 'completed'
                       ? '거래 완료'
-                      : '거래 거절'}
+                      : exchangeStatus === 'rejected'
+                        ? '거래 거절'
+                        : exchangeStatus === 'canceled'
+                          ? '제안 취소'
+                          : '채팅 종료'}
                 </span>
               </div>
               <p>그룹: {group}</p>
               <p>상대: {otherUser}</p>
             </div>
+            {!isSeller &&
+              exchangeStatus === 'available' &&
+              Number.isSafeInteger(itemId) &&
+              itemId > 0 &&
+              Number.isSafeInteger(exchangeRequestId) &&
+              exchangeRequestId > 0 && (
+                <div className={styles.exchangeActions}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      router.push(
+                        `/pages/chat/exchange/edit?${new URLSearchParams({ itemId: String(itemId), exchangeRequestId: String(exchangeRequestId), returnTo }).toString()}`,
+                      )
+                    }
+                  >
+                    제안 수정
+                  </button>
+                </div>
+              )}
             {isSeller && exchangeStatus === 'available' && (
               <div className={styles.exchangeActions}>
                 <button
                   type="button"
-                  onClick={() => setExchangeStatus('completed')}
+                  onClick={() => void changeExchangeStatus('COMPLETED')}
+                  disabled={
+                    isUpdatingExchange ||
+                    !Number.isSafeInteger(exchangeRequestId) ||
+                    exchangeRequestId < 1
+                  }
                 >
                   교환 완료
                 </button>
                 <button
                   type="button"
-                  onClick={() => setExchangeStatus('rejected')}
+                  onClick={() => void changeExchangeStatus('REJECTED')}
+                  disabled={
+                    isUpdatingExchange ||
+                    !Number.isSafeInteger(exchangeRequestId) ||
+                    exchangeRequestId < 1
+                  }
                 >
                   교환 거절
                 </button>
@@ -177,68 +444,40 @@ export default function ChatRoomPage() {
             )}
           </article>
 
+          {actionError && <p className={styles.error}>{actionError}</p>}
           <div className={styles.messages} aria-live="polite" ref={messagesRef}>
-            <div className={styles.systemGroup}>
-              <time>오늘 10:05</time>
-              <div className={styles.systemCard}>
-                <strong>
-                  (시스템) 교환 요청이{' '}
-                  {isSeller ? '접수되었습니다.' : '전송되었습니다.'}
-                </strong>
-                <p>요청 물건: {title}</p>
-                <p>요청 수량: 1개</p>
-                <div className={styles.exchangeDetails}>
-                  <div className={styles.exchangeItem}>
-                    <img
-                      src="/figma/chat/target-placeholder.svg"
-                      alt=""
-                      width="44"
-                      height="44"
-                    />
-                    <strong>{title}</strong>
-                    <span>보유 수량: 3</span>
-                  </div>
-                  <div className={styles.exchangeArrows} aria-hidden="true">
-                    <img
-                      src="/figma/chat/back.svg"
-                      alt=""
-                      width="24"
-                      height="24"
-                    />
-                    <img
-                      src="/figma/chat/arrow-right.svg"
-                      alt=""
-                      width="24"
-                      height="24"
-                    />
-                  </div>
-                  <div className={styles.exchangeItem}>
-                    <img
-                      src="/figma/chat/offered-placeholder.svg"
-                      alt=""
-                      width="44"
-                      height="44"
-                    />
-                    <strong>물건 1, 물건 2, ...</strong>
-                    <span>보유 수량: 8</span>
-                  </div>
-                </div>
+            {isLoading && (
+              <p className={styles.state}>메시지를 불러오는 중입니다.</p>
+            )}
+            {!isLoading && hasNext && nextCursor && (
+              <button
+                className={styles.loadMore}
+                type="button"
+                onClick={() => void loadOlderMessages()}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? '불러오는 중...' : '이전 메시지 보기'}
+              </button>
+            )}
+            {!isLoading && messageError && (
+              <div className={styles.state}>
+                <p>{messageError}</p>
+                {!messages.length && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsLoading(true)
+                      setRetryCount((count) => count + 1)
+                    }}
+                  >
+                    다시 시도
+                  </button>
+                )}
               </div>
-              {isSeller && (
-                <div className={styles.systemCard}>
-                  <strong>(시스템) 교환 상태에 따른 버튼 설정</strong>
-                  <p className={styles.systemExplanation}>
-                    채팅을 시작하시면 교환을 진행하는 것으로 간주됩니다.
-                    <br />
-                    ‘펼쳐보기’를 통해 정확한 거래 사항을 확인할 수 있으며,
-                    <br />
-                    ‘교환 거절’ 버튼을 통해 거절할 수 있습니다.
-                    <br />
-                    거래 완료 시 ‘교환 완료’ 버튼을 통해 끝낼 수 있습니다.
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
+            {!isLoading && !messageError && messages.length === 0 && (
+              <p className={styles.state}>아직 메시지가 없습니다.</p>
+            )}
 
             {messages.map((message) => (
               <div
@@ -247,7 +486,7 @@ export default function ChatRoomPage() {
               >
                 {message.side === 'theirs' && (
                   <span className={styles.avatar} aria-hidden="true">
-                    {otherUser.charAt(0)}
+                    {message.senderName.charAt(0)}
                   </span>
                 )}
                 {message.side === 'mine' && <time>{message.time}</time>}
@@ -258,25 +497,19 @@ export default function ChatRoomPage() {
           </div>
         </div>
 
-        <form className={styles.composer} onSubmit={sendMessage}>
+        <div className={styles.composer}>
           <label className={styles.visuallyHidden} htmlFor="chat-message">
             메시지
           </label>
           <input
             id="chat-message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="메시지를 입력하세요..."
-            autoComplete="off"
+            placeholder="메시지 전송은 준비 중입니다"
+            disabled
           />
-          <button
-            type="submit"
-            aria-label="메시지 보내기"
-            disabled={!draft.trim()}
-          >
+          <button type="button" aria-label="메시지 보내기" disabled>
             <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
           </button>
-        </form>
+        </div>
       </section>
       <Navbar />
     </>
