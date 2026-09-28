@@ -84,6 +84,7 @@ function ChatRoomContent() {
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
+  const isComposingRef = useRef(false)
   const [socketError, setSocketError] = useState<string | null>(null)
   const [exchangeStatus, setExchangeStatus] = useState<
     'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
@@ -119,8 +120,8 @@ function ChatRoomContent() {
     onError: setSocketError,
   })
 
-  function handleSendMessage() {
-    const content = messageInput.trim()
+  function handleSendMessage(value: string) {
+    const content = value.trim()
     if (!content) return
     if (content.length > 2000) {
       setSocketError('메시지는 2000자 이내로 입력해주세요.')
@@ -473,18 +474,23 @@ function ChatRoomContent() {
             maxLength={2000}
             disabled={!isConnected}
             onChange={(event) => setMessageInput(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault()
-                handleSendMessage()
-              }
+            onCompositionStart={() => {
+              isComposingRef.current = true
+            }}
+            onCompositionEnd={() => {
+              isComposingRef.current = false
+            }}
+            onKeyUp={(event) => {
+              if (event.key !== 'Enter' || event.shiftKey) return
+              if (isComposingRef.current || event.nativeEvent.isComposing) return
+              handleSendMessage(event.currentTarget.value)
             }}
           />
           <button
             type="button"
             aria-label="메시지 보내기"
             disabled={!isConnected || !messageInput.trim()}
-            onClick={handleSendMessage}
+            onClick={() => handleSendMessage(messageInput)}
           >
             <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
           </button>
