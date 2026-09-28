@@ -6,6 +6,7 @@ import { FormProvider, useForm } from 'react-hook-form'
 import ImageRegister from '@/app/pages/items/register/components/ImageRegister'
 import ItemInfoRegister from '@/app/pages/items/register/components/ItemInfoRegister'
 import type { ItemRegisterFormValues, SelectedImage } from '@/types/item'
+import type { JoinedGroupOption } from '@/types/group'
 import styles from './ItemRegisterForm.module.css'
 
 export type ItemRegisterSubmitContext = {
@@ -16,6 +17,7 @@ export type ItemRegisterSubmitContext = {
 type ItemRegisterFormProps = {
   initialValues?: Partial<ItemRegisterFormValues>
   initialImages?: SelectedImage[]
+  groups?: JoinedGroupOption[]
   isSubmitting: boolean
   requireChanges?: boolean
   submitLabel?: string
@@ -32,7 +34,7 @@ const DEFAULT_VALUES: ItemRegisterFormValues = {
   content: '',
   itemState: 'AVAILABLE',
   quantity: undefined,
-  groupIds: [1],
+  groupIds: [],
   pace: 55,
   condition: 28,
 }
@@ -40,6 +42,7 @@ const DEFAULT_VALUES: ItemRegisterFormValues = {
 export default function ItemRegisterForm({
   initialValues,
   initialImages = [],
+  groups = [],
   isSubmitting,
   requireChanges = false,
   submitLabel = '등록 완료',
@@ -103,7 +106,7 @@ export default function ItemRegisterForm({
           onAnalysisStateChange={setIsAnalyzing}
           onRejectionChange={setIsImageRejected}
         />
-        <ItemInfoRegister />
+        <ItemInfoRegister groups={groups} />
 
         <div className={styles.submitBar}>
           <button type="submit" disabled={!canSubmit}>
