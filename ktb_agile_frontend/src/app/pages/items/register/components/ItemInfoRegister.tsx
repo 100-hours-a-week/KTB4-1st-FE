@@ -3,18 +3,83 @@
 import type { CSSProperties } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ItemRegisterFormValues } from '../../../../../types/item'
+import type { JoinedGroupOption } from '@/types/group'
 import styles from './ItemInfoRegister.module.css'
 
 const TITLE_MAX_LENGTH = 100
 const CONTENT_MAX_LENGTH = 2000
 
-const groups = [
-  { id: 1, name: '우리 동네 나눔방' },
-  { id: 2, name: '직장 교환 모임' },
-  { id: 3, name: '취미 용품 교환' },
+type RangeMessage = {
+  max: number
+  title: string
+  description: string
+}
+
+const PACE_MESSAGES: RangeMessage[] = [
+  {
+    max: 19,
+    title: '천천히 교환하고 싶어요',
+    description: '조건이 잘 맞는 상대를 여유롭게 기다려요.',
+  },
+  {
+    max: 39,
+    title: '여유롭게 교환하고 싶어요',
+    description: '시간을 두고 괜찮은 제안을 살펴볼게요.',
+  },
+  {
+    max: 59,
+    title: '적당한 속도로 교환하고 싶어요',
+    description: '조건과 시기를 함께 고려해요.',
+  },
+  {
+    max: 79,
+    title: '조금 빠르게 교환하고 싶어요',
+    description: '마음에 드는 제안이 오면 빠르게 진행해요.',
+  },
+  {
+    max: 100,
+    title: '가능한 빨리 교환하고 싶어요',
+    description: '좋은 조건이라면 빠르게 거래를 진행하고 싶어요.',
+  },
 ]
 
-export default function ItemInfoRegister() {
+const CONDITION_MESSAGES: RangeMessage[] = [
+  {
+    max: 19,
+    title: '가치가 비슷한 물건을 원해요',
+    description: '가격 차이가 거의 없는 물건과 교환하고 싶어요.',
+  },
+  {
+    max: 39,
+    title: '비슷한 가치면 괜찮아요',
+    description: '작은 가치 차이는 고려할 수 있어요.',
+  },
+  {
+    max: 59,
+    title: '가치 차이를 어느 정도 고려해요',
+    description: '상황에 따라 적당한 가치 차이를 받아들일 수 있어요.',
+  },
+  {
+    max: 79,
+    title: '가치 차이에 너그러워요',
+    description: '가치가 조금 달라도 조건이 맞으면 괜찮아요.',
+  },
+  {
+    max: 100,
+    title: '가치 차이에 유연해요',
+    description: '가치 차이보다 원하는 물건인지가 더 중요해요.',
+  },
+]
+
+function getRangeMessage(value: number, messages: RangeMessage[]) {
+  return messages.find((message) => value <= message.max) ?? messages.at(-1)!
+}
+
+type ItemInfoRegisterProps = {
+  groups: JoinedGroupOption[]
+}
+
+export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
   const {
     register,
     setValue,
@@ -27,6 +92,8 @@ export default function ItemInfoRegister() {
   const pace = useWatch({ control, name: 'pace' })
   const condition = useWatch({ control, name: 'condition' })
   const selectedGroups = useWatch({ control, name: 'groupIds' })
+  const paceMessage = getRangeMessage(pace, PACE_MESSAGES)
+  const conditionMessage = getRangeMessage(condition, CONDITION_MESSAGES)
 
   const toggleGroup = (id: number) => {
     setValue(
@@ -159,15 +226,15 @@ export default function ItemInfoRegister() {
         />
         <div className={styles.groupList}>
           {groups.map((group) => {
-            const selected = selectedGroups.includes(group.id)
+            const selected = selectedGroups.includes(group.groupId)
             return (
               <button
                 className={styles.groupRow}
                 type="button"
-                key={group.id}
-                onClick={() => toggleGroup(group.id)}
+                key={group.groupId}
+                onClick={() => toggleGroup(group.groupId)}
               >
-                <strong>{group.name}</strong>
+                <strong>{group.groupName}</strong>
                 <span
                   className={`${styles.switch} ${selected ? styles.switchOn : ''}`}
                 >
@@ -193,6 +260,8 @@ export default function ItemInfoRegister() {
             type="range"
             min="0"
             max="100"
+            aria-label="교환 속도"
+            aria-valuetext={paceMessage.title}
             style={{ '--range-progress': `${pace}%` } as CSSProperties}
             {...register('pace', { valueAsNumber: true })}
           />
@@ -201,8 +270,8 @@ export default function ItemInfoRegister() {
             <span>급해요</span>
           </div>
           <div className={styles.rangeResult}>
-            <strong>좋은 상대를 기다릴래요</strong>
-            <p>조건이 맞는 사람이 나타날 때까지 여유롭게 기다려요.</p>
+            <strong>{paceMessage.title}</strong>
+            <p>{paceMessage.description}</p>
           </div>
         </div>
 
@@ -213,6 +282,8 @@ export default function ItemInfoRegister() {
             type="range"
             min="0"
             max="100"
+            aria-label="가치 허용도"
+            aria-valuetext={conditionMessage.title}
             style={{ '--range-progress': `${condition}%` } as CSSProperties}
             {...register('condition', { valueAsNumber: true })}
           />
@@ -221,8 +292,8 @@ export default function ItemInfoRegister() {
             <span>너그럽게</span>
           </div>
           <div className={styles.rangeResult}>
-            <strong>비슷하면 괜찮아요</strong>
-            <p>엇비슷한 가치라면 교환할 의향이 있어요.</p>
+            <strong>{conditionMessage.title}</strong>
+            <p>{conditionMessage.description}</p>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
@@ -59,7 +59,7 @@ function toMessage(
   }
 }
 
-export default function ChatRoomPage() {
+function ChatRoomContent() {
   const router = useRouter()
   const { chatRoomId } = useParams<{ chatRoomId: string }>()
   const searchParams = useSearchParams()
@@ -492,5 +492,13 @@ export default function ChatRoomPage() {
       </section>
       <Navbar />
     </>
+  )
+}
+
+export default function ChatRoomPage() {
+  return (
+    <Suspense fallback={<p>채팅방을 불러오는 중입니다.</p>}>
+      <ChatRoomContent />
+    </Suspense>
   )
 }
