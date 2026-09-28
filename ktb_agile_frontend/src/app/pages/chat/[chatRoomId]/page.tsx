@@ -10,6 +10,7 @@ import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
+import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import styles from './page.module.css'
 
 type ChatMessageDto = {
@@ -82,6 +83,8 @@ export default function ChatRoomPage() {
   const [isLeaving, setIsLeaving] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
+  const [messageInput, setMessageInput] = useState('')
+  const [socketError, setSocketError] = useState<string | null>(null)
   const [exchangeStatus, setExchangeStatus] = useState<
     'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
   >(() => {
@@ -96,6 +99,40 @@ export default function ChatRoomPage() {
             ? 'closed'
             : 'available'
   })
+
+  const { isConnected, sendMessage } = useChatRoomSocket({
+    chatRoomId,
+    onMessage: (incoming) => {
+      const token = window.sessionStorage.getItem('accessToken')
+      const incomingMessage = toMessage(
+        incoming,
+        token ? getUserIdFromAccessToken(token) : null,
+        otherUser,
+      )
+      setMessages((current) =>
+        current.some((message) => message.id === incomingMessage.id)
+          ? current
+          : [...current, incomingMessage],
+      )
+      setSocketError(null)
+    },
+    onError: setSocketError,
+  })
+
+  function handleSendMessage() {
+    const content = messageInput.trim()
+    if (!content) return
+    if (content.length > 2000) {
+      setSocketError('메시지는 2000자 이내로 입력해주세요.')
+      return
+    }
+    if (!sendMessage(content)) {
+      setSocketError('채팅 서버에 연결된 후 다시 시도해주세요.')
+      return
+    }
+    setMessageInput('')
+    setSocketError(null)
+  }
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -382,6 +419,7 @@ export default function ChatRoomPage() {
           />
 
           {actionError && <p className={styles.error}>{actionError}</p>}
+          {socketError && <p className={styles.error}>{socketError}</p>}
           <div className={styles.messages} aria-live="polite" ref={messagesRef}>
             {isLoading && (
               <p className={styles.state}>메시지를 불러오는 중입니다.</p>
@@ -428,10 +466,26 @@ export default function ChatRoomPage() {
           </label>
           <input
             id="chat-message"
-            placeholder="메시지 전송은 준비 중입니다"
-            disabled
+            placeholder={
+              isConnected ? '메시지를 입력하세요' : '채팅 서버 연결 중...'
+            }
+            value={messageInput}
+            maxLength={2000}
+            disabled={!isConnected}
+            onChange={(event) => setMessageInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault()
+                handleSendMessage()
+              }
+            }}
           />
-          <button type="button" aria-label="메시지 보내기" disabled>
+          <button
+            type="button"
+            aria-label="메시지 보내기"
+            disabled={!isConnected || !messageInput.trim()}
+            onClick={handleSendMessage}
+          >
             <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
           </button>
         </div>
