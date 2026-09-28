@@ -3,18 +3,13 @@
 import axios from 'axios'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import ChatMessageBubble, {
+  type ChatMessage,
+} from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import styles from './page.module.css'
-
-type Message = {
-  id: number
-  side: 'mine' | 'theirs'
-  content: string
-  time: string
-  senderName: string
-}
 
 type ChatMessageDto = {
   messageId: number
@@ -49,7 +44,7 @@ function toMessage(
   message: ChatMessageDto,
   userId: number | null,
   otherUser: string,
-): Message {
+): ChatMessage {
   const mine =
     message.isMine ??
     (userId !== null && (message.sender?.userId ?? message.userId) === userId)
@@ -75,7 +70,7 @@ export default function ChatRoomPage() {
   const exchangeRequestId = Number(searchParams.get('exchangeRequestId'))
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -480,19 +475,7 @@ export default function ChatRoomPage() {
             )}
 
             {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`${styles.messageRow} ${message.side === 'mine' ? styles.mine : styles.theirs}`}
-              >
-                {message.side === 'theirs' && (
-                  <span className={styles.avatar} aria-hidden="true">
-                    {message.senderName.charAt(0)}
-                  </span>
-                )}
-                {message.side === 'mine' && <time>{message.time}</time>}
-                <p className={styles.bubble}>{message.content}</p>
-                {message.side === 'theirs' && <time>{message.time}</time>}
-              </div>
+              <ChatMessageBubble key={message.id} message={message} />
             ))}
           </div>
         </div>

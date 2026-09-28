@@ -256,48 +256,6 @@
   line-height: 18px;
 }
 
-.messageRow {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: flex-end;
-  gap: 8px;
-  width: 100%;
-}
-.messageRow.mine {
-  justify-content: flex-end;
-}
-.messageRow time {
-  flex: 0 0 auto;
-  color: #9ca3af;
-  font-size: 11px;
-}
-.avatar {
-  display: grid;
-  flex: 0 0 32px;
-  width: 32px;
-  height: 32px;
-  place-items: center;
-  border-radius: 16px;
-  background: #e5e7eb;
-  color: #4b5563;
-  font-size: 12px;
-  font-weight: 600;
-}
-.bubble {
-  max-width: min(360px, 72%);
-  padding: 10px 12px;
-  border-radius: 12px 12px 12px 4px;
-  background: #f3f4f6;
-  font-size: 14px;
-  line-height: 22px;
-  overflow-wrap: anywhere;
-}
-.mine .bubble {
-  border-radius: 12px 12px 4px 12px;
-  background: #111827;
-  color: #fff;
-}
-
 .composer {
   display: flex;
   flex: 0 0 82px;
@@ -364,8 +322,5 @@
   }
   .exchangeArrows {
     gap: 0;
-  }
-  .bubble {
-    max-width: 70%;
   }
 }
