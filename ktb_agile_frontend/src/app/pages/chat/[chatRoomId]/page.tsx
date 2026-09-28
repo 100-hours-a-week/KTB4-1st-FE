@@ -473,7 +473,7 @@ function ChatRoomContent() {
             maxLength={2000}
             disabled={!isConnected}
             onChange={(event) => setMessageInput(event.target.value)}
-            onKeyDown={(event) => {
+            onKeyUp={(event) => {
               if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault()
                 handleSendMessage()
