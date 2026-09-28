@@ -68,9 +68,23 @@ jobs:
         id: build-push
         env:
           # 빌드 시 주입할 NEXT_PUBLIC_* 값 묶음(.env 형식). 브라우저에 노출되는 값만 넣을 것
-          FE_ENV: ${{ secrets.FE_ENV }}
+          # dev 푸시(로컬 docker compose 테스트용 이미지)는 FE_ENV_DEV, 릴리즈 태그(운영 이미지)는 FE_ENV
+          FE_ENV_DEV: ${{ secrets.FE_ENV_DEV }}
+          FE_ENV_PROD: ${{ secrets.FE_ENV }}
         run: |
           set -e
+
+          # 빌드 대상에 맞는 값 선택. 비어 있으면 다른 환경 값으로 빌드되지 않도록 중단
+          if [ "${GITHUB_REF}" = "refs/heads/dev" ]; then
+            FE_ENV="$FE_ENV_DEV"; SECRET_NAME="FE_ENV_DEV"
+          else
+            FE_ENV="$FE_ENV_PROD"; SECRET_NAME="FE_ENV"
+          fi
+          if [ -z "$FE_ENV" ]; then
+            echo "::error::${SECRET_NAME} 시크릿이 없습니다."
+            exit 1
+          fi
+          export FE_ENV
 
           # 태그 변환
           TAG_ARGS=()
@@ -115,3 +129,80 @@ jobs:
           delete-tags: "*.*.*"
           keep-n-tagged: 5
           delete-untagged: true
+
+      - name: Send Discord Notification
+        if: always()
+        continue-on-error: true
+        env:
+          JOB_STATUS: ${{ job.status }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          REPO_NAME: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || github.event.pull_request.title || '수동 실행' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # 1. 웹훅 URL 미등록 시 에러 없이 스킵
+          if [ -z "$WEBHOOK_URL" ]; then
+            echo "::warning::DISCORD_WEBHOOK_URL is not configured. Skipping notification."
+            exit 0
+          fi
+
+          # 2. 빌드 결과 상태값 분기
+          case "$JOB_STATUS" in
+            success)
+              COLOR=3066993
+              STATUS_EMOJI="✅"
+              STATUS_TEXT="성공"
+              ;;
+            failure)
+              COLOR=15158332
+              STATUS_EMOJI="🚨"
+              STATUS_TEXT="실패"
+              ;;
+            *)
+              COLOR=15105570
+              STATUS_EMOJI="⚠️"
+              STATUS_TEXT="취소됨"
+              ;;
+          esac
+
+          # 3. 커밋 메시지 첫 줄만 사용하고 타임스탬프 생성
+          FIRST_LINE_COMMIT_MSG=$(printf '%s\n' "$COMMIT_MSG" | head -n 1)
+          TIMESTAMP=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+          # 4. jq를 통한 안전한 JSON 직렬화
+          jq -n \
+            --arg title "${STATUS_EMOJI} [${WORKFLOW_NAME}] ${STATUS_TEXT}" \
+            --argjson color "$COLOR" \
+            --arg repo "\`${REPO_NAME}\`" \
+            --arg ref "\`${REF_NAME}\`" \
+            --arg actor "$ACTOR" \
+            --arg commit "$FIRST_LINE_COMMIT_MSG" \
+            --arg run_url "[GitHub Actions 실행 로그 바로가기](${RUN_URL})" \
+            --arg time "$TIMESTAMP" \
+            '{
+              embeds: [
+                {
+                  title: $title,
+                  color: $color,
+                  fields: [
+                    { name: "저장소", value: $repo, inline: true },
+                    { name: "브랜치 / 태그", value: $ref, inline: true },
+                    { name: "트리거 유저", value: $actor, inline: true },
+                    { name: "커밋 메시지", value: $commit },
+                    { name: "상세 로그", value: $run_url }
+                  ],
+                  footer: { text: "바꾸까 배포 알림" },
+                  timestamp: $time
+                }
+              ]
+            }' > payload.json
+
+          # 5. Webhook 전송 (실패해도 워크플로우를 중단시키지 않음)
+          curl -s -S --fail \
+               -H "Content-Type: application/json" \
+               -X POST \
+               -d @payload.json \
+               "$WEBHOOK_URL" || echo "::warning::Failed to deliver Discord notification."
