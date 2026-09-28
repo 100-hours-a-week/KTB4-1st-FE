@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import styles from './ChatRoomCard.module.css'
 
 export type ChatRoom = {
@@ -47,40 +48,72 @@ function formatTime(value: string | null) {
 
 export default function ChatRoomCard({ room }: { room: ChatRoom }) {
   return (
-    <li className={styles.room}>
-      <div className={styles.images}>
-        <div
-          className={`${styles.itemImage} ${room.targetItem.thumbnailImageUrl ? '' : styles.placeholder}`}
-          style={{
-            backgroundImage: `url("${room.targetItem.thumbnailImageUrl || '/icons/chat-image-placeholder.svg'}")`,
-          }}
-        />
-        <div
-          className={`${styles.avatar} ${room.otherUser.profileImageUrl ? '' : styles.placeholder}`}
-          style={{
-            backgroundImage: `url("${room.otherUser.profileImageUrl || '/icons/chat-image-placeholder.svg'}")`,
-          }}
-        />
-      </div>
-      <div className={styles.roomContent}>
-        <div className={styles.topRow}>
-          <strong className={styles.itemTitle}>{room.targetItem.title}</strong>
-          <span className={styles.time}>{formatTime(room.lastMessageAt)}</span>
+    <li>
+      <Link
+        href={{
+          pathname: `/pages/chat/${room.chatRoomId}`,
+          query: {
+            title: room.targetItem.title,
+            group: room.group.groupName,
+            user: room.otherUser.nickname,
+            userId: room.otherUser.userId,
+            direction: room.direction,
+            status: room.chatRoomStatus,
+            itemId: room.targetItem.itemId,
+            exchangeRequestId: room.exchangeRequestId,
+            ...(room.targetItem.thumbnailImageUrl
+              ? { image: room.targetItem.thumbnailImageUrl }
+              : {}),
+            ...(room.lastMessage
+              ? {
+                  lastMessage: room.lastMessage.content,
+                  senderId: room.lastMessage.senderId,
+                  lastMessageAt: room.lastMessage.createdAt,
+                }
+              : {}),
+          },
+        }}
+        className={styles.room}
+        aria-label={`${room.otherUser.nickname}님과 ${room.targetItem.title} 채팅방 열기`}
+      >
+        <div className={styles.images}>
+          <div
+            className={`${styles.itemImage} ${room.targetItem.thumbnailImageUrl ? '' : styles.placeholder}`}
+            style={{
+              backgroundImage: `url("${room.targetItem.thumbnailImageUrl || '/icons/chat-image-placeholder.svg'}")`,
+            }}
+          />
+          <div
+            className={`${styles.avatar} ${room.otherUser.profileImageUrl ? '' : styles.placeholder}`}
+            style={{
+              backgroundImage: `url("${room.otherUser.profileImageUrl || '/icons/chat-image-placeholder.svg'}")`,
+            }}
+          />
         </div>
-        <p className={styles.groupName}>{room.group.groupName}</p>
-        <div className={styles.bottomRow}>
-          <p className={styles.preview}>
-            {room.lastMessage
-              ? `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) ${room.lastMessage.content}`
-              : `${room.otherUser.nickname}님과의 대화`}
-          </p>
-          {room.unreadMessageCount > 0 && (
-            <span className={styles.unread}>
-              {room.unreadMessageCount > 99 ? '99+' : room.unreadMessageCount}
+        <div className={styles.roomContent}>
+          <div className={styles.topRow}>
+            <strong className={styles.itemTitle}>
+              {room.targetItem.title}
+            </strong>
+            <span className={styles.time}>
+              {formatTime(room.lastMessageAt)}
             </span>
-          )}
+          </div>
+          <p className={styles.groupName}>{room.group.groupName}</p>
+          <div className={styles.bottomRow}>
+            <p className={styles.preview}>
+              {room.lastMessage
+                ? `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) ${room.lastMessage.content}`
+                : `${room.otherUser.nickname}님과의 대화`}
+            </p>
+            {room.unreadMessageCount > 0 && (
+              <span className={styles.unread}>
+                {room.unreadMessageCount > 99 ? '99+' : room.unreadMessageCount}
+              </span>
+            )}
+          </div>
         </div>
-      </div>
+      </Link>
     </li>
   )
 }
