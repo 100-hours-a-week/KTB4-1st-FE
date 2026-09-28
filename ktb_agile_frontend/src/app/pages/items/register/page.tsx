@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -20,7 +20,7 @@ type ModerationResponse = {
   }
 }
 
-export default function ItemRegister() {
+function ItemRegisterContent() {
   const [groups, setGroups] = useState<JoinedGroupOption[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -187,5 +187,13 @@ export default function ItemRegister() {
         />
       )}
     </section>
+  )
+}
+
+export default function ItemRegister() {
+  return (
+    <Suspense fallback={<p>물품 등록 화면을 불러오는 중입니다.</p>}>
+      <ItemRegisterContent />
+    </Suspense>
   )
 }
