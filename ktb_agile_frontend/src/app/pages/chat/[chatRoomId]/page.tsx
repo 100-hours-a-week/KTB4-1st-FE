@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
+import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
@@ -361,83 +362,24 @@ export default function ChatRoomPage() {
         </header>
 
         <div className={styles.content}>
-          <article className={styles.productCard}>
-            <div className={styles.productImage}>
-              {image ? (
-                <img className={styles.actualProductImage} src={image} alt="" />
-              ) : (
-                <img
-                  src="/figma/chat/product-image-icon.svg"
-                  alt=""
-                  width="18.5"
-                  height="18.5"
-                />
-              )}
-            </div>
-            <div className={styles.productDetails}>
-              <div className={styles.productTitleRow}>
-                <strong>상품명: {title}</strong>
-                <span>
-                  {exchangeStatus === 'available'
-                    ? '거래 가능'
-                    : exchangeStatus === 'completed'
-                      ? '거래 완료'
-                      : exchangeStatus === 'rejected'
-                        ? '거래 거절'
-                        : exchangeStatus === 'canceled'
-                          ? '제안 취소'
-                          : '채팅 종료'}
-                </span>
-              </div>
-              <p>그룹: {group}</p>
-              <p>상대: {otherUser}</p>
-            </div>
-            {!isSeller &&
-              exchangeStatus === 'available' &&
-              Number.isSafeInteger(itemId) &&
-              itemId > 0 &&
-              Number.isSafeInteger(exchangeRequestId) &&
-              exchangeRequestId > 0 && (
-                <div className={styles.exchangeActions}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      router.push(
-                        `/pages/chat/exchange/edit?${new URLSearchParams({ itemId: String(itemId), exchangeRequestId: String(exchangeRequestId), returnTo }).toString()}`,
-                      )
-                    }
-                  >
-                    제안 수정
-                  </button>
-                </div>
-              )}
-            {isSeller && exchangeStatus === 'available' && (
-              <div className={styles.exchangeActions}>
-                <button
-                  type="button"
-                  onClick={() => void changeExchangeStatus('COMPLETED')}
-                  disabled={
-                    isUpdatingExchange ||
-                    !Number.isSafeInteger(exchangeRequestId) ||
-                    exchangeRequestId < 1
-                  }
-                >
-                  교환 완료
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void changeExchangeStatus('REJECTED')}
-                  disabled={
-                    isUpdatingExchange ||
-                    !Number.isSafeInteger(exchangeRequestId) ||
-                    exchangeRequestId < 1
-                  }
-                >
-                  교환 거절
-                </button>
-              </div>
-            )}
-          </article>
+          <ChatRoomInfo
+            title={title}
+            group={group}
+            otherUser={otherUser}
+            image={image}
+            isSeller={isSeller}
+            itemId={itemId}
+            exchangeRequestId={exchangeRequestId}
+            exchangeStatus={exchangeStatus}
+            isUpdatingExchange={isUpdatingExchange}
+            returnTo={returnTo}
+            onUpdateExchange={(status) => void changeExchangeStatus(status)}
+            onEditExchange={(editItemId, editRequestId, editReturnTo) =>
+              router.push(
+                `/pages/chat/exchange/edit?${new URLSearchParams({ itemId: String(editItemId), exchangeRequestId: String(editRequestId), returnTo: editReturnTo }).toString()}`,
+              )
+            }
+          />
 
           {actionError && <p className={styles.error}>{actionError}</p>}
           <div className={styles.messages} aria-live="polite" ref={messagesRef}>
