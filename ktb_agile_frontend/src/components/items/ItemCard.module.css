@@ -10,25 +10,13 @@
 }
 
 .thumbnail {
-  display: flex;
   width: 112px;
   aspect-ratio: 1;
-  align-items: center;
-  justify-content: center;
   align-self: center;
   border-radius: 12px;
-  color: #727c8c;
   background: #d4d8de;
-}
-
-.thumbnail svg {
-  width: 32px;
-  height: 32px;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
+  background-position: center;
+  background-size: cover;
 }
 
 .content {
