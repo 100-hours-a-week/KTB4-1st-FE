@@ -49,3 +49,8 @@ export type GroupCardData = {
   groupContent: string
   isJoined: boolean
 }
+
+export type JoinedGroupOption = {
+  groupId: number
+  groupName: string
+}

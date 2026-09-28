@@ -3,18 +3,17 @@
 import type { CSSProperties } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ItemRegisterFormValues } from '../../../../../types/item'
+import type { JoinedGroupOption } from '@/types/group'
 import styles from './ItemInfoRegister.module.css'
 
 const TITLE_MAX_LENGTH = 100
 const CONTENT_MAX_LENGTH = 2000
 
-const groups = [
-  { id: 1, name: '우리 동네 나눔방' },
-  { id: 2, name: '직장 교환 모임' },
-  { id: 3, name: '취미 용품 교환' },
-]
+type ItemInfoRegisterProps = {
+  groups: JoinedGroupOption[]
+}
 
-export default function ItemInfoRegister() {
+export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
   const {
     register,
     setValue,
@@ -159,15 +158,15 @@ export default function ItemInfoRegister() {
         />
         <div className={styles.groupList}>
           {groups.map((group) => {
-            const selected = selectedGroups.includes(group.id)
+            const selected = selectedGroups.includes(group.groupId)
             return (
               <button
                 className={styles.groupRow}
                 type="button"
-                key={group.id}
-                onClick={() => toggleGroup(group.id)}
+                key={group.groupId}
+                onClick={() => toggleGroup(group.groupId)}
               >
-                <strong>{group.name}</strong>
+                <strong>{group.groupName}</strong>
                 <span
                   className={`${styles.switch} ${selected ? styles.switchOn : ''}`}
                 >

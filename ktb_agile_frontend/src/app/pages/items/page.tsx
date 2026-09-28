@@ -8,8 +8,7 @@ import { API_BASE_URL } from '@/config/api'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/items/ItemCard'
-import { fetchMockItemsByGroup } from '@/data/mockItems'
-import type { ItemListItem } from '@/types/item'
+import type { ItemListItem, ItemListResponse } from '@/types/item'
 import styles from './page.module.css'
 
 type JoinedGroup = {
@@ -32,10 +31,6 @@ export default function ItemList() {
     items: ItemListItem[]
   } | null>(null)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
-  const [nextData, setNextData] = useState<{
-    hasNext : boolean | null,
-    nextCursor : string | null
-  } | null>(null)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -97,30 +92,30 @@ export default function ItemList() {
 
     const groupId = selectedGroupId
     let isActive = true
+    const accessToken = window.sessionStorage.getItem('accessToken')
+
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
 
     async function fetchItems() {
-      //const response = await axios.get<GroupListResponse>(
-        //   `${API_BASE_URL}/groups/{groupId}/items?size=10&cursor={nextData.hasNext ?? ''}`,
-        //   {
-        //     headers: {
-        //       Authorization: `Bearer ${accessToken}`,
-        //       Accept: 'application/json',
-        //     },
-        //     signal: controller.signal,
-        //   },
-        // )
-      const response = await fetchMockItemsByGroup(groupId)
+      try {
+        const response = await axios.get<ItemListResponse>(
+          `${API_BASE_URL}/groups/${groupId}/items?size=10&cursor=`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+          },
+        )
 
-      if (isActive) {
-        setItemResult({
-          groupId,
-          items: response.data.items,
-        })
-
-        setNextData({
-          nextCursor : response.data.nextCursor,
-          hasNext :  response.data.hasNext
-        })
+        if (isActive) {
+          setItemResult({ groupId, items: response.data.data.items })
+        }
+      } catch (error) {
+        if (isActive) console.error(error)
       }
     }
 
@@ -129,7 +124,7 @@ export default function ItemList() {
     return () => {
       isActive = false
     }
-  }, [selectedGroupId])
+  }, [selectedGroupId, router])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -223,7 +218,10 @@ export default function ItemList() {
       )}
       {selectedGroup && (
         <div className={styles.registerArea}>
-          <Link className={styles.registerButton} href="/pages/items/register">
+          <Link
+            className={styles.registerButton}
+            href={`/pages/items/register?groupId=${selectedGroup.groupId}`}
+          >
             <span className={styles.registerIcon}>
               <RegisterIcon />
             </span>

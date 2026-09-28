@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/items/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/items/ItemRegisterForm'
 import { uploadImagesToS3 } from './imageUpload'
 import type { ItemRegisterFormValues } from '../../../../types/item'
 import styles from './page.module.css'
+import type { JoinedGroupOption } from '@/types/group'
 
 type ModerationResponse = {
   data: {
@@ -20,9 +21,49 @@ type ModerationResponse = {
 }
 
 export default function ItemRegister() {
+  const [groups, setGroups] = useState<JoinedGroupOption[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [modalMessage, setModalMessage] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const requestedGroupId = Number(searchParams.get('groupId'))
+
+  useEffect(() => {
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    const controller = new AbortController()
+    async function loadGroups() {
+      try {
+        const response = await axios.get<{
+          data: { groups: JoinedGroupOption[] }
+        }>(
+          `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        setGroups(response.data.data.groups)
+      } catch (error) {
+        if (!axios.isCancel(error)) {
+          console.error(error)
+          setModalMessage('그룹 목록을 불러오지 못했습니다. 다시 시도해주세요.')
+        }
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingGroups(false)
+      }
+    }
+    void loadGroups()
+    return () => controller.abort()
+  }, [router])
 
   async function handleItemSubmit(
     values: ItemRegisterFormValues,
@@ -118,11 +159,25 @@ export default function ItemRegister() {
         <h1>물건 등록</h1>
       </header>
 
-      <ItemRegisterForm
-        isSubmitting={isSubmitting}
-        onSubmit={handleItemSubmit}
-        onValidationError={setModalMessage}
-      />
+      {isLoadingGroups ? (
+        <p>그룹 목록을 불러오는 중입니다.</p>
+      ) : groups.length > 0 ? (
+        <ItemRegisterForm
+          initialValues={{
+            groupIds: groups.some((group) => group.groupId === requestedGroupId)
+              ? [requestedGroupId]
+              : [],
+          }}
+          groups={groups}
+          isSubmitting={isSubmitting}
+          onSubmit={handleItemSubmit}
+          onValidationError={setModalMessage}
+        />
+      ) : (
+        <p>
+          가입한 그룹이 없습니다. <a href="/pages/groups">그룹 가입하기</a>
+        </p>
+      )}
       {modalMessage !== null && (
         <ModalDefault
           message={modalMessage}
