@@ -45,7 +45,7 @@ export type GroupCardData = {
   memberCount: number
   roadAddress: string
   itemCount: number
-  lastItemCreatedAt: string
+  lastItemCreatedAt: string | null
   groupContent: string
   isJoined: boolean
 }

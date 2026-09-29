@@ -128,6 +128,7 @@ function ExchangeEditContent() {
   return (
     <ExchangeForm
       itemId={itemId}
+      includeGroupId
       initialValues={initialValues}
       closeHref={returnTo}
       submitLabel="수정하기"

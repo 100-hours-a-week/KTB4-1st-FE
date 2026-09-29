@@ -30,12 +30,14 @@ function getErrorMessage(cause: unknown, fallback: string) {
 }
 
 export type ExchangeFormValues = {
+  groupId?: number
   requestedQuantity: number
   offeredItems: { itemId: number; quantity: number }[]
 }
 
 type ExchangeFormProps = {
   itemId: number
+  includeGroupId?: boolean
   submitLabel: string
   onSubmit: (values: ExchangeFormValues, accessToken: string) => Promise<void>
   initialValues?: ExchangeFormValues
@@ -48,6 +50,7 @@ export default function ExchangeForm(props: ExchangeFormProps) {
 
 function ExchangeFormContent({
   itemId,
+  includeGroupId = false,
   submitLabel,
   onSubmit,
   initialValues,
@@ -59,6 +62,7 @@ function ExchangeFormContent({
   const [requestedQuantity, setRequestedQuantity] = useState(
     initialValues?.requestedQuantity ?? 1,
   )
+  const [groupId, setGroupId] = useState<number | null>(null)
   const [offeredQuantities, setOfferedQuantities] = useState<
     Record<number, number>
   >(() =>
@@ -128,6 +132,7 @@ function ExchangeFormContent({
         }
         if (!active) return
         setItem(target)
+        setGroupId(target.groups.length === 1 ? target.groups[0].groupId : null)
         setMyItems(ownedItems)
       } catch (cause) {
         if (!active || axios.isCancel(cause)) return
@@ -158,7 +163,8 @@ function ExchangeFormContent({
     !!item &&
     item.itemState === 'AVAILABLE' &&
     item.quantity >= 1 &&
-    offeredItems.length > 0
+    offeredItems.length > 0 &&
+    (!includeGroupId || groupId !== null)
 
   async function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -189,7 +195,14 @@ function ExchangeFormContent({
     setIsSubmitting(true)
     setError(null)
     try {
-      await onSubmit({ requestedQuantity, offeredItems }, accessToken)
+      await onSubmit(
+        {
+          ...(includeGroupId ? { groupId: groupId! } : {}),
+          requestedQuantity,
+          offeredItems,
+        },
+        accessToken,
+      )
     } catch (cause) {
       if (axios.isAxiosError(cause) && cause.response?.status === 401) {
         router.replace('/auth/login')
@@ -226,6 +239,28 @@ function ExchangeFormContent({
             <>
               <section className={styles.section}>
                 <h2>1) 교환 대상</h2>
+                {includeGroupId && item.groups.length > 1 && (
+                  <label className={styles.groupField}>
+                    교환을 진행할 그룹
+                    <select
+                      value={groupId ?? ''}
+                      disabled={isSubmitting}
+                      onChange={(event) =>
+                        setGroupId(event.target.value ? Number(event.target.value) : null)
+                      }
+                    >
+                      <option value="">그룹을 선택해주세요</option>
+                      {item.groups.map((group) => (
+                        <option key={group.groupId} value={group.groupId}>
+                          {group.groupName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {includeGroupId && item.groups.length === 0 && (
+                  <p className={styles.message}>이 물품에 연결된 그룹이 없습니다.</p>
+                )}
                 <div className={styles.targetCard}>
                   <ItemImage
                     url={

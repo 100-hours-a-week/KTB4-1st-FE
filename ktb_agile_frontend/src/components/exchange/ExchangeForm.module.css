@@ -36,6 +36,23 @@
   margin-bottom: 10px;
   font-size: 14px;
 }
+.groupField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: #374151;
+  font-size: 13px;
+}
+.groupField select {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #d1d5df;
+  border-radius: 8px;
+  color: #111827;
+  background: #fff;
+  font: inherit;
+}
 .targetCard,
 .offerCard {
   display: flex;
