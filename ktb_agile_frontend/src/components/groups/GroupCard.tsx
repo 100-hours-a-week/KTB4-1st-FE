@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import type { GroupCardData } from '@/types/group'
 import styles from './GroupCard.module.css'
+import { formatCreatedDate } from '@/utils/date'
 
 type GroupCardAction = {
   label: string
   tone: 'primary' | 'secondary'
   onClick?: () => void
+  disabled?: boolean
 }
 
 export type GroupCardProps = {
@@ -41,11 +43,21 @@ export default function GroupCard({
     ? [
         { label: '참여 중', tone: 'primary', onClick: onSelect },
         { label: '그룹 탈퇴', tone: 'secondary', onClick: onLeave },
-        { label: '공유', tone: 'secondary', onClick: onShare },
+        {
+          label: '공유 (개발 중)',
+          tone: 'secondary',
+          onClick: onShare,
+          disabled: true,
+        },
       ]
     : [
         { label: '참여하기', tone: 'primary', onClick: onJoin },
-        { label: '공유', tone: 'secondary', onClick: onShare },
+        {
+          label: '공유 (개발 중)',
+          tone: 'secondary',
+          onClick: onShare,
+          disabled: true,
+        },
       ]
 
   return (
@@ -66,7 +78,11 @@ export default function GroupCard({
             </span>
             <span className={styles.metadata}>
                 <span>공개 물품 {itemCount}개</span>
-                <span>{lastItemCreatedAt}</span>
+                <span>
+                  {lastItemCreatedAt
+                    ? formatCreatedDate(lastItemCreatedAt)
+                    : '날짜 가져오기 실패'}
+                </span>
             </span>
             </span>
 
@@ -98,6 +114,7 @@ export default function GroupCard({
                     type="button"
                     key={action.label}
                     onClick={action.onClick}
+                    disabled={action.disabled}
                 >
                     {action.label}
                 </button>

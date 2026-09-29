@@ -153,6 +153,12 @@
   transform: scale(0.98);
 }
 
+.actionButton:disabled {
+  color: #777777;
+  background: #e8e8e8;
+  cursor: not-allowed;
+}
+
 .primaryAction {
   color: #ffffff;
   background: #1b1b25;
@@ -186,6 +192,10 @@
 
   .secondaryAction:hover {
     background: #e9e9e9;
+  }
+
+  .actionButton:disabled:hover {
+    background: #e8e8e8;
   }
 }
 
