@@ -35,6 +35,7 @@ function ExchangePageContent() {
   return (
     <ExchangeForm
       itemId={itemId}
+      includeGroupId
       submitLabel="요청하기"
       onSubmit={sendExchangeRequest}
     />
