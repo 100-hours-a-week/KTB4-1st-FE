@@ -72,6 +72,7 @@ function ChatRoomContent() {
   const exchangeRequestId = Number(searchParams.get('exchangeRequestId'))
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
+  const lastMessageIdRef = useRef<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -100,6 +101,20 @@ function ChatRoomContent() {
             ? 'closed'
             : 'available'
   })
+
+  useEffect(() => {
+    const lastMessage = messages.at(-1)
+    if (!lastMessage) return
+
+    if (lastMessageIdRef.current !== lastMessage.id) {
+      messagesRef.current?.scrollTo({
+        top: messagesRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+
+    lastMessageIdRef.current = lastMessage.id
+  }, [messages])
 
   const { isConnected, sendMessage } = useChatRoomSocket({
     chatRoomId,
