@@ -20,9 +20,9 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   return isBackendRequest && hasAccessToken
 }
 
-function returnToLogin() {
+function showLoginExpiredModal() {
   window.sessionStorage.removeItem('accessToken')
-  window.location.replace('/auth/login')
+  window.dispatchEvent(new Event('auth-expired'))
 }
 
 async function getNewAccessToken() {
@@ -70,7 +70,6 @@ async function handleRequestError(error: {
   }
 
   if (request.retried) {
-    returnToLogin()
     throw error
   }
 
@@ -92,7 +91,7 @@ async function handleRequestError(error: {
       axios.isAxiosError(refreshError) &&
       refreshError.response?.status === 401
     ) {
-      returnToLogin()
+      showLoginExpiredModal()
     }
 
     throw refreshError

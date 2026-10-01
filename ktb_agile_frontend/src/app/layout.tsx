@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './layout.css'
 import Script from 'next/script'
+import AuthExpiredModal from '@/components/auth/AuthExpiredModal'
 
 
 export const metadata: Metadata = {
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           `}
           </Script>
         <div className="app-shell">
-          <main className="app-content">{children}</main>
+          <main className="app-content">
+            <AuthExpiredModal>{children}</AuthExpiredModal>
+          </main>
         </div>
       </body>
     </html>
