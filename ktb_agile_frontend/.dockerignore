@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+coverage
+test-results
+*.tsbuildinfo
+
+# 비밀값
+.env*
+.sentryclirc
+*.pem
+
+.git
+.DS_Store
+.vercel
+npm-debug.log*
+Dockerfile
+.dockerignore
+*.md
