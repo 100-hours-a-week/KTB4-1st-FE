@@ -67,7 +67,7 @@ jobs:
       - name: Docker Image 빌드 및 Push
         id: build-push
         env:
-          # 빌드 시 주입할 NEXT_PUBLIC_* 값 묶음(.env 형식)
+          # 빌드 시 주입할 NEXT_PUBLIC_* 값 묶음(.env 형식). 브라우저에 노출되는 값만 넣을 것
           # dev 푸시(로컬 docker compose 테스트용 이미지)는 FE_ENV_DEV, 릴리즈 태그(운영 이미지)는 FE_ENV
           FE_ENV_DEV: ${{ secrets.FE_ENV_DEV }}
           FE_ENV_PROD: ${{ secrets.FE_ENV }}
@@ -140,7 +140,7 @@ jobs:
           REPO_NAME: ${{ github.repository }}
           REF_NAME: ${{ github.ref_name }}
           ACTOR: ${{ github.actor }}
-          COMMIT_MSG: ${{ github.event.head_commit.message || '(커밋 메시지 없음)' }}
+          COMMIT_MSG: ${{ github.event.head_commit.message || github.event.pull_request.title || '수동 실행' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
