@@ -8,6 +8,11 @@ import type {
 const KAKAO_ADDRESS_SEARCH_URL =
   'https://dapi.kakao.com/v2/local/search/address.json'
 
+const backendUrl = process.env.BACKEND_API_BASE_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'http://springboot:8080'
+    : 'http://127.0.0.1:8080')
+
 function toCoordinate(value: string | undefined): number | null {
   if (value === undefined || value === '') return null
 
@@ -31,6 +36,24 @@ function toGroupAddressResult(
 }
 
 export async function GET(request: Request) {
+  const authorization = request.headers.get('Authorization')
+  if (!authorization) {
+    return Response.json({ message: '로그인이 필요합니다.' }, { status: 401 })
+  }
+
+  try {
+    // Spring에서 토큰을 검증한 뒤에만 카카오 주소 검색을 호출합니다.
+    const authResponse = await fetch(`${backendUrl}/users/me/groups`, {
+      headers: { Authorization: authorization },
+      cache: 'no-store',
+    })
+    if (!authResponse.ok) {
+      return Response.json(await authResponse.json(), { status: authResponse.status })
+    }
+  } catch {
+    return Response.json({ message: '인증 서버에 연결할 수 없습니다.' }, { status: 502 })
+  }
+
   const kakaoRestApiKey = process.env.KAKAO_REST_API_KEY
 
   if (!kakaoRestApiKey) {

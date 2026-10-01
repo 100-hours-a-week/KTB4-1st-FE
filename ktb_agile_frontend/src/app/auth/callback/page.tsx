@@ -1,7 +1,6 @@
 'use client'
 
 import axios from 'axios'
-import { API_BASE_URL } from '@/config/api'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -32,7 +31,7 @@ export default function LoginCallback() {
       try {
         const [response] = await Promise.all([
           axios.post<RefreshResponse>(
-            `${API_BASE_URL}/auth/refresh`,
+            '/bff/auth/accesstoken',
             undefined,
             {
               withCredentials: true,

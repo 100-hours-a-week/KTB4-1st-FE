@@ -149,11 +149,6 @@ export default function ImageRegister({
       })
     } catch (error) {
       console.error(error)
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        window.sessionStorage.removeItem('accessToken')
-        router.replace('/auth/login')
-        return
-      }
       setImageError('이미지 분석에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setIsAnalyzing(false)
