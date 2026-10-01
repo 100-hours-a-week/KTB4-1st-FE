@@ -8,6 +8,7 @@ import ChatMessageBubble, {
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import Navbar from '@/components/common/navbar/Navbar'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
@@ -495,6 +496,7 @@ function ChatRoomContent() {
           </button>
         </div>
       </section>
+      <FloatingInquiryButton aboveComposer />
       <Navbar />
     </>
   )

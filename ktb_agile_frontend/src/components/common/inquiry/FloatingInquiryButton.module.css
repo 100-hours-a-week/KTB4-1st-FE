@@ -1,0 +1,41 @@
+.container {
+  position: fixed;
+  z-index: 110;
+  bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 20px);
+  left: 50%;
+  width: 100%;
+  max-width: var(--app-shell-max-width);
+  padding-inline: var(--app-content-inline-padding);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.aboveComposer {
+  bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 102px);
+}
+
+.button {
+  display: inline-flex;
+  min-width: 64px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #aeebcb;
+  background: #3d5146;
+  box-shadow: 0 4px 16px rgba(17, 17, 17, 0.16);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button:focus-visible {
+  outline: 2px solid #3d5146;
+  outline-offset: 3px;
+}
