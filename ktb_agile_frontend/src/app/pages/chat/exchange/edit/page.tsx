@@ -80,10 +80,6 @@ function ExchangeEditContent() {
         })
       } catch (cause) {
         if (axios.isCancel(cause) || controller.signal.aborted) return
-        if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-          router.replace('/auth/login')
-          return
-        }
         setError(
           axios.isAxiosError<ExchangeRequestDetailsResponse>(cause)
             ? cause.response?.data?.error?.message ||

@@ -1,6 +1,7 @@
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
+import axios from 'axios'
 
 type ChatRoomSocketMessage = {
   messageId: number
@@ -57,8 +58,24 @@ export function useChatRoomSocket({
 
     const client = new Client({
       brokerURL: `${getWebSocketUrl()}/ws`,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
+      beforeConnect: async () => {
+        const accessToken = window.sessionStorage.getItem('accessToken')
+        try {
+          // HTTP 인증 요청에서 401을 처리한 뒤 최신 토큰으로 연결합니다.
+          await axios.get(`${API_BASE_URL}/users/me/groups`, {
+            headers: { Authorization: `Bearer ${accessToken || ''}` },
+          })
+          const latestToken = window.sessionStorage.getItem('accessToken')
+          if (!latestToken) {
+            await client.deactivate()
+            return
+          }
+          client.connectHeaders = { Authorization: `Bearer ${latestToken}` }
+        } catch {
+          await client.deactivate()
+          setIsConnected(false)
+          onErrorRef.current?.('채팅 인증을 확인할 수 없습니다. 다시 접속해주세요.')
+        }
       },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,

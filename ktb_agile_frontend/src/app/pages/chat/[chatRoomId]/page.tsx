@@ -191,10 +191,6 @@ function ChatRoomContent() {
         setMessageError(null)
       } catch (cause) {
         if (axios.isCancel(cause) || controller.signal.aborted) return
-        if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-          router.replace('/auth/login')
-          return
-        }
         setMessageError(
           axios.isAxiosError<ChatMessageResponse>(cause)
             ? cause.response?.data?.error?.message ||
@@ -249,10 +245,6 @@ function ChatRoomContent() {
       setNextCursor(page.nextCursor)
       setHasNext(page.hasNext)
     } catch (cause) {
-      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-        router.replace('/auth/login')
-        return
-      }
       setMessageError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||
@@ -287,10 +279,6 @@ function ChatRoomContent() {
       )
       router.replace('/pages/chat')
     } catch (cause) {
-      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-        router.replace('/auth/login')
-        return
-      }
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||
@@ -350,10 +338,6 @@ function ChatRoomContent() {
       )
       setMenuOpen(false)
     } catch (cause) {
-      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-        router.replace('/auth/login')
-        return
-      }
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||

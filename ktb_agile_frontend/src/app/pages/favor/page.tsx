@@ -106,12 +106,7 @@ export default function PreferenceSetup() {
       )
 
       router.replace('/pages/groups')
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        window.sessionStorage.removeItem('accessToken')
-        setErrorMessage('로그인이 필요합니다.')
-        return
-      }
+    } catch {
       setErrorMessage('서버 오류로 저장에 실패했습니다. 다시 시도해주세요')
     } finally {
       setIsSubmitting(false)

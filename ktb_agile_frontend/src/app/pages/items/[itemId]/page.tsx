@@ -57,12 +57,6 @@ export default function ItemDetailsPage() {
       } catch (error) {
         if (!isMounted) return
 
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          sessionStorage.removeItem('accessToken')
-          router.replace('/auth/login')
-          return
-        }
-
         setErrorMessage(
           axios.isAxiosError(error) && error.response?.status === 404
             ? '물품을 찾을 수 없습니다.'
@@ -114,12 +108,6 @@ export default function ItemDetailsPage() {
       router.replace('/pages/items')
     } catch (error) {
       setIsDeleteModalOpen(false)
-
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        sessionStorage.removeItem('accessToken')
-        router.replace('/auth/login')
-        return
-      }
 
       setErrorMessage(
         axios.isAxiosError(error) && error.response?.status === 404

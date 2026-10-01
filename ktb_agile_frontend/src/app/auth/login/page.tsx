@@ -11,8 +11,6 @@ export default function Login() {
   const [modalMessage, setModalMessage] = useState<string | null>(null)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
-  const LOGIN_ERROR_STATUSES = new Set([400, 401, 409, 500])
-
   async function loginProcess() {
     //이미 로그인 된 상태일 시
     if(isLoggingIn){
@@ -43,7 +41,7 @@ export default function Login() {
         const status = error.response?.status
 
         //로그인 관련 에러
-        if (status !== undefined && LOGIN_ERROR_STATUSES.has(status)) {
+        if (status !== undefined) {
           setModalMessage(
             '로그인에 오류가 발생했습니다.\n다시 시도해주세요.',
           )

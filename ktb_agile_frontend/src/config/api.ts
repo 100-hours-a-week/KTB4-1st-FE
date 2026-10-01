@@ -15,9 +15,10 @@ let refreshPromise: Promise<string> | null = null
 
 function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
+  const isAddressRequest = request.url?.split('?')[0] === '/bff/group'
   const hasAccessToken = request.headers.get('Authorization')
 
-  return isBackendRequest && hasAccessToken
+  return (isBackendRequest || isAddressRequest) && hasAccessToken
 }
 
 function showLoginExpiredModal() {

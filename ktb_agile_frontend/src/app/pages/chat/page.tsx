@@ -80,11 +80,6 @@ export default function Chat() {
         setHasNext(page.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          window.sessionStorage.removeItem('accessToken')
-          router.replace('/auth/login')
-          return
-        }
         setErrorMessage(
           error instanceof Error && !axios.isAxiosError(error)
             ? error.message

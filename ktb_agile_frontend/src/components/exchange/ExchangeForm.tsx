@@ -136,10 +136,6 @@ function ExchangeFormContent({
         setMyItems(ownedItems)
       } catch (cause) {
         if (!active || axios.isCancel(cause)) return
-        if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-          router.replace('/auth/login')
-          return
-        }
         setError(getErrorMessage(cause, '물품 조회에 실패했습니다.'))
       } finally {
         if (active) setIsLoading(false)
@@ -204,10 +200,6 @@ function ExchangeFormContent({
         accessToken,
       )
     } catch (cause) {
-      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-        router.replace('/auth/login')
-        return
-      }
       setError(
         getErrorMessage(cause, '처리에 실패했습니다. 다시 시도해주세요.'),
       )
