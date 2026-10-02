@@ -1,5 +1,6 @@
 'use client'
 import Navbar from '@/components/common/navbar/Navbar'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -300,6 +301,7 @@ export default function GroupList() {
             onConfirm={confirmLeave}
           />
         )}
+        <FloatingInquiryButton />
         <Navbar />
       </section>
     )
