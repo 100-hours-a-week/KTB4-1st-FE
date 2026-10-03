@@ -1,5 +1,7 @@
 .room {
   display: flex;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
   min-height: 96px;
   gap: 16px;
@@ -7,6 +9,7 @@
   border: 1px solid #e5e5e5;
   border-radius: 12px;
   background: #fff;
+  overflow: hidden;
 }
 .room:focus-visible {
   outline: 2px solid #111827;
@@ -67,6 +70,7 @@
   white-space: nowrap;
 }
 .itemTitle {
+  flex: 1 1 0;
   min-width: 0;
   font-size: 16px;
   font-weight: 600;
@@ -81,6 +85,7 @@
   font-size: 14px;
 }
 .preview {
+  flex: 1 1 0;
   min-width: 0;
   color: #111;
   font-size: 14px;
