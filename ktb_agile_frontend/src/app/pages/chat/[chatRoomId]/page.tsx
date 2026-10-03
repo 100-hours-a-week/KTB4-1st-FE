@@ -13,6 +13,7 @@ import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryBu
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
+import type { ItemState } from '@/types/item'
 import styles from './page.module.css'
 
 type ChatMessageDto = {
@@ -31,6 +32,8 @@ type ChatMessageResponse = {
     messages: ChatMessageDto[]
     nextCursor: string | null
     hasNext: boolean
+    itemQuantity: number
+    itemState: ItemState
   } | null
   error: { code: string; message: string } | null
 }
@@ -85,6 +88,14 @@ function ChatRoomContent() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
+  const [itemAvailability, setItemAvailability] = useState<{
+    chatRoomId: string
+    available: boolean
+  } | null>(null)
+  const itemAvailable =
+    itemAvailability?.chatRoomId === chatRoomId
+      ? itemAvailability.available
+      : null
   const [actionError, setActionError] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const isComposingRef = useRef(false)
@@ -183,6 +194,10 @@ function ChatRoomContent() {
           )
         }
         const page = response.data.data
+        setItemAvailability({
+          chatRoomId,
+          available: page.itemState === 'AVAILABLE' && page.itemQuantity > 0,
+        })
         setMessages(
           page.messages.map((message) =>
             toMessage(message, getUserIdFromAccessToken(token!), otherUser),
@@ -246,6 +261,10 @@ function ChatRoomContent() {
       ])
       setNextCursor(page.nextCursor)
       setHasNext(page.hasNext)
+      setItemAvailability({
+        chatRoomId,
+        available: page.itemState === 'AVAILABLE' && page.itemQuantity > 0,
+      })
     } catch (cause) {
       setMessageError(
         axios.isAxiosError<ChatMessageResponse>(cause)
@@ -295,6 +314,7 @@ function ChatRoomContent() {
   async function changeExchangeStatus(
     status: 'COMPLETED' | 'REJECTED' | 'CANCELED',
   ) {
+    if (itemAvailable !== true) return
     if (!Number.isSafeInteger(exchangeRequestId) || exchangeRequestId < 1)
       return
     const action =
@@ -378,6 +398,7 @@ function ChatRoomContent() {
               <div className={styles.menu}>
                 {!isSeller &&
                   exchangeStatus === 'available' &&
+                  itemAvailable === true &&
                   Number.isSafeInteger(exchangeRequestId) &&
                   exchangeRequestId > 0 && (
                     <button
@@ -410,6 +431,7 @@ function ChatRoomContent() {
             itemId={itemId}
             exchangeRequestId={exchangeRequestId}
             exchangeStatus={exchangeStatus}
+            itemAvailable={itemAvailable}
             isUpdatingExchange={isUpdatingExchange}
             returnTo={returnTo}
             onUpdateExchange={(status) => void changeExchangeStatus(status)}
