@@ -1,4 +1,6 @@
 'use client'
+
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import Navbar from '@/components/common/navbar/Navbar'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import styles from './page.module.css'
@@ -12,10 +14,12 @@ import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
-
-const NO_SEARCH_RESULT_MSG = '검색된 그룹이 없어요!\n원하는 그룹을 찾을 수 없어요. 새로운 그룹을 만들어보세요!'
-const NO_GROUP_MSG = '참여하고 있는 그룹이 없어요! 새로운 그룹에 참여해보세요!'
-const RECOMMENDED_GROUP_DESCRIPTION = '가입된 사용자가 많은 순서대로 보여드려요'
+import {
+  JOIN_CONFIRM_MSG,
+  NO_GROUP_MSG,
+  NO_SEARCH_RESULT_MSG,
+  RECOMMENDED_GROUP_DESCRIPTION,
+} from './constants/group'
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
@@ -266,14 +270,14 @@ export default function GroupList() {
         {joinTarget 
           && (
             <ModalDefault
-              message='참여 하시겠습니까?'
+              message={JOIN_CONFIRM_MSG}
               onConfirm={confirmJoin}
               onCancel={() => setJoinTarget(null)}
               />
           )}
           {openErrorModal&&(
             <ModalDefault
-            message='오류가 발생했습니다'
+            message={GROUP_ERRORS.JOIN_FAILED}
             onConfirm={() =>setOpenErrorModal(false)}/>
           )}
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import type { CSSProperties } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ItemRegisterFormValues } from '../../../../../types/item'
@@ -69,10 +70,10 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           placeholder="예: 게시글 제목"
           maxLength={TITLE_MAX_LENGTH}
           {...register('title', {
-            required: '제목을 입력해주세요.',
+            required: ITEM_ERRORS.TITLE_REQUIRED,
             maxLength: {
               value: TITLE_MAX_LENGTH,
-              message: `제목은 ${TITLE_MAX_LENGTH}자 이내로 입력해주세요.`,
+              message: ITEM_ERRORS.TITLE_TOO_LONG(TITLE_MAX_LENGTH),
             },
           })}
         />
@@ -94,10 +95,10 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           placeholder="예: 게시글 내용"
           maxLength={CONTENT_MAX_LENGTH}
           {...register('content', {
-            required: '내용을 입력해주세요.',
+            required: ITEM_ERRORS.CONTENT_REQUIRED,
             maxLength: {
               value: CONTENT_MAX_LENGTH,
-              message: `내용은 ${CONTENT_MAX_LENGTH.toLocaleString('ko-KR')}자 이내로 입력해주세요.`,
+              message: ITEM_ERRORS.CONTENT_TOO_LONG(CONTENT_MAX_LENGTH),
             },
           })}
         />
@@ -115,7 +116,7 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           <select
             className={styles.select}
             {...register('itemState', {
-              required: '거래 상태를 선택해주세요.',
+              required: ITEM_ERRORS.STATE_REQUIRED,
             })}
           >
             <option value="AVAILABLE">거래 가능</option>
@@ -144,12 +145,12 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           max={99}
           onWheel={(event) => event.currentTarget.blur()}
           {...register('quantity', {
-            required: '수량을 입력해주세요.',
-            min: { value: 1, message: '수량은 1개 이상이어야 합니다.' },
-            max: { value: 99, message: '수량은 99개 이하여야 합니다.' },
+            required: ITEM_ERRORS.QUANTITY_REQUIRED,
+            min: { value: 1, message: ITEM_ERRORS.QUANTITY_TOO_LOW },
+            max: { value: 99, message: ITEM_ERRORS.QUANTITY_TOO_HIGH },
             valueAsNumber: true,
             validate: (value) =>
-              Number.isInteger(value) || '수량은 정수로 입력해주세요.',
+              Number.isInteger(value) || ITEM_ERRORS.QUANTITY_NOT_INTEGER,
           })}
         />
       </div>
@@ -166,7 +167,7 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           type="hidden"
           {...register('groupIds', {
             validate: (value) =>
-              value.length > 0 || '최소 한 개의 그룹을 선택해주세요.',
+              value.length > 0 || ITEM_ERRORS.GROUP_REQUIRED,
           })}
         />
         <div className={styles.groupList}>

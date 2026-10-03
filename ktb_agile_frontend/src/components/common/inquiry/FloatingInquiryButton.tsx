@@ -1,5 +1,6 @@
 'use client'
 
+import { INQUIRY_ERRORS } from '@/constants/errors/inquiry'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ModalDefault from '@/components/common/modal/Default'
@@ -60,13 +61,13 @@ export default function FloatingInquiryButton({
       })
       if (!response.ok) {
         const result = (await response.json()) as { message?: string }
-        setNotice(result.message || '등록하지 못했습니다. 다시 시도해주세요.')
+        setNotice(result.message || INQUIRY_ERRORS.CLIENT_SUBMIT_FAILED)
         return
       }
       setIsSubmitted(true)
       setIsOpen(false)
     } catch {
-      setNotice('등록하지 못했습니다. 다시 시도해주세요.')
+      setNotice(INQUIRY_ERRORS.CLIENT_SUBMIT_FAILED)
     } finally {
       setIsSubmitting(false)
     }

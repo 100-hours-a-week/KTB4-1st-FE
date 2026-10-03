@@ -1,5 +1,6 @@
 'use client'
 
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import { useState } from 'react'
 import type { GroupCardData } from '@/types/group'
 import styles from './GroupCard.module.css'
@@ -81,7 +82,7 @@ export default function GroupCard({
                 <span>
                   {lastItemCreatedAt
                     ? formatCreatedDate(lastItemCreatedAt)
-                    : '날짜 가져오기 실패'}
+                    : GROUP_ERRORS.DATE_LOAD_FAILED}
                 </span>
             </span>
             </span>

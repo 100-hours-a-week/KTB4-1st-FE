@@ -1,3 +1,4 @@
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import type { NextRequest } from 'next/server'
 
 const backendUrl = process.env.BACKEND_API_BASE_URL ||
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     })
   } catch {
     return Response.json(
-      { data: null, error: { message: '인증 서버에 연결할 수 없습니다.' } },
+      { data: null, error: { message: AUTH_ERRORS.AUTH_SERVER_UNAVAILABLE } },
       { status: 502 },
     )
   }

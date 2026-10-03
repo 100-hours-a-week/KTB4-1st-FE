@@ -1,5 +1,6 @@
 'use client'
 
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import { useEffect, useState, type AnimationEvent, type SubmitEvent } from 'react'
 import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
@@ -52,7 +53,7 @@ export default function AddressModal({
       setSearchError(
         error instanceof Error
           ? error.message
-          : '주소 검색 중 오류가 발생했습니다.',
+          : GROUP_ERRORS.ADDRESS_SEARCH_FAILED,
       )
     } finally {
       setIsSearching(false)

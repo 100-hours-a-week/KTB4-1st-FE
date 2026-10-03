@@ -1,5 +1,6 @@
 'use client'
 
+import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -59,7 +60,7 @@ export default function Chat() {
         )
         if (response.data.error || !response.data.data) {
           throw new Error(
-            response.data.error?.message || '채팅 목록을 불러오지 못했습니다.',
+            response.data.error?.message || CHAT_ERRORS.ROOM_LIST_LOAD_FAILED,
           )
         }
         const page = response.data.data
@@ -83,7 +84,7 @@ export default function Chat() {
         setErrorMessage(
           error instanceof Error && !axios.isAxiosError(error)
             ? error.message
-            : '채팅 목록을 불러오지 못했습니다. 다시 시도해주세요.',
+            : CHAT_ERRORS.ROOM_LIST_LOAD_RETRY,
         )
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)

@@ -1,3 +1,4 @@
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 
 // 배포 환경에서는 Nginx가 /api 요청을 백엔드로 전달합니다.
@@ -35,7 +36,7 @@ async function getNewAccessToken() {
   const accessToken = response.data.data.accessToken
 
   if (typeof accessToken !== 'string' || !accessToken) {
-    throw new Error('Access token is missing from refresh response.')
+    throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
   }
 
   window.sessionStorage.setItem('accessToken', accessToken)

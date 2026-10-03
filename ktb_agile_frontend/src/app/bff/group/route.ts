@@ -1,3 +1,5 @@
+import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import type {
   GroupAddressResponse,
   GroupAddressResult,
@@ -38,7 +40,7 @@ function toGroupAddressResult(
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
   if (!authorization) {
-    return Response.json({ message: '로그인이 필요합니다.' }, { status: 401 })
+    return Response.json({ message: AUTH_ERRORS.LOGIN_REQUIRED }, { status: 401 })
   }
 
   try {
@@ -51,14 +53,14 @@ export async function GET(request: Request) {
       return Response.json(await authResponse.json(), { status: authResponse.status })
     }
   } catch {
-    return Response.json({ message: '인증 서버에 연결할 수 없습니다.' }, { status: 502 })
+    return Response.json({ message: AUTH_ERRORS.AUTH_SERVER_UNAVAILABLE }, { status: 502 })
   }
 
   const kakaoRestApiKey = process.env.KAKAO_REST_API_KEY
 
   if (!kakaoRestApiKey) {
     return Response.json(
-      { message: 'KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다.' },
+      { message: GROUP_ERRORS.KAKAO_KEY_MISSING },
       { status: 500 },
     )
   }
@@ -67,7 +69,7 @@ export async function GET(request: Request) {
 
   if (!query) {
     return Response.json(
-      { message: '검색할 주소(query)를 입력해주세요.' },
+      { message: GROUP_ERRORS.ADDRESS_QUERY_REQUIRED },
       { status: 400 },
     )
   }
@@ -85,7 +87,7 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       return Response.json(
-        { message: '카카오 주소 검색 API 호출에 실패했습니다.' },
+        { message: GROUP_ERRORS.KAKAO_SEARCH_FAILED },
         { status: 502 },
       )
     }
@@ -100,7 +102,7 @@ export async function GET(request: Request) {
     return Response.json(body)
   } catch {
     return Response.json(
-      { message: '카카오 주소 검색 API와 통신할 수 없습니다.' },
+      { message: GROUP_ERRORS.KAKAO_CONNECTION_FAILED },
       { status: 502 },
     )
   }

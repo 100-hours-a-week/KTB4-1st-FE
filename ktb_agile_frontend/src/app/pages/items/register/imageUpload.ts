@@ -1,3 +1,4 @@
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import type { Dispatch, SetStateAction } from 'react'
@@ -16,7 +17,7 @@ export async function uploadImagesToS3(
   accessToken: string,
 ): Promise<string[]> {
   if (images.length === 0 || images.length > 3) {
-    throw new Error('이미지는 1장 이상 3장 이하로 선택해야 합니다.')
+    throw new Error(ITEM_ERRORS.IMAGE_COUNT_INVALID)
   }
 
   const pendingImages = images.filter((image) => {
@@ -24,7 +25,7 @@ export async function uploadImagesToS3(
   })
   if (pendingImages.some((image) => !image.file)) {
     throw new Error(
-      '기존 사진은 이미지 ID를 사용하는 수정 API로 처리해야 합니다.',
+      ITEM_ERRORS.EXISTING_IMAGE_UPLOAD_UNSUPPORTED,
     )
   }
   let presignedUploads: PresignedUpload[] = []
@@ -49,7 +50,7 @@ export async function uploadImagesToS3(
 
     presignedUploads = response.data.data
     if (presignedUploads.length !== pendingImages.length) {
-      throw new Error('발급된 업로드 URL 개수가 이미지 개수와 다릅니다.')
+      throw new Error(ITEM_ERRORS.UPLOAD_URL_COUNT_MISMATCH)
     }
   }
 

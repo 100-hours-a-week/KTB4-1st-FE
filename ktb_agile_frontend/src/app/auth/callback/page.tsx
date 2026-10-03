@@ -1,5 +1,6 @@
 'use client'
 
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -44,7 +45,7 @@ export default function LoginCallback() {
         const accessToken = response.data.data.accessToken
 
         if (!accessToken) {
-          throw new Error('Access token is missing from refresh response.')
+          throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
         }
 
         window.sessionStorage.setItem('accessToken', accessToken)
@@ -62,7 +63,7 @@ export default function LoginCallback() {
         await waitForLoading
 
         if (isActive) {
-          setErrorMessage('로그인 정보를 불러오지 못했습니다. 다시 로그인해주세요.')
+          setErrorMessage(AUTH_ERRORS.LOGIN_INFO_LOAD_FAILED)
         }
       }
     }

@@ -1,5 +1,6 @@
 'use client'
 
+import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
@@ -140,11 +141,11 @@ function ChatRoomContent() {
     const content = value.trim()
     if (!content) return
     if (content.length > 2000) {
-      setSocketError('메시지는 2000자 이내로 입력해주세요.')
+      setSocketError(CHAT_ERRORS.MESSAGE_TOO_LONG)
       return
     }
     if (!sendMessage(content)) {
-      setSocketError('채팅 서버에 연결된 후 다시 시도해주세요.')
+      setSocketError(CHAT_ERRORS.NOT_CONNECTED)
       return
     }
     setMessageInput('')
@@ -164,7 +165,7 @@ function ChatRoomContent() {
           !Number.isSafeInteger(Number(chatRoomId)) ||
           Number(chatRoomId) < 1
         ) {
-          throw new Error('올바른 채팅방 ID가 필요합니다.')
+          throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
         }
         const response = await axios.get<ChatMessageResponse>(
           `${API_BASE_URL}/chat/rooms/${chatRoomId}/messages`,
@@ -178,7 +179,7 @@ function ChatRoomContent() {
         )
         if (!response.data.data || response.data.error) {
           throw new Error(
-            response.data.error?.message || '메시지를 불러오지 못했습니다.',
+            response.data.error?.message || CHAT_ERRORS.MESSAGE_LOAD_FAILED,
           )
         }
         const page = response.data.data
@@ -195,10 +196,10 @@ function ChatRoomContent() {
         setMessageError(
           axios.isAxiosError<ChatMessageResponse>(cause)
             ? cause.response?.data?.error?.message ||
-                '메시지를 불러오지 못했습니다.'
+                CHAT_ERRORS.MESSAGE_LOAD_FAILED
             : cause instanceof Error
               ? cause.message
-              : '메시지를 불러오지 못했습니다.',
+              : CHAT_ERRORS.MESSAGE_LOAD_FAILED,
         )
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
@@ -230,7 +231,7 @@ function ChatRoomContent() {
       )
       if (!response.data.data || response.data.error) {
         throw new Error(
-          response.data.error?.message || '이전 메시지를 불러오지 못했습니다.',
+          response.data.error?.message || CHAT_ERRORS.OLDER_MESSAGE_LOAD_FAILED,
         )
       }
       const page = response.data.data
@@ -249,10 +250,10 @@ function ChatRoomContent() {
       setMessageError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||
-              '이전 메시지를 불러오지 못했습니다.'
+              CHAT_ERRORS.OLDER_MESSAGE_LOAD_FAILED
           : cause instanceof Error
             ? cause.message
-            : '이전 메시지를 불러오지 못했습니다.',
+            : CHAT_ERRORS.OLDER_MESSAGE_LOAD_FAILED,
       )
     } finally {
       setIsLoadingMore(false)
@@ -283,8 +284,8 @@ function ChatRoomContent() {
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||
-              '채팅방을 나가지 못했습니다.'
-          : '채팅방을 나가지 못했습니다.',
+              CHAT_ERRORS.LEAVE_FAILED
+          : CHAT_ERRORS.LEAVE_FAILED,
       )
       setIsLeaving(false)
       setMenuOpen(false)
@@ -342,8 +343,8 @@ function ChatRoomContent() {
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
           ? cause.response?.data?.error?.message ||
-              `교환 제안을 ${action}하지 못했습니다.`
-          : `교환 제안을 ${action}하지 못했습니다.`,
+              CHAT_ERRORS.EXCHANGE_ACTION_FAILED(action)
+          : CHAT_ERRORS.EXCHANGE_ACTION_FAILED(action),
       )
     } finally {
       setIsUpdatingExchange(false)

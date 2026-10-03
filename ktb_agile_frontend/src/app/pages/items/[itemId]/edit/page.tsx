@@ -1,5 +1,6 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -67,8 +68,8 @@ export default function ItemEditPage() {
         if (!isMounted) return
         setModalMessage(
           axios.isAxiosError(error) && error.response?.status === 404
-            ? '물품을 찾을 수 없습니다.'
-            : '물품 정보를 불러오지 못했습니다. 다시 시도해주세요.',
+            ? ITEM_ERRORS.NOT_FOUND
+            : ITEM_ERRORS.EDIT_LOAD_FAILED,
         )
       }
     }
@@ -94,7 +95,7 @@ export default function ItemEditPage() {
     try {
       const imageIds = context.images.map((image) => image.imageId)
       if (imageIds.some((imageId) => imageId === undefined)) {
-        throw new Error('현재 수정 API에서는 새 이미지 추가를 지원하지 않습니다.')
+        throw new Error(ITEM_ERRORS.NEW_IMAGE_ON_EDIT_UNSUPPORTED)
       }
       await axios.put(
         `${API_BASE_URL}/items/${itemId}`,
@@ -121,7 +122,7 @@ export default function ItemEditPage() {
       setModalMessage(
         error instanceof Error
           ? error.message
-          : '물품 수정에 실패했습니다. 다시 시도해주세요.',
+          : ITEM_ERRORS.UPDATE_FAILED,
       )
     } finally {
       setIsSubmitting(false)
