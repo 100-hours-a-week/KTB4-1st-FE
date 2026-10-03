@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
-import { API_BASE_URL } from '@/config/api'
+import '@/config/api'
 import styles from './page.module.css'
 
 type Direction = 'SENT' | 'RECEIVED'
@@ -44,7 +44,7 @@ export default function Chat() {
       setErrorMessage(null)
       try {
         const response = await axios.get<ChatRoomResponse>(
-          `${API_BASE_URL}/chat-rooms`,
+          '/bff/chat-rooms',
           {
             params: {
               size: 20,
