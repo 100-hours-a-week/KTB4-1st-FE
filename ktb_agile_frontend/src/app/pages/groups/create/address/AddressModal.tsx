@@ -111,7 +111,7 @@ export default function AddressModal({
               <input
                 type="search"
                 value={query}
-                placeholder="도로명, 건물명, 지번 검색"
+                placeholder="도로명으로 검색"
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setSearchedQuery(null)
