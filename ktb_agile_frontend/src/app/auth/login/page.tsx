@@ -1,5 +1,6 @@
 'use client'
 
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import Image from 'next/image'
 import styles from './login.module.css'
 import axios from 'axios'
@@ -43,7 +44,7 @@ export default function Login() {
         //로그인 관련 에러
         if (status !== undefined) {
           setModalMessage(
-            '로그인에 오류가 발생했습니다.\n다시 시도해주세요.',
+            AUTH_ERRORS.LOGIN_FAILED,
           )
           return
         }
@@ -51,7 +52,7 @@ export default function Login() {
 
       // CORS 또는 네트워크 오류처럼 HTTP 상태가 없는 경우
       setModalMessage(
-        '서버에 연결할 수 없습니다.\n잠시 후 다시 시도해주세요.',
+        AUTH_ERRORS.SERVER_UNAVAILABLE,
       )
     } finally {
       setIsLoggingIn(false)

@@ -1,5 +1,7 @@
 'use client'
 
+import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { GroupAddressResult } from '@/types/group'
@@ -30,7 +32,7 @@ export default function CreateGroup() {
   async function createProcess(){
     const accessToken = window.sessionStorage.getItem('accessToken')
     if (!accessToken) {
-      setErrorMessage('로그인이 필요합니다.')
+      setErrorMessage(AUTH_ERRORS.LOGIN_REQUIRED)
       router.replace('/auth/login')
       return
     }
@@ -87,7 +89,7 @@ export default function CreateGroup() {
                 setGroupName(value)
                 setGroupNameHelperText(
                   value.length > GROUP_NAME_MAX_LENGTH
-                    ? `그룹명은 ${GROUP_NAME_MAX_LENGTH}자 이내로 입력해주세요.`
+                    ? GROUP_ERRORS.NAME_TOO_LONG(GROUP_NAME_MAX_LENGTH)
                     : null,
                 )
               }}
@@ -127,7 +129,7 @@ export default function CreateGroup() {
                 setGroupDescription(value)
                 setGroupDescriptionHelperText(
                   value.length > GROUP_DESCRIPTION_MAX_LENGTH
-                    ? `그룹 설명은 ${GROUP_DESCRIPTION_MAX_LENGTH}자 이내로 입력해주세요.`
+                    ? GROUP_ERRORS.DESCRIPTION_TOO_LONG(GROUP_DESCRIPTION_MAX_LENGTH)
                     : null,
                 )
               }}

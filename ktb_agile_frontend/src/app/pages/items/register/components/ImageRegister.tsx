@@ -1,5 +1,6 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import { useRef, useState } from 'react'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
@@ -128,15 +129,15 @@ export default function ImageRegister({
 
       if (!analysis.isAppropriate) {
         setRejectionReason(
-          analysis.rejectionReason ?? '등록할 수 없는 이미지입니다.',
+          analysis.rejectionReason ?? ITEM_ERRORS.IMAGE_REJECTED,
         )
         setIsRejectionModalOpen(true)
-        setImageError('사진을 모두 삭제한 뒤 다시 선택해주세요.')
+        setImageError(ITEM_ERRORS.REMOVE_IMAGES_FIRST)
         onRejectionChange(true)
         return
       }
       if (!analysis.title || !analysis.content) {
-        throw new Error('AI 분석 결과에 제목이나 내용이 없습니다.')
+        throw new Error(ITEM_ERRORS.ANALYSIS_FIELDS_MISSING)
       }
 
       setValue('title', analysis.title, {
@@ -149,7 +150,7 @@ export default function ImageRegister({
       })
     } catch (error) {
       console.error(error)
-      setImageError('이미지 분석에 실패했습니다. 다시 시도해주세요.')
+      setImageError(ITEM_ERRORS.IMAGE_ANALYSIS_FAILED)
     } finally {
       setIsAnalyzing(false)
       onAnalysisStateChange(false)
@@ -185,7 +186,7 @@ export default function ImageRegister({
         return !ALLOWED_IMAGE_TYPES.includes(file.type)
       })
     ) {
-      setImageError('JPEG, PNG, WebP 이미지만 선택할 수 있습니다.')
+      setImageError(ITEM_ERRORS.IMAGE_TYPE_UNSUPPORTED)
       return
     }
     if (
@@ -193,11 +194,11 @@ export default function ImageRegister({
         return file.size > MAX_IMAGE_SIZE
       })
     ) {
-      setImageError('사진 한 장의 크기는 최대 10MB입니다.')
+      setImageError(ITEM_ERRORS.IMAGE_TOO_LARGE)
       return
     }
     if (files.length > MAX_IMAGES - images.length) {
-      setImageError('사진은 최대 3장까지 등록할 수 있습니다.')
+      setImageError(ITEM_ERRORS.IMAGE_COUNT_EXCEEDED)
       return
     }
 
@@ -208,7 +209,7 @@ export default function ImageRegister({
       setIsPhotoUploaded(updatedImages.length > 0)
       setImageError('')
     } catch {
-      setImageError('사진을 읽을 수 없습니다. 다시 선택해주세요.')
+      setImageError(ITEM_ERRORS.IMAGE_READ_FAILED)
     }
   }
 

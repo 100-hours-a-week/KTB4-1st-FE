@@ -1,5 +1,7 @@
 'use client'
 
+import { GROUP_ERRORS } from '@/constants/errors/group'
+import { NO_GROUP_ACTIVITY_MSG } from '@/app/pages/groups/constants/group'
 import { useState } from 'react'
 import type { GroupCardData } from '@/types/group'
 import styles from './GroupCard.module.css'
@@ -79,9 +81,11 @@ export default function GroupCard({
             <span className={styles.metadata}>
                 <span>공개 물품 {itemCount}개</span>
                 <span>
-                  {lastItemCreatedAt
-                    ? formatCreatedDate(lastItemCreatedAt)
-                    : '날짜 가져오기 실패'}
+                  {itemCount === 0
+                    ? NO_GROUP_ACTIVITY_MSG
+                    : lastItemCreatedAt
+                      ? formatCreatedDate(lastItemCreatedAt)
+                      : GROUP_ERRORS.DATE_LOAD_FAILED}
                 </span>
             </span>
             </span>

@@ -1,3 +1,4 @@
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 
 // 배포 환경에서는 Nginx가 /api 요청을 백엔드로 전달합니다.
@@ -15,10 +16,12 @@ let refreshPromise: Promise<string> | null = null
 
 function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
-  const isAddressRequest = request.url?.split('?')[0] === '/bff/group'
+  const isBffRequest = ['/bff/group', '/bff/chat-rooms'].includes(
+    request.url?.split('?')[0] ?? '',
+  )
   const hasAccessToken = request.headers.get('Authorization')
 
-  return (isBackendRequest || isAddressRequest) && hasAccessToken
+  return (isBackendRequest || isBffRequest) && hasAccessToken
 }
 
 function showLoginExpiredModal() {
@@ -35,7 +38,7 @@ async function getNewAccessToken() {
   const accessToken = response.data.data.accessToken
 
   if (typeof accessToken !== 'string' || !accessToken) {
-    throw new Error('Access token is missing from refresh response.')
+    throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
   }
 
   window.sessionStorage.setItem('accessToken', accessToken)

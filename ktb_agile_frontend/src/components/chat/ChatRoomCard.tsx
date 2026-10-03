@@ -1,6 +1,15 @@
 import Link from 'next/link'
 import styles from './ChatRoomCard.module.css'
 
+const PREVIEW_MAX_LENGTH = 25
+
+function formatMessagePreview(content: string) {
+  const characters = Array.from(content)
+  return characters.length > PREVIEW_MAX_LENGTH
+    ? `${characters.slice(0, PREVIEW_MAX_LENGTH).join('')}...`
+    : content
+}
+
 export type ChatRoom = {
   chatRoomId: number
   chatRoomStatus: string
@@ -103,7 +112,7 @@ export default function ChatRoomCard({ room }: { room: ChatRoom }) {
           <div className={styles.bottomRow}>
             <p className={styles.preview}>
               {room.lastMessage
-                ? `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) ${room.lastMessage.content}`
+                ? `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) ${formatMessagePreview(room.lastMessage.content)}`
                 : `${room.otherUser.nickname}님과의 대화`}
             </p>
             {room.unreadMessageCount > 0 && (

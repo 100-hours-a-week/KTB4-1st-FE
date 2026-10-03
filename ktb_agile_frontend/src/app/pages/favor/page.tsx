@@ -1,5 +1,6 @@
 'use client'
 
+import { PREFERENCE_ERRORS } from '@/constants/errors/preference'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
@@ -107,7 +108,7 @@ export default function PreferenceSetup() {
 
       router.replace('/pages/groups')
     } catch {
-      setErrorMessage('서버 오류로 저장에 실패했습니다. 다시 시도해주세요')
+      setErrorMessage(PREFERENCE_ERRORS.SAVE_FAILED)
     } finally {
       setIsSubmitting(false)
     }

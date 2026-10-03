@@ -1,5 +1,7 @@
 "use client";
 
+import { MONITORING_ERRORS } from '@/constants/errors/monitoring'
+
 import * as Sentry from "@sentry/nextjs";
 import Head from "next/head";
 import { useEffect, useState } from "react";
@@ -85,7 +87,7 @@ export default function Page() {
               },
             );
             throw new SentryExampleFrontendError(
-              "This error is raised on the frontend of the example page.",
+              MONITORING_ERRORS.FRONTEND_EXAMPLE,
             );
           }}
           disabled={!isConnected}

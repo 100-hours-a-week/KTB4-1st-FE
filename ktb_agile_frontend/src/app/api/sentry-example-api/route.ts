@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { connection } from "next/server";
+import { MONITORING_ERRORS } from '@/constants/errors/monitoring'
+
 class SentryExampleAPIError extends Error {
   constructor(message: string | undefined) {
     super(message);
@@ -13,6 +15,6 @@ export async function GET() {
   await connection();
   Sentry.logger.info("Sentry example API called");
   throw new SentryExampleAPIError(
-    "This error is raised on the backend called by the example page.",
+    MONITORING_ERRORS.API_EXAMPLE,
   );
 }

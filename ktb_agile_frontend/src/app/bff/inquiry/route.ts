@@ -1,3 +1,4 @@
+import { INQUIRY_ERRORS } from '@/constants/errors/inquiry'
 const koreanDateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
   timeZone: 'Asia/Seoul',
   year: 'numeric',
@@ -41,14 +42,14 @@ export async function POST(request: Request) {
     body = await request.json()
   } catch {
     return Response.json(
-      { message: '요청 형식이 올바르지 않습니다.' },
+      { message: INQUIRY_ERRORS.REQUEST_INVALID },
       { status: 400 },
     )
   }
 
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return Response.json(
-      { message: '요청 형식이 올바르지 않습니다.' },
+      { message: INQUIRY_ERRORS.REQUEST_INVALID },
       { status: 400 },
     )
   }
@@ -61,7 +62,7 @@ export async function POST(request: Request) {
     text.length > 500
   ) {
     return Response.json(
-      { message: '글 유형과 500자 이내의 내용을 확인해주세요.' },
+      { message: INQUIRY_ERRORS.CONTENT_INVALID },
       { status: 400 },
     )
   }
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
   const webhookUrl = getDiscordWebhookUrl()
   if (!webhookUrl) {
     return Response.json(
-      { message: '문의 등록 설정을 확인할 수 없습니다.' },
+      { message: INQUIRY_ERRORS.CONFIG_MISSING },
       { status: 500 },
     )
   }
@@ -87,14 +88,14 @@ export async function POST(request: Request) {
 
     if (!discordResponse.ok) {
       return Response.json(
-        { message: '문의 등록에 실패했습니다. 다시 시도해주세요.' },
+        { message: INQUIRY_ERRORS.SUBMIT_FAILED },
         { status: 502 },
       )
     }
     return Response.json({ message: '등록되었습니다.' }, { status: 201 })
   } catch {
     return Response.json(
-      { message: '문의 등록에 실패했습니다. 다시 시도해주세요.' },
+      { message: INQUIRY_ERRORS.SUBMIT_FAILED },
       { status: 502 },
     )
   }

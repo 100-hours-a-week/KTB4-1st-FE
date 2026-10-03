@@ -1,5 +1,6 @@
 'use client'
 
+import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
@@ -51,7 +52,7 @@ function ExchangeEditContent() {
           !Number.isSafeInteger(itemId) ||
           itemId < 1
         ) {
-          throw new Error('교환 요청 정보가 올바르지 않습니다.')
+          throw new Error(EXCHANGE_ERRORS.REQUEST_INVALID)
         }
         const response = await axios.get<ExchangeRequestDetailsResponse>(
           `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
@@ -66,13 +67,13 @@ function ExchangeEditContent() {
         const request = response.data.data
         if (!request || response.data.error)
           throw new Error(
-            response.data.error?.message || '교환 요청을 불러오지 못했습니다.',
+            response.data.error?.message || EXCHANGE_ERRORS.REQUEST_LOAD_FAILED,
           )
         if (
           request.itemId !== itemId ||
           request.requestedStatus !== 'PENDING'
         ) {
-          throw new Error('수정할 수 없는 교환 요청입니다.')
+          throw new Error(EXCHANGE_ERRORS.REQUEST_NOT_EDITABLE)
         }
         setInitialValues({
           requestedQuantity: request.requestedQuantity,
@@ -83,10 +84,10 @@ function ExchangeEditContent() {
         setError(
           axios.isAxiosError<ExchangeRequestDetailsResponse>(cause)
             ? cause.response?.data?.error?.message ||
-                '교환 요청을 불러오지 못했습니다.'
+                EXCHANGE_ERRORS.REQUEST_LOAD_FAILED
             : cause instanceof Error
               ? cause.message
-              : '교환 요청을 불러오지 못했습니다.',
+              : EXCHANGE_ERRORS.REQUEST_LOAD_FAILED,
         )
       }
     }

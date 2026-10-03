@@ -1,5 +1,6 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import { useEffect, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { FormProvider, useForm } from 'react-hook-form'
@@ -86,7 +87,7 @@ export default function ItemRegisterForm({
     if (isSubmitting || isAnalyzing || isImageRejected) return
     if (requireChanges && !hasChanges) return
     if (images.length === 0 || values.quantity === undefined) {
-      onValidationError('사진과 필수 정보를 입력해주세요.')
+      onValidationError(ITEM_ERRORS.REQUIRED_FIELDS)
       return
     }
 

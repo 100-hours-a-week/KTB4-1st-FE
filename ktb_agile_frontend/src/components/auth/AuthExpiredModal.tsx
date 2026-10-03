@@ -1,5 +1,6 @@
 'use client'
 
+import { AUTH_ERRORS } from '@/constants/errors/auth'
 import { useEffect, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 
@@ -20,7 +21,7 @@ export default function AuthExpiredModal({ children }: { children: React.ReactNo
       {children}
       {isOpen && (
         <ModalDefault
-          message="로그인이 만료되었습니다. 다시 로그인해주세요."
+          message={AUTH_ERRORS.LOGIN_EXPIRED}
           confirmLabel="로그인"
           onConfirm={() => window.location.replace('/auth/login')}
         />

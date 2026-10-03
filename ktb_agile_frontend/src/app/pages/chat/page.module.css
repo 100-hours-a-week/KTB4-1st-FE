@@ -41,8 +41,14 @@
 }
 .list {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   list-style: none;
+}
+.list > li {
+  min-width: 0;
 }
 .state {
   padding: 42px 12px;
