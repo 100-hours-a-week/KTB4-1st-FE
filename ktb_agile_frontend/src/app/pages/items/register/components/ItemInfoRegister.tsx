@@ -4,74 +4,16 @@ import type { CSSProperties } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
 import type { ItemRegisterFormValues } from '../../../../../types/item'
 import type { JoinedGroupOption } from '@/types/group'
+import {
+  CONDITION_MESSAGES,
+  CONTENT_MAX_LENGTH,
+  PACE_MESSAGES,
+  TITLE_MAX_LENGTH,
+  type RangeMessage,
+} from '@/app/pages/items/register/constants/item'
 import styles from './ItemInfoRegister.module.css'
 
-const TITLE_MAX_LENGTH = 100
-const CONTENT_MAX_LENGTH = 2000
-
-type RangeMessage = {
-  max: number
-  title: string
-  description: string
-}
-
-const PACE_MESSAGES: RangeMessage[] = [
-  {
-    max: 19,
-    title: '천천히 교환하고 싶어요',
-    description: '조건이 잘 맞는 상대를 여유롭게 기다려요.',
-  },
-  {
-    max: 39,
-    title: '여유롭게 교환하고 싶어요',
-    description: '시간을 두고 괜찮은 제안을 살펴볼게요.',
-  },
-  {
-    max: 59,
-    title: '적당한 속도로 교환하고 싶어요',
-    description: '조건과 시기를 함께 고려해요.',
-  },
-  {
-    max: 79,
-    title: '조금 빠르게 교환하고 싶어요',
-    description: '마음에 드는 제안이 오면 빠르게 진행해요.',
-  },
-  {
-    max: 100,
-    title: '가능한 빨리 교환하고 싶어요',
-    description: '좋은 조건이라면 빠르게 거래를 진행하고 싶어요.',
-  },
-]
-
-const CONDITION_MESSAGES: RangeMessage[] = [
-  {
-    max: 19,
-    title: '가치가 비슷한 물건을 원해요',
-    description: '가격 차이가 거의 없는 물건과 교환하고 싶어요.',
-  },
-  {
-    max: 39,
-    title: '비슷한 가치면 괜찮아요',
-    description: '작은 가치 차이는 고려할 수 있어요.',
-  },
-  {
-    max: 59,
-    title: '가치 차이를 어느 정도 고려해요',
-    description: '상황에 따라 적당한 가치 차이를 받아들일 수 있어요.',
-  },
-  {
-    max: 79,
-    title: '가치 차이에 너그러워요',
-    description: '가치가 조금 달라도 조건이 맞으면 괜찮아요.',
-  },
-  {
-    max: 100,
-    title: '가치 차이에 유연해요',
-    description: '가치 차이보다 원하는 물건인지가 더 중요해요.',
-  },
-]
-
-function getRangeMessage(value: number, messages: RangeMessage[]) {
+function getRangeMessage(value: number, messages: readonly RangeMessage[]) {
   return messages.find((message) => value <= message.max) ?? messages.at(-1)!
 }
 
@@ -130,7 +72,7 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
             required: '제목을 입력해주세요.',
             maxLength: {
               value: TITLE_MAX_LENGTH,
-              message: '제목은 100자 이내로 입력해주세요.',
+              message: `제목은 ${TITLE_MAX_LENGTH}자 이내로 입력해주세요.`,
             },
           })}
         />
@@ -155,7 +97,7 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
             required: '내용을 입력해주세요.',
             maxLength: {
               value: CONTENT_MAX_LENGTH,
-              message: '내용은 2,000자 이내로 입력해주세요.',
+              message: `내용은 ${CONTENT_MAX_LENGTH.toLocaleString('ko-KR')}자 이내로 입력해주세요.`,
             },
           })}
         />
@@ -198,6 +140,9 @@ export default function ItemInfoRegister({ groups }: ItemInfoRegisterProps) {
           className={styles.textInput}
           type="number"
           placeholder="1 이상의 정수"
+          min={1}
+          max={99}
+          onWheel={(event) => event.currentTarget.blur()}
           {...register('quantity', {
             required: '수량을 입력해주세요.',
             min: { value: 1, message: '수량은 1개 이상이어야 합니다.' },
