@@ -8,6 +8,7 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
 import '@/config/api'
 import styles from './page.module.css'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
@@ -158,6 +159,7 @@ export default function Chat() {
           )}
         </div>
       </section>
+      <FloatingInquiryButton/>
       <Navbar />
     </>
   )
