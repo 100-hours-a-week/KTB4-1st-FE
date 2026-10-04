@@ -105,8 +105,8 @@ export default function PreferenceSetup() {
           },
         },
       )
-
-      router.replace('/pages/groups')
+      
+      router.replace('/pages/items')
     } catch {
       setErrorMessage(PREFERENCE_ERRORS.SAVE_FAILED)
     } finally {
