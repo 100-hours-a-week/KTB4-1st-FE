@@ -1,3 +1,5 @@
+import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import type {
   GroupAddressResponse,
   GroupAddressResult,
@@ -7,6 +9,11 @@ import type {
 
 const KAKAO_ADDRESS_SEARCH_URL =
   'https://dapi.kakao.com/v2/local/search/address.json'
+
+const backendUrl = process.env.BACKEND_API_BASE_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'http://springboot:8080'
+    : 'http://127.0.0.1:8080')
 
 function toCoordinate(value: string | undefined): number | null {
   if (value === undefined || value === '') return null
@@ -31,11 +38,29 @@ function toGroupAddressResult(
 }
 
 export async function GET(request: Request) {
+  const authorization = request.headers.get('Authorization')
+  if (!authorization) {
+    return Response.json({ message: AUTH_ERRORS.LOGIN_REQUIRED }, { status: 401 })
+  }
+
+  try {
+    // Spring에서 토큰을 검증한 뒤에만 카카오 주소 검색을 호출합니다.
+    const authResponse = await fetch(`${backendUrl}/users/me/groups`, {
+      headers: { Authorization: authorization },
+      cache: 'no-store',
+    })
+    if (!authResponse.ok) {
+      return Response.json(await authResponse.json(), { status: authResponse.status })
+    }
+  } catch {
+    return Response.json({ message: AUTH_ERRORS.AUTH_SERVER_UNAVAILABLE }, { status: 502 })
+  }
+
   const kakaoRestApiKey = process.env.KAKAO_REST_API_KEY
 
   if (!kakaoRestApiKey) {
     return Response.json(
-      { message: 'KAKAO_REST_API_KEY 환경변수가 설정되지 않았습니다.' },
+      { message: GROUP_ERRORS.KAKAO_KEY_MISSING },
       { status: 500 },
     )
   }
@@ -44,7 +69,7 @@ export async function GET(request: Request) {
 
   if (!query) {
     return Response.json(
-      { message: '검색할 주소(query)를 입력해주세요.' },
+      { message: GROUP_ERRORS.ADDRESS_QUERY_REQUIRED },
       { status: 400 },
     )
   }
@@ -62,7 +87,7 @@ export async function GET(request: Request) {
 
     if (!response.ok) {
       return Response.json(
-        { message: '카카오 주소 검색 API 호출에 실패했습니다.' },
+        { message: GROUP_ERRORS.KAKAO_SEARCH_FAILED },
         { status: 502 },
       )
     }
@@ -77,7 +102,7 @@ export async function GET(request: Request) {
     return Response.json(body)
   } catch {
     return Response.json(
-      { message: '카카오 주소 검색 API와 통신할 수 없습니다.' },
+      { message: GROUP_ERRORS.KAKAO_CONNECTION_FAILED },
       { status: 502 },
     )
   }

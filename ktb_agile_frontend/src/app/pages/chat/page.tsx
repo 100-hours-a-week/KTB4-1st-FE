@@ -1,12 +1,14 @@
 'use client'
 
+import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
-import { API_BASE_URL } from '@/config/api'
+import '@/config/api'
 import styles from './page.module.css'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
@@ -43,7 +45,7 @@ export default function Chat() {
       setErrorMessage(null)
       try {
         const response = await axios.get<ChatRoomResponse>(
-          `${API_BASE_URL}/chat-rooms`,
+          '/bff/chat-rooms',
           {
             params: {
               size: 20,
@@ -59,7 +61,7 @@ export default function Chat() {
         )
         if (response.data.error || !response.data.data) {
           throw new Error(
-            response.data.error?.message || '채팅 목록을 불러오지 못했습니다.',
+            response.data.error?.message || CHAT_ERRORS.ROOM_LIST_LOAD_FAILED,
           )
         }
         const page = response.data.data
@@ -80,15 +82,10 @@ export default function Chat() {
         setHasNext(page.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          window.sessionStorage.removeItem('accessToken')
-          router.replace('/auth/login')
-          return
-        }
         setErrorMessage(
           error instanceof Error && !axios.isAxiosError(error)
             ? error.message
-            : '채팅 목록을 불러오지 못했습니다. 다시 시도해주세요.',
+            : CHAT_ERRORS.ROOM_LIST_LOAD_RETRY,
         )
       } finally {
         if (!controller.signal.aborted) setIsLoading(false)
@@ -162,6 +159,7 @@ export default function Chat() {
           )}
         </div>
       </section>
+      <FloatingInquiryButton/>
       <Navbar />
     </>
   )

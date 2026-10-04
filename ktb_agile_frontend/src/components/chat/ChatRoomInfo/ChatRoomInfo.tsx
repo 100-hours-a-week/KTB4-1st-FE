@@ -15,6 +15,7 @@ type ChatRoomInfoProps = {
   itemId: number
   exchangeRequestId: number
   exchangeStatus: ExchangeStatus
+  itemAvailable: boolean | null
   isUpdatingExchange: boolean
   returnTo: string
   onUpdateExchange: (status: ExchangeActionStatus) => void
@@ -42,6 +43,7 @@ export default function ChatRoomInfo({
   itemId,
   exchangeRequestId,
   exchangeStatus,
+  itemAvailable,
   isUpdatingExchange,
   returnTo,
   onUpdateExchange,
@@ -50,6 +52,7 @@ export default function ChatRoomInfo({
   const canEdit =
     !isSeller &&
     exchangeStatus === 'available' &&
+    itemAvailable === true &&
     Number.isSafeInteger(itemId) &&
     itemId > 0 &&
     Number.isSafeInteger(exchangeRequestId) &&
@@ -72,7 +75,11 @@ export default function ChatRoomInfo({
       <div className={styles.productDetails}>
         <div className={styles.productTitleRow}>
           <strong>상품명: {title}</strong>
-          <span>{statusLabel[exchangeStatus]}</span>
+          <span>
+            {exchangeStatus === 'available' && itemAvailable === false
+              ? '거래 완료'
+              : statusLabel[exchangeStatus]}
+          </span>
         </div>
         <p>그룹: {group}</p>
         <p>상대: {otherUser}</p>
@@ -88,7 +95,9 @@ export default function ChatRoomInfo({
         </div>
       )}
       <ChatExchangeActions
-        isSeller={isSeller && exchangeStatus === 'available'}
+        isSeller={
+          isSeller && exchangeStatus === 'available' && itemAvailable === true
+        }
         exchangeRequestId={exchangeRequestId}
         isUpdating={isUpdatingExchange}
         onUpdate={onUpdateExchange}

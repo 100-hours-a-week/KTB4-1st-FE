@@ -1,5 +1,6 @@
 'use client'
 
+import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -96,7 +97,7 @@ function ExchangeFormContent({
       try {
         const targetId = itemId
         if (!Number.isSafeInteger(targetId) || targetId <= 0) {
-          throw new Error('올바른 물품 ID가 필요합니다.')
+          throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
         }
 
         const headers = {
@@ -109,7 +110,7 @@ function ExchangeFormContent({
         )
         const target = response.data.data
         if (target.owner.userId === userId) {
-          throw new Error('내 물품에는 교환 요청을 보낼 수 없습니다.')
+          throw new Error(EXCHANGE_ERRORS.OWN_ITEM_NOT_ALLOWED)
         }
         const ownedItems: Omit<ItemListItem, 'owner'>[] = []
         let cursor: string | null = null
@@ -125,7 +126,7 @@ function ExchangeFormContent({
           ownedItems.push(...page.items)
           if (!page.hasNext) break
           if (!page.nextCursor || seenCursors.has(page.nextCursor)) {
-            throw new Error('내 물품 목록의 다음 페이지를 불러올 수 없습니다.')
+            throw new Error(EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED)
           }
           cursor = page.nextCursor
           seenCursors.add(cursor)
@@ -136,11 +137,7 @@ function ExchangeFormContent({
         setMyItems(ownedItems)
       } catch (cause) {
         if (!active || axios.isCancel(cause)) return
-        if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-          router.replace('/auth/login')
-          return
-        }
-        setError(getErrorMessage(cause, '물품 조회에 실패했습니다.'))
+        setError(getErrorMessage(cause, EXCHANGE_ERRORS.ITEM_LOOKUP_FAILED))
       } finally {
         if (active) setIsLoading(false)
       }
@@ -187,7 +184,7 @@ function ExchangeFormContent({
         )
       })
     ) {
-      setError('수량은 1개 이상, 보유 수량 이하로 선택해주세요.')
+      setError(EXCHANGE_ERRORS.QUANTITY_INVALID)
       return
     }
 
@@ -204,12 +201,8 @@ function ExchangeFormContent({
         accessToken,
       )
     } catch (cause) {
-      if (axios.isAxiosError(cause) && cause.response?.status === 401) {
-        router.replace('/auth/login')
-        return
-      }
       setError(
-        getErrorMessage(cause, '처리에 실패했습니다. 다시 시도해주세요.'),
+        getErrorMessage(cause, EXCHANGE_ERRORS.PROCESS_FAILED),
       )
     } finally {
       submitting.current = false

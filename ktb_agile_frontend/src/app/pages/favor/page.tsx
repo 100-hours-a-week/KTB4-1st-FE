@@ -1,5 +1,6 @@
 'use client'
 
+import { PREFERENCE_ERRORS } from '@/constants/errors/preference'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
@@ -104,15 +105,10 @@ export default function PreferenceSetup() {
           },
         },
       )
-
-      router.replace('/pages/groups')
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        window.sessionStorage.removeItem('accessToken')
-        setErrorMessage('로그인이 필요합니다.')
-        return
-      }
-      setErrorMessage('서버 오류로 저장에 실패했습니다. 다시 시도해주세요')
+      
+      router.replace('/pages/items')
+    } catch {
+      setErrorMessage(PREFERENCE_ERRORS.SAVE_FAILED)
     } finally {
       setIsSubmitting(false)
     }

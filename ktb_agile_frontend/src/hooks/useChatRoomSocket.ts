@@ -1,6 +1,8 @@
+import { CHAT_ERRORS } from '@/constants/errors/chat'
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
+import axios from 'axios'
 
 type ChatRoomSocketMessage = {
   messageId: number
@@ -57,8 +59,24 @@ export function useChatRoomSocket({
 
     const client = new Client({
       brokerURL: `${getWebSocketUrl()}/ws`,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
+      beforeConnect: async () => {
+        const accessToken = window.sessionStorage.getItem('accessToken')
+        try {
+          // HTTP 인증 요청에서 401을 처리한 뒤 최신 토큰으로 연결합니다.
+          await axios.get(`${API_BASE_URL}/users/me/groups`, {
+            headers: { Authorization: `Bearer ${accessToken || ''}` },
+          })
+          const latestToken = window.sessionStorage.getItem('accessToken')
+          if (!latestToken) {
+            await client.deactivate()
+            return
+          }
+          client.connectHeaders = { Authorization: `Bearer ${latestToken}` }
+        } catch {
+          await client.deactivate()
+          setIsConnected(false)
+          onErrorRef.current?.(CHAT_ERRORS.AUTH_FAILED)
+        }
       },
       reconnectDelay: 5000,
       heartbeatIncoming: 10000,
@@ -73,7 +91,7 @@ export function useChatRoomSocket({
                 JSON.parse(frame.body) as ChatRoomSocketMessage,
               )
             } catch {
-              onErrorRef.current?.('수신한 메시지를 처리하지 못했습니다.')
+              onErrorRef.current?.(CHAT_ERRORS.RECEIVED_MESSAGE_INVALID)
             }
           },
         )
@@ -82,12 +100,12 @@ export function useChatRoomSocket({
       onWebSocketClose: () => setIsConnected(false),
       onWebSocketError: () => {
         setIsConnected(false)
-        onErrorRef.current?.('채팅 서버에 연결할 수 없습니다.')
+        onErrorRef.current?.(CHAT_ERRORS.SERVER_UNAVAILABLE)
       },
       onStompError: (frame) => {
         setIsConnected(false)
         onErrorRef.current?.(
-          frame.headers.message || '채팅 연결이 거부되었습니다.',
+          frame.headers.message || CHAT_ERRORS.CONNECTION_REJECTED,
         )
       },
     })

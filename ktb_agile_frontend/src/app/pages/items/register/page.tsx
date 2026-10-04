@@ -1,5 +1,7 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import { Suspense, useEffect, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
@@ -55,7 +57,7 @@ function ItemRegisterContent() {
       } catch (error) {
         if (!axios.isCancel(error)) {
           console.error(error)
-          setModalMessage('그룹 목록을 불러오지 못했습니다. 다시 시도해주세요.')
+          setModalMessage(GROUP_ERRORS.GROUP_LIST_LOAD_FAILED)
         }
       } finally {
         if (!controller.signal.aborted) setIsLoadingGroups(false)
@@ -98,12 +100,12 @@ function ItemRegisterContent() {
 
       if (!moderation.isAppropriate) {
         setModalMessage(
-          moderation.rejectionReason ?? '등록할 수 없는 내용입니다.',
+          moderation.rejectionReason ?? ITEM_ERRORS.CONTENT_REJECTED,
         )
         return
       }
       if (!moderation.checkId) {
-        throw new Error('검수 ID가 반환되지 않았습니다.')
+        throw new Error(ITEM_ERRORS.MODERATION_ID_MISSING)
       }
 
       // 검수를 통과한 경우에만 물품 등록을 요청합니다.
@@ -132,12 +134,7 @@ function ItemRegisterContent() {
       router.push('/pages/items')
     } catch (error) {
       console.error(error)
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        window.sessionStorage.removeItem('accessToken')
-        router.replace('/auth/login')
-        return
-      }
-      setModalMessage('물품 등록에 실패했습니다. 다시 시도해주세요.')
+      setModalMessage(ITEM_ERRORS.REGISTER_FAILED)
     } finally {
       setIsSubmitting(false)
     }

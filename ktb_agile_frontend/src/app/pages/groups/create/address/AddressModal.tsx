@@ -1,8 +1,11 @@
 'use client'
 
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import { useEffect, useState, type AnimationEvent, type SubmitEvent } from 'react'
 import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
+import axios from 'axios'
+import '@/config/api'
 
 export default function AddressModal({
   onClose,
@@ -50,7 +53,7 @@ export default function AddressModal({
       setSearchError(
         error instanceof Error
           ? error.message
-          : '주소 검색 중 오류가 발생했습니다.',
+          : GROUP_ERRORS.ADDRESS_SEARCH_FAILED,
       )
     } finally {
       setIsSearching(false)
@@ -71,16 +74,15 @@ export default function AddressModal({
   }
 
   async function getAddress(keyword: string): Promise<GroupAddressResponse> {
-    const response = await fetch(
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    const response = await axios.get<GroupAddressResponse>(
       `/bff/group?query=${encodeURIComponent(keyword)}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken || ''}` },
+      },
     )
 
-    if (!response.ok) {
-      const error = (await response.json()) as { message?: string }
-      throw new Error(error.message ?? '주소 검색에 실패했습니다.')
-    }
-
-    return (await response.json()) as GroupAddressResponse
+    return response.data
   }
 
   return (
@@ -109,7 +111,7 @@ export default function AddressModal({
               <input
                 type="search"
                 value={query}
-                placeholder="도로명, 건물명, 지번 검색"
+                placeholder="도로명으로 검색"
                 onChange={(event) => {
                   setQuery(event.target.value)
                   setSearchedQuery(null)

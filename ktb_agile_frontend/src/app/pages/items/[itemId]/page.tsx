@@ -1,5 +1,6 @@
 'use client'
 
+import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -10,9 +11,6 @@ import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
 import styles from './page.module.css'
-
-const DEFAULT_ERROR_MESSAGE =
-  '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.'
 
 export default function ItemDetailsPage() {
   const { itemId } = useParams<{ itemId: string }>()
@@ -57,16 +55,10 @@ export default function ItemDetailsPage() {
       } catch (error) {
         if (!isMounted) return
 
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          sessionStorage.removeItem('accessToken')
-          router.replace('/auth/login')
-          return
-        }
-
         setErrorMessage(
           axios.isAxiosError(error) && error.response?.status === 404
-            ? '물품을 찾을 수 없습니다.'
-            : DEFAULT_ERROR_MESSAGE,
+            ? ITEM_ERRORS.NOT_FOUND
+            : ITEM_ERRORS.DETAIL_LOAD_FAILED,
         )
       } finally {
         if (isMounted) {
@@ -115,16 +107,10 @@ export default function ItemDetailsPage() {
     } catch (error) {
       setIsDeleteModalOpen(false)
 
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        sessionStorage.removeItem('accessToken')
-        router.replace('/auth/login')
-        return
-      }
-
       setErrorMessage(
         axios.isAxiosError(error) && error.response?.status === 404
-          ? '삭제할 물품을 찾을 수 없습니다.'
-          : '물품 삭제에 실패했습니다. 다시 시도해주세요.',
+          ? ITEM_ERRORS.DELETE_NOT_FOUND
+          : ITEM_ERRORS.DELETE_FAILED,
       )
     } finally {
       setIsDeleting(false)
