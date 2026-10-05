@@ -38,7 +38,6 @@ export default function GroupList() {
     type GroupListResponse = {
       data: {
         groups: GroupCardData[]
-        nextCursor?: string | null
       }
     }
 
@@ -210,12 +209,24 @@ export default function GroupList() {
             },
           },
         )
+        const leavingGroupId = leaveTarget.groupId
+        setMyGroupList((previous) =>
+          previous
+            ? {
+                ...previous,
+                data: {
+                  ...previous.data,
+                  groups: previous.data.groups.filter(
+                    (group) => group.groupId !== leavingGroupId,
+                  ),
+                },
+              }
+            : previous,
+        )
         setLeaveModalStep(null)
         setLeaveTarget(null)
         setInputKeyword('')
-        setTimeout(()=>location.reload(), 1500)
-        
-        await fetchGroupList()
+        setIsSearchMode(false)
       } catch (error) {
         console.error(error)
       } finally {
