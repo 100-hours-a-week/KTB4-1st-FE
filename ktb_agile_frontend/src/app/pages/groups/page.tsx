@@ -34,6 +34,7 @@ export default function GroupList() {
     const [isJoining, setIsJoining] = useState(false)
     const [openErrorModal, setOpenErrorModal] = useState(false);
     const router = useRouter()
+    const hasNoJoinedGroups = myGroupList?.data.groups.length === 0
   
     type GroupListResponse = {
       data: {
@@ -94,6 +95,8 @@ export default function GroupList() {
     }, [fetchGroupList])
 
     useEffect(() => {
+      if (!hasNoJoinedGroups) return
+
       async function recommendGroupListViewProcess() {
         const accessToken = window.sessionStorage.getItem('accessToken')
 
@@ -121,7 +124,7 @@ export default function GroupList() {
       }
 
       recommendGroupListViewProcess()
-    }, [router])
+    }, [hasNoJoinedGroups, router])
 
     function handleSearch() {
       fetchGroupList(inputKeyword)
@@ -275,6 +278,7 @@ export default function GroupList() {
             <div className={styles.emptyState}>
               <p className={styles.emptyMessage}>{emptyMessage}</p>
 
+              {hasNoJoinedGroups && (
               <section className={styles.recommendations}>
                 <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
                 <p className={styles.recommendationsDescription}>
@@ -289,6 +293,7 @@ export default function GroupList() {
                   ))}
                 </div>
               </section>
+              )}
             </div>
           ) : (
             displayedGroupList.data.groups.map((group) => (
