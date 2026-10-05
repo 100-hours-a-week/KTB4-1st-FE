@@ -23,7 +23,8 @@ import {
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
-    const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
+    const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null)
+    const [searchGroupList, setSearchGroupList] = useState<GroupListResponse | null>(null)
     const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
     const [isSearchMode, setIsSearchMode] = useState(false)
     const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
@@ -64,7 +65,7 @@ export default function GroupList() {
           )
 
           setIsSearchMode(false)
-          setCurGroupList(response.data)
+          setMyGroupList(response.data)
           return
         }
 
@@ -79,7 +80,7 @@ export default function GroupList() {
         )
 
         setIsSearchMode(true)
-        setCurGroupList(response.data)
+        setSearchGroupList(response.data)
       } catch (error) {
         console.error(error)
       }
@@ -158,8 +159,25 @@ export default function GroupList() {
             },
           },
         )
+        const joinedGroup = {
+          ...joinTarget,
+          isJoined: true,
+          memberCount: joinTarget.memberCount + 1,
+        }
+        setMyGroupList((previous) => ({
+          data: {
+            ...previous?.data,
+            groups: [
+              joinedGroup,
+              ...(previous?.data.groups ?? []).filter(
+                (group) => group.groupId !== joinedGroup.groupId,
+              ),
+            ],
+          },
+        }))
         setJoinTarget(null)
-        window.location.reload()
+        setInputKeyword('')
+        setIsSearchMode(false)
       } catch (error) {
         console.error(error)        
         setOpenErrorModal(true)
@@ -205,6 +223,7 @@ export default function GroupList() {
       }
     }
 
+    const displayedGroupList = isSearchMode ? searchGroupList : myGroupList
     const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
 
@@ -228,6 +247,7 @@ export default function GroupList() {
             className={styles.searchInput}
             type="search"
             placeholder="그룹명을 검색"
+            value={inputKeyword}
             onChange={(event)=>setInputKeyword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') handleSearch()
@@ -238,8 +258,8 @@ export default function GroupList() {
           </button>
         </div>
 
-        {curGroupList &&
-          (curGroupList.data.groups.length === 0
+        {displayedGroupList &&
+          (displayedGroupList.data.groups.length === 0
             ? (
             <div className={styles.emptyState}>
               <p className={styles.emptyMessage}>{emptyMessage}</p>
@@ -260,7 +280,7 @@ export default function GroupList() {
               </section>
             </div>
           ) : (
-            curGroupList.data.groups.map((group) => (
+            displayedGroupList.data.groups.map((group) => (
               <GroupCard key={group.groupId} group={group}
                onLeave={() => handleLeave(group)} 
                onJoin={()=>handleJoin(group)}/>
