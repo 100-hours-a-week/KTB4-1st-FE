@@ -1,6 +1,9 @@
 :root {
   --outer-background: #fafafa;
   --surface-background: #ffffff;
+  --app-background:
+    radial-gradient(circle at 98% 3%, rgb(174 235 203 / 44%), transparent 35%),
+    linear-gradient(180deg, #fffff6 0%, #fffdf6 48%, #e6f7ef 100%);
   --foreground: #171717;
   --app-shell-tablet-width: 600px;
   --app-shell-desktop-width: 480px;
@@ -33,7 +36,7 @@ body {
   display: flex;
   justify-content: center;
   color: var(--foreground);
-  background: var(--surface-background);
+  background: var(--app-background);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -47,7 +50,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   flex-direction: column;
-  background: var(--surface-background);
+  background: var(--app-background);
 }
 
 .app-content {

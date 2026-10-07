@@ -6,7 +6,6 @@
     calc(var(--app-content-inline-padding) * -1);
   padding: 12px;
   color: #111827;
-  background: #fff;
 }
 
 .imageArea {

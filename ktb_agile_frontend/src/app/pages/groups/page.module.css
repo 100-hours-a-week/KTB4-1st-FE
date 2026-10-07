@@ -10,9 +10,6 @@
   padding: 34px var(--app-content-inline-padding)
     calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 36px);
   color: var(--group-ink);
-  background:
-    radial-gradient(circle at 98% 3%, rgb(174 235 203 / 44%), transparent 35%),
-    linear-gradient(180deg, #fffff6 0%, #fffdf6 48%, #e6f7ef 100%);
 }
 
 .header {
