@@ -8,12 +8,14 @@ type LikeButtonProps = {
   itemId: number
   isLiked: boolean
   initialLikeCount: number
+  placement?: 'card' | 'title'
 }
 
 export default function LikeButton({
   itemId,
   isLiked,
   initialLikeCount,
+  placement = 'card',
 }: LikeButtonProps) {
   const [liked, setLiked] = useState(isLiked)
   const [count, setCount] = useState(initialLikeCount)
@@ -65,7 +67,9 @@ export default function LikeButton({
     <button
       aria-label={liked ? '좋아요 취소' : '좋아요'}
       aria-pressed={liked}
-      className={`${styles.button}${liked ? ` ${styles.liked}` : ''}`}
+      className={`${styles.button}${liked ? ` ${styles.liked}` : ''}${
+        placement === 'title' ? ` ${styles.titlePlacement}` : ''
+      }`}
       onClick={toggleLike}
       disabled={isPending}
       type="button"

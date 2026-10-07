@@ -21,6 +21,14 @@
     transform 160ms ease;
 }
 
+.titlePlacement {
+  position: relative;
+  top: auto;
+  right: auto;
+  flex: 0 0 52px;
+  margin: 0;
+}
+
 .button svg {
   width: 38px;
   height: 38px;

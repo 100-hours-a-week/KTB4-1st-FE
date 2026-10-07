@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
+import LikeButton from '@/components/items/like/LikeButton'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
@@ -144,7 +145,15 @@ export default function ItemDetailsPage() {
 
         {item ? (
           <main className={styles.content}>
-            <h1 className={styles.title}>{item.title}</h1>
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>{item.title}</h1>
+              <LikeButton
+                itemId={item.itemId}
+                isLiked={item.isLiked}
+                initialLikeCount={item.likeCount}
+                placement="title"
+              />
+            </div>
             <p className={styles.meta}>
               등록자: {item.owner.nickname} · 그룹: {groupNames || '없음'} ·{' '}
               {formatRelativeTime(item.createdAt)}
