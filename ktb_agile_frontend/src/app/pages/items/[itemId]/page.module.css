@@ -75,6 +75,13 @@
   letter-spacing: -0.04em;
 }
 
+.viewCount {
+  margin-top: 4px;
+  color: #858b95;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .meta {
   margin-top: 4px;
   color: #858b95;

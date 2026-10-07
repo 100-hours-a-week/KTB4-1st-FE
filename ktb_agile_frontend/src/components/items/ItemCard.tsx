@@ -29,6 +29,7 @@ export default function ItemCard({ item }: ItemCardProps) {
           <p className={styles.meta}>
             <span>수량: {item.quantity}개</span>
             <span>등록자: {item.owner.nickname}</span>
+            <span>조회 수 : {item.viewCount}</span>
             <span className={styles.time}>
               {formatRelativeTime(item.createdAt)}
             </span>
