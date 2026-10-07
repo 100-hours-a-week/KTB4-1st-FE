@@ -18,7 +18,7 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
   const requestUrl = request.url?.split('?')[0] ?? ''
   const isBffRequest =
-    ['/bff/group', '/bff/chat-rooms'].includes(requestUrl) ||
+    ['/bff/group', '/bff/chat-rooms', '/bff/my-items'].includes(requestUrl) ||
     requestUrl.startsWith('/bff/like/')
   const hasAccessToken = request.headers.get('Authorization')
 
