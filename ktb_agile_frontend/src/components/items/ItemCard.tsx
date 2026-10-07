@@ -2,6 +2,7 @@ import type { ItemListItem } from '@/types/item'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
 import styles from './ItemCard.module.css'
 import Link from 'next/link'
+import LikeButton from './like/LikeButton'
 
 type ItemCardProps = {
   item: ItemListItem
@@ -11,8 +12,8 @@ export default function ItemCard({ item }: ItemCardProps) {
   const isAvailable = item.itemState === 'AVAILABLE'
 
   return (
-    <Link href={`/pages/items/${item.itemId}`}>
-      <article className={styles.card}>
+    <article className={styles.card}>
+      <Link className={styles.link} href={`/pages/items/${item.itemId}`}>
         <div
           className={styles.thumbnail}
           style={
@@ -41,7 +42,12 @@ export default function ItemCard({ item }: ItemCardProps) {
             {getItemStateLabel(item.itemState)}
           </span>
         </div>
-      </article>
-    </Link>
+      </Link>
+      <LikeButton
+        itemId={item.itemId}
+        isLiked={item.isLiked}
+        initialLikeCount={item.likeCount}
+      />
+    </article>
   )
 }
