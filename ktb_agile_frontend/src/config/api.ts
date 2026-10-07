@@ -16,9 +16,10 @@ let refreshPromise: Promise<string> | null = null
 
 function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
-  const isBffRequest = ['/bff/group', '/bff/chat-rooms'].includes(
-    request.url?.split('?')[0] ?? '',
-  )
+  const requestUrl = request.url?.split('?')[0] ?? ''
+  const isBffRequest =
+    ['/bff/group', '/bff/chat-rooms'].includes(requestUrl) ||
+    requestUrl.startsWith('/bff/like/')
   const hasAccessToken = request.headers.get('Authorization')
 
   return (isBackendRequest || isBffRequest) && hasAccessToken

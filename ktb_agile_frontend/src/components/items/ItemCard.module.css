@@ -1,4 +1,5 @@
 .card {
+  position: relative;
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
   gap: 16px;
@@ -7,6 +8,10 @@
   border: 1px solid #e1e5ea;
   border-radius: 16px;
   background: #fff;
+}
+
+.link {
+  display: contents;
 }
 
 .thumbnail {
@@ -25,6 +30,7 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
+  padding-right: 48px;
 }
 
 .title {
@@ -103,5 +109,9 @@
 
   .title {
     font-size: 15px;
+  }
+
+  .content {
+    padding-right: 42px;
   }
 }
