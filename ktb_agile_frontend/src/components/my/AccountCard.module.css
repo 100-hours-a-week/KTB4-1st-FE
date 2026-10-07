@@ -1,0 +1,48 @@
+.card {
+  display: flex;
+  min-height: 86px;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  border-radius: 50%;
+  background: #a3a3a3;
+}
+
+.details {
+  min-width: 0;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.name {
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.logout {
+  padding: 4px 8px;
+  border: 1px solid #ff5a5a;
+  border-radius: 6px;
+  color: #f03b3b;
+  background: #ffffff;
+  font: inherit;
+  font-size: 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.description {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.35;
+}
