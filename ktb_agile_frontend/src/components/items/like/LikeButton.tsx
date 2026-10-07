@@ -78,8 +78,8 @@ export default function LikeButton({
         <svg viewBox="0 0 128 128">
           <path
             className={styles.heart}
-            transform="translate(0 5) scale(1 0.92)"
-            d="M64 116C53 108 10 78 10 46 10 24 23 11 43 11c10 0 17 9 21 23 5-14 13-23 23-23 19 0 32 13 31 35-1 32-44 62-54 70Z"
+            transform="translate(0 5) scale(1 0.90)"
+            d="M64 116c-5 0-9-2-14-6C27 97 7 72 7 45c0-20 14-37 34-37 11 0 19 9 23 26 4-17 12-26 23-26 20 0 34 17 34 37 0 27-20 52-43 65-5 4-9 6-14 6Z"
           />
         </svg>
         <span>{count}</span>
