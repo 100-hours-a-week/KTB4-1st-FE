@@ -2,6 +2,7 @@
 
 import axios from 'axios'
 import { useState } from 'react'
+import ModalDefault from '@/components/common/modal/Default'
 import styles from './LikeButton.module.css'
 
 type LikeButtonProps = {
@@ -20,6 +21,7 @@ export default function LikeButton({
   const [liked, setLiked] = useState(isLiked)
   const [count, setCount] = useState(initialLikeCount)
   const [isPending, setIsPending] = useState(false)
+  const [hasRequestError, setHasRequestError] = useState(false)
 
   async function toggleLike() {
     if (isPending) return
@@ -58,30 +60,37 @@ export default function LikeButton({
       setLiked(!nextLiked)
       setCount(previousCount)
       console.error('물품 좋아요 요청에 실패했습니다.', error)
+      setHasRequestError(true)
     } finally {
       setIsPending(false)
     }
   }
 
   return (
-    <button
-      aria-label={liked ? '좋아요 취소' : '좋아요'}
-      aria-pressed={liked}
-      className={`${styles.button}${liked ? ` ${styles.liked}` : ''}${
-        placement === 'title' ? ` ${styles.titlePlacement}` : ''
-      }`}
-      onClick={toggleLike}
-      disabled={isPending}
-      type="button"
-    >
-      <svg aria-hidden="true" viewBox="0 0 128 128">
-        <path
-          className={styles.heart}
-          transform="translate(0 5) scale(1 0.92)"
-          d="M64 116C53 108 10 78 10 46 10 24 23 11 43 11c10 0 17 9 21 23 5-14 13-23 23-23 19 0 32 13 31 35-1 32-44 62-54 70Z"
+    <>
+      <button
+        className={`${styles.button}${liked ? ` ${styles.liked}` : ''}${
+          placement === 'title' ? ` ${styles.titlePlacement}` : ''
+        }`}
+        onClick={toggleLike}
+        disabled={isPending}
+        type="button"
+      >
+        <svg viewBox="0 0 128 128">
+          <path
+            className={styles.heart}
+            transform="translate(0 5) scale(1 0.92)"
+            d="M64 116C53 108 10 78 10 46 10 24 23 11 43 11c10 0 17 9 21 23 5-14 13-23 23-23 19 0 32 13 31 35-1 32-44 62-54 70Z"
+          />
+        </svg>
+        <span>{count}</span>
+      </button>
+      {hasRequestError && (
+        <ModalDefault
+          message="좋아요 버튼에 문제가 생겼습니다. 조금만 기다렸다가 다시 시도해주세요."
+          onConfirm={() => setHasRequestError(false)}
         />
-      </svg>
-      <span>{count}</span>
-    </button>
+      )}
+    </>
   )
 }
