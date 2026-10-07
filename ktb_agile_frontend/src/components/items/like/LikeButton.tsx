@@ -59,7 +59,6 @@ export default function LikeButton({
     } catch (error) {
       setLiked(!nextLiked)
       setCount(previousCount)
-      console.error('물품 좋아요 요청에 실패했습니다.', error)
       setHasRequestError(true)
     } finally {
       setIsPending(false)
@@ -87,7 +86,8 @@ export default function LikeButton({
       </button>
       {hasRequestError && (
         <ModalDefault
-          message="좋아요 버튼에 문제가 생겼습니다. 조금만 기다렸다가 다시 시도해주세요."
+          message="좋아요 버튼에 문제가 생겼습니다.
+          조금만 기다렸다가 다시 시도해주세요."
           onConfirm={() => setHasRequestError(false)}
         />
       )}
