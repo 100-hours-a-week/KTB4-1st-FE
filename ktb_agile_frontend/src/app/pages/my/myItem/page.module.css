@@ -225,6 +225,20 @@
   margin-top: 6px;
 }
 
+.registerButton {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 10px 22px;
+  border-radius: 999px;
+  color: #fffff6;
+  background: #3d5146;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .moreButton {
   display: block;
   margin: 22px auto 0;

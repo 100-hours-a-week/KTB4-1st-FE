@@ -180,6 +180,12 @@ export default function MyItemPage() {
             </span>
             <h2>아직 올린 상품이 없어요</h2>
             <p>첫 물품을 등록하고 이웃과 교환해 보세요.</p>
+            <Link
+              className={styles.registerButton}
+              href="/pages/items/register"
+            >
+              물품 등록하기
+            </Link>
           </div>
         )}
 
