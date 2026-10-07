@@ -1,0 +1,71 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px 28px;
+  text-align: center;
+}
+
+.avatar {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border-radius: 50%;
+  color: #3d5146;
+  background: #d9f3e8;
+}
+
+.avatar svg {
+  width: 36px;
+  height: 36px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  margin-top: 16px;
+}
+
+.name {
+  font-size: 21px;
+  line-height: 1.35;
+  letter-spacing: -0.04em;
+}
+
+.description {
+  margin-top: 6px;
+  color: #65776c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.logout {
+  margin-top: 18px;
+  padding: 7px 15px;
+  border: 0;
+  border-radius: 999px;
+  color: #3d5146;
+  background: #e6f7ef;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.logout:focus-visible {
+  outline: 2px solid #3d5146;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .logout:hover {
+    background: #aeebcb;
+  }
+}

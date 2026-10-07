@@ -6,7 +6,6 @@
     calc(var(--app-content-inline-padding) * -1);
   padding: 24px 22px;
   color: #111827;
-  background: #fff;
 }
 
 .header {

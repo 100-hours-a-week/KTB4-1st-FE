@@ -5,7 +5,6 @@
   margin: calc(var(--app-content-block-padding) * -1)
     calc(var(--app-content-inline-padding) * -1);
   color: #111827;
-  background: #fff;
 }
 
 .header {
