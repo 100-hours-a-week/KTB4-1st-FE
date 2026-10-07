@@ -49,6 +49,9 @@ export default function ItemList() {
       return
     }
 
+    const requestedGroupId = Number(
+      new URLSearchParams(window.location.search).get('groupId'),
+    )
     const controller = new AbortController()
 
     async function fetchJoinedGroups() {
@@ -71,7 +74,11 @@ export default function ItemList() {
         )
 
         setJoinedGroups(groups)
-        setSelectedGroupId(groups[0]?.groupId ?? null)
+        setSelectedGroupId(
+          groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+            groups[0]?.groupId ??
+            null,
+        )
       } catch (error) {
         if (!axios.isCancel(error)) {
           console.error(error)
