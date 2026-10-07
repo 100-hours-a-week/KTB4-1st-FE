@@ -23,7 +23,8 @@ import {
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
-    const [curGroupList, setCurGroupList] = useState<GroupListResponse | null>(null)
+    const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null)
+    const [searchGroupList, setSearchGroupList] = useState<GroupListResponse | null>(null)
     const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
     const [isSearchMode, setIsSearchMode] = useState(false)
     const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
@@ -33,11 +34,11 @@ export default function GroupList() {
     const [isJoining, setIsJoining] = useState(false)
     const [openErrorModal, setOpenErrorModal] = useState(false);
     const router = useRouter()
+    const hasNoJoinedGroups = myGroupList?.data.groups.length === 0
   
     type GroupListResponse = {
       data: {
         groups: GroupCardData[]
-        nextCursor?: string | null
       }
     }
 
@@ -64,7 +65,7 @@ export default function GroupList() {
           )
 
           setIsSearchMode(false)
-          setCurGroupList(response.data)
+          setMyGroupList(response.data)
           return
         }
 
@@ -79,7 +80,7 @@ export default function GroupList() {
         )
 
         setIsSearchMode(true)
-        setCurGroupList(response.data)
+        setSearchGroupList(response.data)
       } catch (error) {
         console.error(error)
       }
@@ -94,6 +95,8 @@ export default function GroupList() {
     }, [fetchGroupList])
 
     useEffect(() => {
+      if (!hasNoJoinedGroups) return
+
       async function recommendGroupListViewProcess() {
         const accessToken = window.sessionStorage.getItem('accessToken')
 
@@ -121,7 +124,7 @@ export default function GroupList() {
       }
 
       recommendGroupListViewProcess()
-    }, [router])
+    }, [hasNoJoinedGroups, router])
 
     function handleSearch() {
       fetchGroupList(inputKeyword)
@@ -158,8 +161,25 @@ export default function GroupList() {
             },
           },
         )
+        const joinedGroup = {
+          ...joinTarget,
+          isJoined: true,
+          memberCount: joinTarget.memberCount + 1,
+        }
+        setMyGroupList((previous) => ({
+          data: {
+            ...previous?.data,
+            groups: [
+              joinedGroup,
+              ...(previous?.data.groups ?? []).filter(
+                (group) => group.groupId !== joinedGroup.groupId,
+              ),
+            ],
+          },
+        }))
         setJoinTarget(null)
-        window.location.reload()
+        setInputKeyword('')
+        setIsSearchMode(false)
       } catch (error) {
         console.error(error)        
         setOpenErrorModal(true)
@@ -192,12 +212,24 @@ export default function GroupList() {
             },
           },
         )
+        const leavingGroupId = leaveTarget.groupId
+        setMyGroupList((previous) =>
+          previous
+            ? {
+                ...previous,
+                data: {
+                  ...previous.data,
+                  groups: previous.data.groups.filter(
+                    (group) => group.groupId !== leavingGroupId,
+                  ),
+                },
+              }
+            : previous,
+        )
         setLeaveModalStep(null)
         setLeaveTarget(null)
         setInputKeyword('')
-        setTimeout(()=>location.reload(), 1500)
-        
-        await fetchGroupList()
+        setIsSearchMode(false)
       } catch (error) {
         console.error(error)
       } finally {
@@ -205,6 +237,7 @@ export default function GroupList() {
       }
     }
 
+    const displayedGroupList = isSearchMode ? searchGroupList : myGroupList
     const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
 
@@ -228,6 +261,7 @@ export default function GroupList() {
             className={styles.searchInput}
             type="search"
             placeholder="그룹명을 검색"
+            value={inputKeyword}
             onChange={(event)=>setInputKeyword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') handleSearch()
@@ -238,12 +272,13 @@ export default function GroupList() {
           </button>
         </div>
 
-        {curGroupList &&
-          (curGroupList.data.groups.length === 0
+        {displayedGroupList &&
+          (displayedGroupList.data.groups.length === 0
             ? (
             <div className={styles.emptyState}>
               <p className={styles.emptyMessage}>{emptyMessage}</p>
 
+              {hasNoJoinedGroups && (
               <section className={styles.recommendations}>
                 <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
                 <p className={styles.recommendationsDescription}>
@@ -258,9 +293,10 @@ export default function GroupList() {
                   ))}
                 </div>
               </section>
+              )}
             </div>
           ) : (
-            curGroupList.data.groups.map((group) => (
+            displayedGroupList.data.groups.map((group) => (
               <GroupCard key={group.groupId} group={group}
                onLeave={() => handleLeave(group)} 
                onJoin={()=>handleJoin(group)}/>
