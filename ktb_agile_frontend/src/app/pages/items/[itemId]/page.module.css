@@ -57,12 +57,28 @@
   padding: 14px 0 32px;
 }
 
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .title {
+  min-width: 0;
+  flex: 1;
   overflow-wrap: anywhere;
   font-size: 22px;
   font-weight: 750;
   line-height: 1.35;
   letter-spacing: -0.04em;
+}
+
+.viewCount {
+  margin-top: 4px;
+  color: #858b95;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .meta {

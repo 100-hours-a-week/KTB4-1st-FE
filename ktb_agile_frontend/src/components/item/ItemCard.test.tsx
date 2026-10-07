@@ -14,6 +14,7 @@ const item: ItemListItem = {
   itemState: 'AVAILABLE',
   thumbnailImageUrl: null,
   likeCount: 0,
+  viewCount: 0,
   exchangeRequestCount: 0,
   isLiked: false,
   createdAt: new Date().toISOString(),
