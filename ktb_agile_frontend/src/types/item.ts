@@ -45,6 +45,19 @@ export type ItemListResponse = {
   error: null
 }
 
+export type MyItemListItem = Omit<ItemListItem, 'owner' | 'viewCount'> & {
+  groups: { groupId: number; groupName: string }[]
+}
+
+export type MyItemListResponse = {
+  data: {
+    items: MyItemListItem[]
+    nextCursor: string | null
+    hasNext: boolean
+  } | null
+  error: { code: string; message: string; details: unknown[] } | null
+}
+
 export type ItemDetail = {
   itemId: number
   groups: {

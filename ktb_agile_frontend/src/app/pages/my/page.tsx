@@ -24,7 +24,7 @@ export default function MyPage() {
           <nav>
             <ul className={styles.linkList}>
               {myPageLinks.map(({ title, href }) => (
-                <li key={href}>
+                <li key={title}>
                   <Link className={styles.link} href={href}>
                     <span className={styles.linkTitle}>{title}</span>
                     <span className={styles.arrow}>
