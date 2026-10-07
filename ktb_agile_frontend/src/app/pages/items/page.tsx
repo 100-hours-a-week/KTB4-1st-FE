@@ -8,7 +8,7 @@ import { API_BASE_URL } from '@/config/api'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import Navbar from '@/components/common/navbar/Navbar'
-import ItemCard from '@/components/items/ItemCard'
+import ItemCard from '@/components/item/ItemCard'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import styles from './page.module.css'
 

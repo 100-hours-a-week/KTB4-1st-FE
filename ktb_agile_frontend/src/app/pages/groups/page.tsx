@@ -9,8 +9,8 @@ import { useCallback, useState } from 'react'
 import { useEffect } from 'react'
 import type { GroupCardData } from '@/types/group'
 import GroupCard from '@/components/groups/GroupCard'
-import LeaveConfirmModal from './modal/LeaveConfirmModal'
-import LeaveFinalConfirmModal from './modal/LeaveFinalConfirmModal'
+import LeaveConfirmModal from '@/components/groups/modal/LeaveConfirmModal'
+import LeaveFinalConfirmModal from '@/components/groups/modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
@@ -19,7 +19,7 @@ import {
   NO_GROUP_MSG,
   NO_SEARCH_RESULT_MSG,
   RECOMMENDED_GROUP_DESCRIPTION,
-} from './constants/group'
+} from '@/constants/group'
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')

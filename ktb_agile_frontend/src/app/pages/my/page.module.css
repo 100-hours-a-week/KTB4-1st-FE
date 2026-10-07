@@ -1,0 +1,25 @@
+.page {
+  display: flex;
+  width: 100%;
+  min-height: calc(100dvh - 20px);
+  flex: 1;
+  flex-direction: column;
+  margin-top: -28px;
+  margin-bottom: -48px;
+  padding-bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 12px);
+}
+
+.activity {
+  margin-top: 16px;
+}
+
+.activity h1 {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.footer {
+  margin-top: auto;
+  text-align: center;
+}
