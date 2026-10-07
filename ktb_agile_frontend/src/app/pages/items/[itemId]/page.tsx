@@ -145,6 +145,7 @@ export default function ItemDetailsPage() {
         {item ? (
           <main className={styles.content}>
             <h1 className={styles.title}>{item.title}</h1>
+            <p className={styles.viewCount}>조회 수 : {item.viewCount}</p>
             <p className={styles.meta}>
               등록자: {item.owner.nickname} · 그룹: {groupNames || '없음'} ·{' '}
               {formatRelativeTime(item.createdAt)}

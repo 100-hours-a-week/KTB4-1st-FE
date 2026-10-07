@@ -30,6 +30,7 @@ export type ItemListItem = {
   itemState: ItemState
   thumbnailImageUrl: string | null
   likeCount: number
+  viewCount: number
   exchangeRequestCount: number
   isLiked: boolean
   createdAt: string
