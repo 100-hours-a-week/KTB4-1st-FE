@@ -170,7 +170,6 @@ export default function ExchangeItemsPage() {
           </button>
         )}
       </section>
-      <Navbar />
     </>
   )
 }

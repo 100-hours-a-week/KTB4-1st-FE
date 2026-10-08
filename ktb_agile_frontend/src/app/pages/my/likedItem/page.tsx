@@ -184,7 +184,6 @@ export default function LikedItemPage() {
           </button>
         )}
       </section>
-      <Navbar />
     </>
   )
 }
