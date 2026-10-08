@@ -1,0 +1,137 @@
+.card {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 156px;
+  padding: 13px;
+  border: 1px solid rgb(61 81 70 / 10%);
+  border-radius: 20px;
+  background: rgb(255 255 246 / 90%);
+  box-shadow: 0 8px 24px rgb(61 81 70 / 7%);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.thumbnail {
+  display: grid;
+  width: 92px;
+  min-height: 128px;
+  place-items: center;
+  border-radius: 14px;
+  color: #3d5146;
+  background: linear-gradient(135deg, #d9f3e8, #aeebcb);
+  background-position: center;
+  background-size: cover;
+}
+
+.thumbnail svg {
+  width: 38px;
+  height: 38px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+.cardContent {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.cardHeading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.groupName {
+  min-width: 0;
+  overflow: hidden;
+  color: #64796b;
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 5px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.available {
+  color: #315a44;
+  background: #d9f3e8;
+}
+
+.unavailable {
+  color: #5c615d;
+  background: #ecefeb;
+}
+
+.cardTitle {
+  margin-top: 9px;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview {
+  display: -webkit-box;
+  margin-top: 4px;
+  overflow: hidden;
+  color: #6b756e;
+  font-size: 12px;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 10px;
+  color: #4b6253;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+@media (max-width: 359px) {
+  .card {
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .thumbnail {
+    width: 76px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgb(61 81 70 / 12%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
