@@ -2,7 +2,6 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
-import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
@@ -131,9 +130,13 @@ export default function ItemDetailsPage() {
               : undefined
           }
         >
-          <Link className={styles.backButton} href="/pages/items">
+          <button
+            className={styles.backButton}
+            type="button"
+            onClick={() => router.back()}
+          >
             ‹
-          </Link>
+          </button>
           {!primaryImage && !isLoading && (
             <svg className={styles.placeholderIcon} viewBox="0 0 24 24">
               <rect x="3.5" y="4" width="17" height="16" rx="2" />

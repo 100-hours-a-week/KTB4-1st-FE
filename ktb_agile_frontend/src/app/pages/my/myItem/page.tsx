@@ -12,12 +12,8 @@ import styles from './page.module.css'
 
 function MyItemCard({ item }: { item: MyItemListItem }) {
   const isAvailable = item.itemState === 'AVAILABLE'
-  const firstGroupId = item.groups[0]?.groupId
-  const href =
-    item.groups.length > 1 && firstGroupId !== undefined
-      ? `/pages/items?groupId=${firstGroupId}`
-      : `/pages/items/${item.itemId}`
-
+  const href = `/pages/items/${item.itemId}`
+  
   return (
     <Link className={styles.card} href={href}>
       <div
