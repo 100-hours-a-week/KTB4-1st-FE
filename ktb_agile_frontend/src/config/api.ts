@@ -18,8 +18,12 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
   const requestUrl = request.url?.split('?')[0] ?? ''
   const isBffRequest =
-    ['/bff/group', '/bff/chat-rooms', '/bff/my-items'].includes(requestUrl) ||
-    requestUrl.startsWith('/bff/like/')
+    [
+      '/bff/group',
+      '/bff/chat-rooms',
+      '/bff/my-items',
+      '/bff/liked-items',
+    ].includes(requestUrl) || requestUrl.startsWith('/bff/like/')
   const hasAccessToken = request.headers.get('Authorization')
 
   return (isBackendRequest || isBffRequest) && hasAccessToken
@@ -115,8 +119,5 @@ if (typeof window !== 'undefined') {
     return request
   })
 
-  axios.interceptors.response.use(
-    (response) => response,
-    handleRequestError,
-  )
+  axios.interceptors.response.use((response) => response, handleRequestError)
 }
