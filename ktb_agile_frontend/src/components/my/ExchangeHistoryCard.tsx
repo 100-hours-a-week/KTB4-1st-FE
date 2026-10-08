@@ -33,13 +33,25 @@ function formatExchangeDate(value: string) {
 
 export default function ExchangeHistoryCard({
   exchange,
+  currentUserId,
 }: {
   exchange: ExchangeHistory
+  currentUserId: number
 }) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [representativeItem, ...otherItems] = exchange.offeredItems
-  const offeredTitle = representativeItem
-    ? `${representativeItem.title}${otherItems.length ? ` 외 ${otherItems.length}개` : ''}`
+  const [expandedSide, setExpandedSide] = useState<'mine' | 'partner' | null>(
+    null,
+  )
+  const exchangedItems = [exchange.requestedItem, ...exchange.offeredItems]
+  const myItems = exchangedItems.filter(
+    (item) => item.owner.userId === currentUserId,
+  )
+  const partnerItems = exchangedItems.filter(
+    (item) => item.owner.userId !== currentUserId,
+  )
+  const [myRepresentative, ...otherMyItems] = myItems
+  const [partnerRepresentative, ...otherPartnerItems] = partnerItems
+  const myItemsTitle = myRepresentative
+    ? `${myRepresentative.title}${otherMyItems.length ? ` 외 ${otherMyItems.length}개` : ''}`
     : '내 물품 정보 없음'
   const statusLabel =
     exchange.exchangeStatus === 'COMPLETED'
@@ -48,19 +60,19 @@ export default function ExchangeHistoryCard({
 
   return (
     <article className={styles.card}>
-      <h2 className={styles.cardTitle}>{offeredTitle}</h2>
+      <h2 className={styles.cardTitle}>{myItemsTitle}</h2>
       <div className={styles.exchangePair}>
         <div className={styles.itemSide}>
           <span className={styles.sideLabel}>내 물품</span>
-          {representativeItem ? (
+          {myRepresentative ? (
             <>
-              <ItemThumbnail item={representativeItem} />
+              <ItemThumbnail item={myRepresentative} />
               <strong className={styles.itemTitle}>
-                {representativeItem.title}
+                {myRepresentative.title}
               </strong>
               <span className={styles.itemMeta}>
-                {representativeItem.owner.nickname} ·{' '}
-                {representativeItem.quantity}개
+                {myRepresentative.owner.nickname} · {myRepresentative.quantity}
+                개
               </span>
             </>
           ) : (
@@ -70,14 +82,20 @@ export default function ExchangeHistoryCard({
         <span className={styles.exchangeArrow}>⇄</span>
         <div className={styles.itemSide}>
           <span className={styles.sideLabel}>상대 물품</span>
-          <ItemThumbnail item={exchange.requestedItem} />
-          <strong className={styles.itemTitle}>
-            {exchange.requestedItem.title}
-          </strong>
-          <span className={styles.itemMeta}>
-            {exchange.requestedItem.owner.nickname} ·{' '}
-            {exchange.requestedItem.quantity}개
-          </span>
+          {partnerRepresentative ? (
+            <>
+              <ItemThumbnail item={partnerRepresentative} />
+              <strong className={styles.itemTitle}>
+                {partnerRepresentative.title}
+              </strong>
+              <span className={styles.itemMeta}>
+                {partnerRepresentative.owner.nickname} ·{' '}
+                {partnerRepresentative.quantity}개
+              </span>
+            </>
+          ) : (
+            <span className={styles.itemTitle}>물품 정보 없음</span>
+          )}
         </div>
       </div>
       <div className={styles.cardFooter}>
@@ -86,34 +104,49 @@ export default function ExchangeHistoryCard({
           {formatExchangeDate(exchange.exchangedAt)}
         </span>
       </div>
-      {otherItems.length > 0 && (
-        <div className={styles.details}>
-          <button
-            className={styles.detailsButton}
-            type="button"
-            onClick={() => setIsExpanded((current) => !current)}
-          >
-            함께 교환한 내 물품 {otherItems.length}개
-            <span className={isExpanded ? styles.chevronOpen : styles.chevron}>
-              ⌄
-            </span>
-          </button>
-          {isExpanded && (
-            <ul className={styles.detailsList}>
-              {otherItems.map((item) => (
-                <li className={styles.detailItem} key={item.itemId}>
-                  <ItemThumbnail item={item} />
-                  <div>
-                    <strong>{item.title}</strong>
-                    <span>
-                      {item.owner.nickname} · {item.quantity}개
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {[
+        { side: 'mine' as const, label: '내 물품', items: otherMyItems },
+        {
+          side: 'partner' as const,
+          label: '상대 물품',
+          items: otherPartnerItems,
+        },
+      ].map(({ side, label, items }) =>
+        items.length > 0 ? (
+          <div className={styles.details} key={side}>
+            <button
+              className={styles.detailsButton}
+              type="button"
+              onClick={() =>
+                setExpandedSide((current) => (current === side ? null : side))
+              }
+            >
+              함께 교환한 {label} {items.length}개
+              <span
+                className={
+                  expandedSide === side ? styles.chevronOpen : styles.chevron
+                }
+              >
+                ⌄
+              </span>
+            </button>
+            {expandedSide === side && (
+              <ul className={styles.detailsList}>
+                {items.map((item) => (
+                  <li className={styles.detailItem} key={item.itemId}>
+                    <ItemThumbnail item={item} />
+                    <div>
+                      <strong>{item.title}</strong>
+                      <span>
+                        {item.owner.nickname} · {item.quantity}개
+                      </span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null,
       )}
     </article>
   )

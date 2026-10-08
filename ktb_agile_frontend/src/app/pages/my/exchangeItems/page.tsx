@@ -10,12 +10,19 @@ import type {
   ExchangeHistory,
   ExchangedItemsResponse,
 } from '@/types/exchangedItem'
+import { getUserIdFromAccessToken } from '@/utils/auth'
 import '@/config/api'
 import styles from './page.module.css'
 
 export default function ExchangeItemsPage() {
   const router = useRouter()
   const [exchanges, setExchanges] = useState<ExchangeHistory[]>([])
+  const currentUserId =
+    typeof window === 'undefined'
+      ? null
+      : getUserIdFromAccessToken(
+          window.sessionStorage.getItem('accessToken') ?? '',
+        )
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasNext, setHasNext] = useState(false)
@@ -27,6 +34,11 @@ export default function ExchangeItemsPage() {
     const accessToken = window.sessionStorage.getItem('accessToken')
 
     if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    if (currentUserId === null) {
       router.replace('/auth/login')
       return
     }
@@ -94,7 +106,7 @@ export default function ExchangeItemsPage() {
 
     void loadExchanges()
     return () => controller.abort()
-  }, [cursor, retryCount, router])
+  }, [currentUserId, cursor, retryCount, router])
 
   return (
     <>
@@ -109,11 +121,14 @@ export default function ExchangeItemsPage() {
           <span />
         </header>
 
-        {exchanges.length > 0 && (
+        {currentUserId !== null && exchanges.length > 0 && (
           <ul className={styles.exchangeList}>
             {exchanges.map((exchange) => (
               <li key={exchange.exchangeRequestId}>
-                <ExchangeHistoryCard exchange={exchange} />
+                <ExchangeHistoryCard
+                  exchange={exchange}
+                  currentUserId={currentUserId}
+                />
               </li>
             ))}
           </ul>

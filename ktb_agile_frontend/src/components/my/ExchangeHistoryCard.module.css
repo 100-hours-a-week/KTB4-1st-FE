@@ -117,6 +117,10 @@
   box-shadow: 0 5px 14px rgb(17 39 27 / 6%);
 }
 
+.details + .details {
+  margin-top: 16px;
+}
+
 .detailsButton {
   display: flex;
   width: 100%;
