@@ -7,7 +7,7 @@ import styles from './page.module.css'
 // 마이페이지에 표시할 항목은 제목과 이동 경로만 여기에서 관리합니다.
 const myPageLinks = [
   { title: '내가 올린 상품 보기', href: '/pages/my/myItem' },
-  { title: '교환한 물품 내역 보기', href: '' },
+  { title: '교환한 물품 내역 보기', href: '/pages/my/exchangeItems' },
   { title: '관심 있어 한 물품 보기', href: '/pages/my/likedItem' },
 ] as const
 
