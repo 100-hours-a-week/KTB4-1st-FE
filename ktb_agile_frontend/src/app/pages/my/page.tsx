@@ -8,7 +8,7 @@ import styles from './page.module.css'
 const myPageLinks = [
   { title: '내가 올린 상품 보기', href: '/pages/my/myItem' },
   { title: '교환한 물품 내역 보기', href: '' },
-  { title: '관심 있어 한 물품 보기', href: '' },
+  { title: '관심 있어 한 물품 보기', href: '/pages/my/likedItem' },
 ] as const
 
 export default function MyPage() {
@@ -27,9 +27,7 @@ export default function MyPage() {
                 <li key={title}>
                   <Link className={styles.link} href={href}>
                     <span className={styles.linkTitle}>{title}</span>
-                    <span className={styles.arrow}>
-                      ↗
-                    </span>
+                    <span className={styles.arrow}>↗</span>
                   </Link>
                 </li>
               ))}
