@@ -28,6 +28,188 @@
   border-radius: 50%;
   font-size: 24px;
 }
+.closeButton {
+  color: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.requestPage {
+  color: #3d5146;
+  background: linear-gradient(180deg, #fffff6 0%, #e6f7ef 100%);
+}
+
+.requestPage .header {
+  justify-content: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.requestPage .header h1 {
+  font-size: 24px;
+  letter-spacing: -0.04em;
+}
+
+.requestPage .closeButton {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border: 0;
+  box-shadow: 0 4px 12px rgb(61 81 70 / 8%);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.body {
+  position: relative;
+  padding: 4px 18px 24px;
+  border: 1px solid #94e3c0;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgb(61 81 70 / 10%);
+  animation: body-enter 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.body::before {
+  position: absolute;
+  top: -1px;
+  right: 20px;
+  left: 20px;
+  height: 4px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, #94e3c0, #aeebcb, #ffad94);
+  transform-origin: left;
+  animation: border-enter 750ms 150ms ease-out both;
+  content: '';
+}
+
+.requestPage .section h2,
+.requestPage .info h3 {
+  color: #3d5146;
+}
+
+.requestPage .groupField,
+.requestPage .meta,
+.requestPage .description,
+.requestPage .hint,
+.requestPage .message {
+  color: #64786c;
+}
+
+.requestPage .groupField select {
+  border-color: #d9f3e8;
+  background: #e6f7ef;
+}
+
+.requestPage .targetCard {
+  border: 1px solid #ffe8e1;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(61 81 70 / 10%);
+}
+
+.requestPage .list {
+  border-color: #d9f3e8;
+  background: #fff;
+  box-shadow: 0 8px 20px rgb(61 81 70 / 10%);
+}
+
+.requestPage .offerCard,
+.requestPage .list .badge,
+.requestPage .list .quantity button,
+.requestPage .list .quantity span {
+  border-color: #aeebcb;
+  color: #3d5146;
+  background: #fff;
+}
+
+.requestPage .targetCard .badge,
+.requestPage .targetCard .quantity button,
+.requestPage .targetCard .quantity span {
+  border-color: #ffad94;
+  color: #3d5146;
+  background: #fff;
+}
+
+.requestPage .quantity button {
+  border: 0;
+  transition: background-color 160ms ease;
+}
+
+.requestPage .quantity span,
+.requestPage .badge {
+  border: 0;
+}
+
+.requestPage .targetCard .quantity button:not(:disabled):active {
+  background-color: #ffdbd1;
+}
+
+.requestPage .list .quantity button:not(:disabled):active {
+  background-color: #d9f3e8;
+}
+
+.requestPage .targetCard .image {
+  color: #3d5146;
+  background-color: #ffdbd1;
+}
+
+.requestPage .offerCard .image {
+  color: #3d5146;
+  background-color: #d9f3e8;
+}
+
+.requestPage .offerCard input {
+  accent-color: #3d5146;
+}
+
+.requestPage .requestButton {
+  background: #3d5146;
+}
+
+.requestPage .requestButton:disabled {
+  color: #6d7b72;
+  background: #d1d8d3;
+}
+
+.requestPage .error {
+  color: #a34630;
+}
+
+@keyframes body-enter {
+  from {
+    transform: translateX(-36px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes border-enter {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body,
+  .body::before {
+    animation: none;
+  }
+
+  .requestPage .quantity button {
+    transition: none;
+  }
+}
+
 .section {
   margin-top: 20px;
 }
@@ -220,5 +402,9 @@
   }
   .list {
     padding: 8px;
+  }
+  .body {
+    padding-right: 12px;
+    padding-left: 12px;
   }
 }
