@@ -40,6 +40,10 @@ export default function ItemList() {
   const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
   const isLoadingItems =
     selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+  const searchHref = `/pages/search?${new URLSearchParams({
+    groups: JSON.stringify(joinedGroups),
+    ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
+  })}`
 
   useEffect(() => {
     const accessToken = window.sessionStorage.getItem('accessToken')
@@ -198,6 +202,12 @@ export default function ItemList() {
               그룹 가입
             </Link>
           )}
+          <Link className={styles.searchLink} href={searchHref}>
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 4.5 4.5" />
+            </svg>
+          </Link>
         </div>
       </header>
       {selectedGroup && !isLoadingItems && items.length > 0 ? (

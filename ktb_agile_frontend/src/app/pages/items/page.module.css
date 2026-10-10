@@ -35,6 +35,31 @@
   padding-inline: var(--app-content-inline-padding);
 }
 
+.searchLink {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  border-radius: 50%;
+  color: #3d5146;
+}
+
+.searchLink svg {
+  width: 23px;
+  height: 23px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.searchLink:active,
+.searchLink:hover {
+  background: #e6f7ef;
+}
+
 .groupDropdown {
   position: relative;
   max-width: 100%;
