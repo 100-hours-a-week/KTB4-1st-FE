@@ -146,6 +146,7 @@ function SearchPageContent() {
   }, [searchRequest, router])
 
   function handleSearchClick() {
+    if (!keyword.trim()) return
     if (selectedGroupId === null) {
       setSearchError('검색할 그룹을 선택해주세요.')
       return
