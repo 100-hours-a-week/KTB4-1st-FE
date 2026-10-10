@@ -57,7 +57,9 @@
 }
 
 .smartSearchLink {
+  position: relative;
   display: flex;
+  width: 100%;
   min-height: 58px;
   align-items: center;
   gap: 10px;
@@ -68,7 +70,10 @@
   background: #fff;
   box-shadow: 0 6px 18px rgba(61, 81, 70, 0.06);
   font-size: 15px;
+  font-family: inherit;
   font-weight: 700;
+  text-align: left;
+  cursor: pointer;
 }
 
 .smartSearchLink:active {
@@ -77,6 +82,18 @@
 .sparkle {
   color: #59b995;
   font-size: 22px;
+}
+.soonLabel {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fff;
+  background: #3d5146;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 .chevron {
   margin-left: auto;
