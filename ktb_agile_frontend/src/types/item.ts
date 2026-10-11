@@ -30,6 +30,7 @@ export type ItemListItem = {
   itemState: ItemState
   thumbnailImageUrl: string | null
   likeCount: number
+  viewCount: number
   exchangeRequestCount: number
   isLiked: boolean
   createdAt: string
@@ -42,6 +43,19 @@ export type ItemListResponse = {
     hasNext: boolean
   }
   error: null
+}
+
+export type MyItemListItem = Omit<ItemListItem, 'owner' | 'viewCount'> & {
+  groups: { groupId: number; groupName: string }[]
+}
+
+export type MyItemListResponse = {
+  data: {
+    items: MyItemListItem[]
+    nextCursor: string | null
+    hasNext: boolean
+  } | null
+  error: { code: string; message: string; details: unknown[] } | null
 }
 
 export type ItemDetail = {

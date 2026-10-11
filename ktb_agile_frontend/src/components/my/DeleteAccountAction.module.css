@@ -1,0 +1,11 @@
+.deleteAccount {
+  padding: 0;
+  border: 0;
+  color: #6b7280;
+  background: none;
+  font: inherit;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}

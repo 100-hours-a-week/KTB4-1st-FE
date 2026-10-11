@@ -36,13 +36,13 @@ export default function OfferingItemCard({
       <div className={styles.info}>
         <h3>{item.title}</h3>
         <div className={styles.meta}>
-          <span>보유 수량: {item.quantity}</span>
           <QuantityControl
             value={quantity}
             maximum={item.quantity}
             disabled={disabled || unavailable}
             onChange={onQuantityChange}
           />
+          <span>보유 수량: {item.quantity}</span>
           {unavailable && <span className={styles.badge}>교환 불가</span>}
         </div>
       </div>

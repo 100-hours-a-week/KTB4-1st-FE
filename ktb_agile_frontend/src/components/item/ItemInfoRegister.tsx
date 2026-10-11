@@ -3,7 +3,7 @@
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import type { CSSProperties } from 'react'
 import { useFormContext, useWatch } from 'react-hook-form'
-import type { ItemRegisterFormValues } from '../../../../../types/item'
+import type { ItemRegisterFormValues } from '@/types/item'
 import type { JoinedGroupOption } from '@/types/group'
 import {
   CONDITION_MESSAGES,
@@ -11,7 +11,7 @@ import {
   PACE_MESSAGES,
   TITLE_MAX_LENGTH,
   type RangeMessage,
-} from '@/app/pages/items/register/constants/item'
+} from '@/constants/item'
 import styles from './ItemInfoRegister.module.css'
 
 function getRangeMessage(value: number, messages: readonly RangeMessage[]) {

@@ -201,9 +201,7 @@ function ExchangeFormContent({
         accessToken,
       )
     } catch (cause) {
-      setError(
-        getErrorMessage(cause, EXCHANGE_ERRORS.PROCESS_FAILED),
-      )
+      setError(getErrorMessage(cause, EXCHANGE_ERRORS.PROCESS_FAILED))
     } finally {
       submitting.current = false
       setIsSubmitting(false)
@@ -211,134 +209,153 @@ function ExchangeFormContent({
   }
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${closeHref ? '' : styles.requestPage}`}>
       <header className={styles.header}>
-        <h1>{initialValues ? '교환 요청 수정' : '교환 요청'}</h1>
-        <Link
-          className={styles.close}
-          href={
-            closeHref ?? (item ? `/pages/items/${item.itemId}` : '/pages/items')
-          }
-        >
-          ×
-        </Link>
+        {closeHref ? (
+          <>
+            <h1>교환 요청 수정</h1>
+            <Link className={styles.close} href={closeHref}>
+              ×
+            </Link>
+          </>
+        ) : (
+          <>
+            <button
+              className={`${styles.close} ${styles.closeButton}`}
+              type="button"
+              aria-label="뒤로가기"
+              onClick={() => router.back()}
+            >
+              &lt;
+            </button>
+            <h1>교환 요청</h1>
+          </>
+        )}
       </header>
-      {isLoading ? (
-        <p className={styles.message}>물품 정보를 불러오는 중입니다.</p>
-      ) : (
-        <form onSubmit={handleRequest}>
-          {error && <p className={styles.error}>{error}</p>}
-          {item && (
-            <>
-              <section className={styles.section}>
-                <h2>1) 교환 대상</h2>
-                {includeGroupId && item.groups.length > 1 && (
-                  <label className={styles.groupField}>
-                    교환을 진행할 그룹
-                    <select
-                      value={groupId ?? ''}
-                      disabled={isSubmitting}
-                      onChange={(event) =>
-                        setGroupId(event.target.value ? Number(event.target.value) : null)
-                      }
-                    >
-                      <option value="">그룹을 선택해주세요</option>
-                      {item.groups.map((group) => (
-                        <option key={group.groupId} value={group.groupId}>
-                          {group.groupName}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {includeGroupId && item.groups.length === 0 && (
-                  <p className={styles.message}>이 물품에 연결된 그룹이 없습니다.</p>
-                )}
-                <div className={styles.targetCard}>
-                  <ItemImage
-                    url={
-                      item.images.toSorted(
-                        (a, b) => a.displayOrder - b.displayOrder,
-                      )[0]?.imageUrl
-                    }
-                  />
-                  <div className={styles.info}>
-                    <h3>{item.title}</h3>
-                    <p className={styles.description}>{item.content}</p>
-                    <div className={styles.meta}>
-                      <span>보유 수량: {item.quantity}</span>
-                      <QuantityControl
-                        value={requestedQuantity}
-                        maximum={item.quantity}
-                        disabled={
-                          isSubmitting ||
-                          item.itemState !== 'AVAILABLE' ||
-                          item.quantity < 1
-                        }
-                        onChange={setRequestedQuantity}
-                      />
-                      <span className={styles.badge}>
-                        상태: {getItemStateLabel(item.itemState)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {(item.itemState !== 'AVAILABLE' || item.quantity < 1) && (
-                  <p className={styles.message}>
-                    현재 교환할 수 없는 물품입니다.
-                  </p>
-                )}
-              </section>
-              <section className={styles.section}>
-                <h2>2) 내 물품 선택 ({selectedIds.length})</h2>
-                <div className={styles.list}>
-                  {myItems.length === 0 ? (
-                    <p className={styles.message}>
-                      내가 등록한 물품이 없습니다.
-                    </p>
-                  ) : (
-                    myItems.map((owned) => (
-                      <OfferingItemCard
-                        key={owned.itemId}
-                        item={owned}
-                        selected={selectedIds.includes(owned.itemId)}
-                        quantity={offeredQuantities[owned.itemId] ?? 1}
+      <div className={closeHref ? undefined : styles.body}>
+        {isLoading ? (
+          <p className={styles.message}>물품 정보를 불러오는 중입니다.</p>
+        ) : (
+          <form onSubmit={handleRequest}>
+            {error && <p className={styles.error}>{error}</p>}
+            {item && (
+              <>
+                <section className={styles.section}>
+                  <h2>1) 교환 대상</h2>
+                  {includeGroupId && item.groups.length > 1 && (
+                    <label className={styles.groupField}>
+                      교환을 진행할 그룹
+                      <select
+                        value={groupId ?? ''}
                         disabled={isSubmitting}
-                        onSelectionChange={(selected) =>
-                          setSelectedIds((ids) =>
-                            selected
-                              ? [...ids, owned.itemId]
-                              : ids.filter((id) => id !== owned.itemId),
+                        onChange={(event) =>
+                          setGroupId(
+                            event.target.value
+                              ? Number(event.target.value)
+                              : null,
                           )
                         }
-                        onQuantityChange={(value) =>
-                          setOfferedQuantities((quantities) => ({
-                            ...quantities,
-                            [owned.itemId]: value,
-                          }))
-                        }
-                      />
-                    ))
+                      >
+                        <option value="">그룹을 선택해주세요</option>
+                        {item.groups.map((group) => (
+                          <option key={group.groupId} value={group.groupId}>
+                            {group.groupName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   )}
-                </div>
-              </section>
-              <section className={styles.section}>
-                <h2>3) {submitLabel}</h2>
-                <button
-                  className={styles.requestButton}
-                  type="submit"
-                  disabled={!canRequest || isSubmitting}
-                >
-                  {isSubmitting ? '처리 중...' : submitLabel}
-                </button>
-                <p className={styles.hint}>
-                  교환할 내 물품을 1개 이상 선택해주세요.
-                </p>
-              </section>
-            </>
-          )}
-        </form>
-      )}
+                  {includeGroupId && item.groups.length === 0 && (
+                    <p className={styles.message}>
+                      이 물품에 연결된 그룹이 없습니다.
+                    </p>
+                  )}
+                  <div className={styles.targetCard}>
+                    <ItemImage
+                      url={
+                        item.images.toSorted(
+                          (a, b) => a.displayOrder - b.displayOrder,
+                        )[0]?.imageUrl
+                      }
+                    />
+                    <div className={styles.info}>
+                      <h3>{item.title}</h3>
+                      <p className={styles.description}>{item.content}</p>
+                      <div className={styles.meta}>
+                        <QuantityControl
+                          value={requestedQuantity}
+                          maximum={item.quantity}
+                          disabled={
+                            isSubmitting ||
+                            item.itemState !== 'AVAILABLE' ||
+                            item.quantity < 1
+                          }
+                          onChange={setRequestedQuantity}
+                        />
+                        <span>보유 수량: {item.quantity}</span>
+                        <span className={styles.badge}>
+                          상태: {getItemStateLabel(item.itemState)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {(item.itemState !== 'AVAILABLE' || item.quantity < 1) && (
+                    <p className={styles.message}>
+                      현재 교환할 수 없는 물품입니다.
+                    </p>
+                  )}
+                </section>
+                <section className={styles.section}>
+                  <h2>2) 내 물품 선택 ({selectedIds.length})</h2>
+                  <div className={styles.list}>
+                    {myItems.length === 0 ? (
+                      <p className={styles.message}>
+                        내가 등록한 물품이 없습니다.
+                      </p>
+                    ) : (
+                      myItems.map((owned) => (
+                        <OfferingItemCard
+                          key={owned.itemId}
+                          item={owned}
+                          selected={selectedIds.includes(owned.itemId)}
+                          quantity={offeredQuantities[owned.itemId] ?? 1}
+                          disabled={isSubmitting}
+                          onSelectionChange={(selected) =>
+                            setSelectedIds((ids) =>
+                              selected
+                                ? [...ids, owned.itemId]
+                                : ids.filter((id) => id !== owned.itemId),
+                            )
+                          }
+                          onQuantityChange={(value) =>
+                            setOfferedQuantities((quantities) => ({
+                              ...quantities,
+                              [owned.itemId]: value,
+                            }))
+                          }
+                        />
+                      ))
+                    )}
+                  </div>
+                </section>
+                <section className={styles.section}>
+                  <h2>3) {submitLabel}</h2>
+                  <button
+                    className={styles.requestButton}
+                    type="submit"
+                    disabled={!canRequest || isSubmitting}
+                  >
+                    {isSubmitting ? '처리 중...' : submitLabel}
+                  </button>
+                  <p className={styles.hint}>
+                    교환할 내 물품을 1개 이상 선택해주세요.
+                  </p>
+                </section>
+              </>
+            )}
+          </form>
+        )}
+      </div>
     </div>
   )
 }

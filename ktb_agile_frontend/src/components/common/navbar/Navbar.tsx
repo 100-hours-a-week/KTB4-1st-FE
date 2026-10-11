@@ -6,7 +6,7 @@ import { useState, type ReactNode } from 'react'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import styles from './Navbar.module.css'
 
-type NavItemId = 'home' | 'group' | 'register' | 'chat'
+type NavItemId = 'home' | 'group' | 'register' | 'chat' | 'my'
 
 type NavItem = {
   id: NavItemId
@@ -62,6 +62,19 @@ const navItems: NavItem[] = [
       <svg viewBox="0 0 24 24">
         <path d="M20.5 11.3a8.2 8.2 0 0 1-8.5 7.8c-1.3 0-2.6-.3-3.7-.8l-4.5 1.2 1.3-4A7.4 7.4 0 0 1 3.5 11c0-4.5 3.8-8.1 8.5-8.1s8.5 3.6 8.5 8.1v.3Z" />
         <path d="M8 11h.1M12 11h.1M16 11h.1" />
+      </svg>
+    ),
+  },
+  {
+    id: 'my',
+    label: 'MY',
+    href: '/pages/my',
+    isCurrentPath: (pathname) =>
+      pathname === '/pages/my' || pathname.startsWith('/pages/my/'),
+    icon: (
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M4.5 20c.5-4 3.3-6 7.5-6s7 2 7.5 6" />
       </svg>
     ),
   },

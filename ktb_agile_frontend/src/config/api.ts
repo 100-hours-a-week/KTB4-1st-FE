@@ -16,9 +16,16 @@ let refreshPromise: Promise<string> | null = null
 
 function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
   const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
-  const isBffRequest = ['/bff/group', '/bff/chat-rooms'].includes(
-    request.url?.split('?')[0] ?? '',
-  )
+  const requestUrl = request.url?.split('?')[0] ?? ''
+  const isBffRequest =
+    [
+      '/bff/group',
+      '/bff/chat-rooms',
+      '/bff/my-items',
+      '/bff/liked-items',
+      '/bff/exchanged-items',
+      '/bff/search',
+    ].includes(requestUrl) || requestUrl.startsWith('/bff/like/')
   const hasAccessToken = request.headers.get('Authorization')
 
   return (isBackendRequest || isBffRequest) && hasAccessToken
@@ -114,8 +121,5 @@ if (typeof window !== 'undefined') {
     return request
   })
 
-  axios.interceptors.response.use(
-    (response) => response,
-    handleRequestError,
-  )
+  axios.interceptors.response.use((response) => response, handleRequestError)
 }

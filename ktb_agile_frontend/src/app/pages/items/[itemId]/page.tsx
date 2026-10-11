@@ -2,10 +2,10 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
-import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
+import LikeButton from '@/components/item/like/LikeButton'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
@@ -130,9 +130,13 @@ export default function ItemDetailsPage() {
               : undefined
           }
         >
-          <Link className={styles.backButton} href="/pages/items">
+          <button
+            className={styles.backButton}
+            type="button"
+            onClick={() => router.back()}
+          >
             ‹
-          </Link>
+          </button>
           {!primaryImage && !isLoading && (
             <svg className={styles.placeholderIcon} viewBox="0 0 24 24">
               <rect x="3.5" y="4" width="17" height="16" rx="2" />
@@ -144,7 +148,15 @@ export default function ItemDetailsPage() {
 
         {item ? (
           <main className={styles.content}>
-            <h1 className={styles.title}>{item.title}</h1>
+            <div className={styles.titleRow}>
+              <h1 className={styles.title}>{item.title}</h1>
+              <LikeButton
+                itemId={item.itemId}
+                isLiked={item.isLiked}
+                initialLikeCount={item.likeCount}
+                placement="title"
+              />
+            </div>
             <p className={styles.meta}>
               등록자: {item.owner.nickname} · 그룹: {groupNames || '없음'} ·{' '}
               {formatRelativeTime(item.createdAt)}

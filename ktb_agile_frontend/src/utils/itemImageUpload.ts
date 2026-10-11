@@ -2,7 +2,7 @@ import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import type { Dispatch, SetStateAction } from 'react'
-import type { SelectedImage } from '../../../../types/item'
+import type { SelectedImage } from '@/types/item'
 
 type PresignedUpload = {
   uploadUrl: string

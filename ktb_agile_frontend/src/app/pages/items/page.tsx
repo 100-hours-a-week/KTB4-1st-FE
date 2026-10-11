@@ -8,7 +8,7 @@ import { API_BASE_URL } from '@/config/api'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import Navbar from '@/components/common/navbar/Navbar'
-import ItemCard from '@/components/items/ItemCard'
+import ItemCard from '@/components/item/ItemCard'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import styles from './page.module.css'
 
@@ -40,6 +40,10 @@ export default function ItemList() {
   const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
   const isLoadingItems =
     selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+  const searchHref = `/pages/search?${new URLSearchParams({
+    groups: JSON.stringify(joinedGroups),
+    ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
+  })}`
 
   useEffect(() => {
     const accessToken = window.sessionStorage.getItem('accessToken')
@@ -49,6 +53,9 @@ export default function ItemList() {
       return
     }
 
+    const requestedGroupId = Number(
+      new URLSearchParams(window.location.search).get('groupId'),
+    )
     const controller = new AbortController()
 
     async function fetchJoinedGroups() {
@@ -71,7 +78,11 @@ export default function ItemList() {
         )
 
         setJoinedGroups(groups)
-        setSelectedGroupId(groups[0]?.groupId ?? null)
+        setSelectedGroupId(
+          groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+            groups[0]?.groupId ??
+            null,
+        )
       } catch (error) {
         if (!axios.isCancel(error)) {
           console.error(error)
@@ -191,6 +202,12 @@ export default function ItemList() {
               그룹 가입
             </Link>
           )}
+          <Link className={styles.searchLink} href={searchHref}>
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="10.8" cy="10.8" r="6.8" />
+              <path d="m16 16 4.5 4.5" />
+            </svg>
+          </Link>
         </div>
       </header>
       {selectedGroup && !isLoadingItems && items.length > 0 ? (

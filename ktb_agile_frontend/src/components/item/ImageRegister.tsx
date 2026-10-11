@@ -8,11 +8,11 @@ import { useFormContext } from 'react-hook-form'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
-import { uploadImagesToS3 } from '../imageUpload'
+import { uploadImagesToS3 } from '@/utils/itemImageUpload'
 import type {
   ItemRegisterFormValues,
   SelectedImage,
-} from '../../../../../types/item'
+} from '@/types/item'
 import styles from './ImageRegister.module.css'
 
 const MAX_IMAGES = 3
