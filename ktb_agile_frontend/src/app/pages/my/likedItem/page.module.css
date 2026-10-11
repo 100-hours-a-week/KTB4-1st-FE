@@ -101,6 +101,10 @@
   list-style: none;
 }
 
+.itemList h2 {
+  color: #263e2e;
+}
+
 .message,
 .emptyState {
   margin-top: 18px;
