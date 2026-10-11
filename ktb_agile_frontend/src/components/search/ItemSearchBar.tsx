@@ -55,7 +55,7 @@ export default function ItemSearchBar({
         type="button"
         className={styles.searchButton}
         onClick={onSearch}
-        disabled={disabled || groups.length === 0}
+        disabled={disabled || groups.length === 0 || keyword.trim().length === 0}
       >
         검색
       </button>
