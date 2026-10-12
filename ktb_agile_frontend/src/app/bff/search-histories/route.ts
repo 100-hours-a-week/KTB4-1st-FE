@@ -52,3 +52,38 @@ export async function GET(request: Request) {
     )
   }
 }
+
+export async function DELETE(request: Request) {
+  const authorization = request.headers.get('Authorization')
+  if (!authorization?.startsWith('Bearer ')) return unauthorized()
+
+  try {
+    const response = await fetch(`${backendUrl}/search-histories`, {
+      method: 'DELETE',
+      headers: { Authorization: authorization, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (response.status === 204) {
+      return new Response(null, {
+        status: 204,
+        headers: { 'Cache-Control': 'no-store' },
+      })
+    }
+    return Response.json(await response.json(), {
+      status: response.status,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+  } catch {
+    return Response.json(
+      {
+        data: null,
+        error: {
+          code: 'BAD_GATEWAY',
+          message: '전체 검색 기록을 삭제하지 못했습니다.',
+          details: [],
+        },
+      },
+      { status: 502, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+}
