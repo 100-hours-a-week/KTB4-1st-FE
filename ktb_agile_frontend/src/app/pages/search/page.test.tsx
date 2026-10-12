@@ -106,3 +106,61 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
   await screen.findByText('검색 결과가 없습니다.')
   expect(post).not.toHaveBeenCalled()
 })
+
+it('x를 누르면 해당 검색 기록만 삭제한다', async () => {
+  vi.spyOn(axios, 'get').mockResolvedValue({
+    data: {
+      data: {
+        searchHistories: [
+          { searchHistoryId: 802, keyword: '충전기' },
+          { searchHistoryId: 801, keyword: '자전거' },
+        ],
+        nextCursor: null,
+        hasNext: false,
+      },
+      error: null,
+    },
+  })
+  const remove = vi.spyOn(axios, 'delete').mockResolvedValue({ status: 204 })
+
+  render(<SearchPage />)
+  await screen.findByText('충전기')
+  fireEvent.click(screen.getAllByText('×')[0])
+
+  await waitFor(() => expect(screen.queryByText('충전기')).toBeNull())
+  expect(screen.getByText('자전거')).toBeDefined()
+  expect(remove).toHaveBeenCalledWith('/bff/search-histories/802', {
+    headers: {
+      Authorization: 'Bearer access-token',
+      Accept: 'application/json',
+    },
+  })
+})
+
+it('삭제 요청이 실패하면 기록을 유지하고 공용 모달을 연다', async () => {
+  vi.spyOn(axios, 'get').mockResolvedValue({
+    data: {
+      data: {
+        searchHistories: [{ searchHistoryId: 802, keyword: '충전기' }],
+        nextCursor: null,
+        hasNext: false,
+      },
+      error: null,
+    },
+  })
+  vi.spyOn(axios, 'delete').mockRejectedValue(new Error('server error'))
+
+  render(<SearchPage />)
+  await screen.findByText('충전기')
+  fireEvent.click(screen.getByText('×'))
+
+  expect(
+    await screen.findByText('서버 문제로 검색 기록을 삭제하지 못했습니다.'),
+  ).toBeDefined()
+  expect(screen.getByText('충전기')).toBeDefined()
+
+  fireEvent.click(screen.getByText('확인'))
+  expect(
+    screen.queryByText('서버 문제로 검색 기록을 삭제하지 못했습니다.'),
+  ).toBeNull()
+})

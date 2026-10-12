@@ -78,6 +78,10 @@ function SearchPageContent() {
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
   const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
   const [historyError, setHistoryError] = useState(false)
+  const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
+    null,
+  )
+  const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false)
   const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
@@ -217,6 +221,38 @@ function SearchPageContent() {
     setMoreLoading(false)
   }
 
+  async function deleteSearchHistory(searchHistoryId: number) {
+    if (deletingHistoryId !== null) return
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+
+    setDeletingHistoryId(searchHistoryId)
+    try {
+      const response = await axios.delete(
+        `/bff/search-histories/${searchHistoryId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+        },
+      )
+      if (response.status !== 204) throw new Error('Unexpected delete response')
+      setSearchHistories((current) =>
+        current.filter(
+          (history) => history.searchHistoryId !== searchHistoryId,
+        ),
+      )
+    } catch {
+      setIsDeleteErrorOpen(true)
+    } finally {
+      setDeletingHistoryId(null)
+    }
+  }
+
   return (
     <section className={styles.page}>
       <header className={styles.header}>
@@ -257,7 +293,16 @@ function SearchPageContent() {
           {searchHistories.map((history) => (
             <span className={styles.historyChip} key={history.searchHistoryId}>
               <span>{history.keyword}</span>
-              <span className={styles.historyRemove}>×</span>
+              <button
+                type="button"
+                className={styles.historyRemove}
+                onClick={() =>
+                  void deleteSearchHistory(history.searchHistoryId)
+                }
+                disabled={deletingHistoryId !== null}
+              >
+                ×
+              </button>
             </span>
           ))}
         </div>
@@ -312,6 +357,12 @@ function SearchPageContent() {
         <ModalDefault
           message="AI 스마트 검색은 개발 중입니다."
           onConfirm={() => setIsSmartSearchNoticeOpen(false)}
+        />
+      )}
+      {isDeleteErrorOpen && (
+        <ModalDefault
+          message="서버 문제로 검색 기록을 삭제하지 못했습니다."
+          onConfirm={() => setIsDeleteErrorOpen(false)}
         />
       )}
       <Navbar />

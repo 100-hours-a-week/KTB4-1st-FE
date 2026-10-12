@@ -83,9 +83,19 @@
 
 .historyRemove {
   flex: none;
+  padding: 0;
+  border: 0;
   color: #748278;
+  background: transparent;
+  font-family: inherit;
   font-size: 18px;
   line-height: 1;
+  cursor: pointer;
+}
+
+.historyRemove:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .historyError {
