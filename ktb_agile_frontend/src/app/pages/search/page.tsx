@@ -96,7 +96,6 @@ function SearchPageContent() {
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
-    if (!token) return
     const controller = new AbortController()
 
     async function loadSearchHistories() {
@@ -224,26 +223,34 @@ function SearchPageContent() {
     setMoreLoading(false)
   }
 
-  async function deleteSearchHistory(searchHistoryId: number) {
-    if (deletingHistoryId !== null || isDeletingAllHistories) return
+  async function requestAllHistoryDelete(path: string) {
     const token = window.sessionStorage.getItem('accessToken')
     if (!token) {
       router.replace('/auth/login')
-      return
+      return false
     }
+
+    const response = await axios.delete(path, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+    if (response.status !== 204) throw new Error('Unexpected delete response')
+    return true
+  }
+
+  async function deleteSingleSearchHistory(searchHistoryId: number) {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
 
     setDeletingHistoryId(searchHistoryId)
     try {
-      const response = await axios.delete(
-        `/bff/search-histories/${searchHistoryId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-        },
+      if (
+        !(await requestAllHistoryDelete(
+          `/bff/search-histories/${searchHistoryId}`,
+        ))
       )
-      if (response.status !== 204) throw new Error('Unexpected delete response')
+        return
       setSearchHistories((current) =>
         current.filter(
           (history) => history.searchHistoryId !== searchHistoryId,
@@ -258,21 +265,10 @@ function SearchPageContent() {
 
   async function deleteAllSearchHistories() {
     if (deletingHistoryId !== null || isDeletingAllHistories) return
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
 
     setIsDeletingAllHistories(true)
     try {
-      const response = await axios.delete('/bff/search-histories', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'application/json',
-        },
-      })
-      if (response.status !== 204) throw new Error('Unexpected delete response')
+      if (!(await requestAllHistoryDelete('/bff/search-histories'))) return
       setSearchHistories([])
     } catch {
       setDeleteErrorMessage('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.')
@@ -337,7 +333,7 @@ function SearchPageContent() {
                   type="button"
                   className={styles.historyRemove}
                   onClick={() =>
-                    void deleteSearchHistory(history.searchHistoryId)
+                    void deleteSingleSearchHistory(history.searchHistoryId)
                   }
                   disabled={
                     deletingHistoryId !== null || isDeletingAllHistories

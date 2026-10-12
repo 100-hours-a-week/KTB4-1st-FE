@@ -224,3 +224,28 @@ it('전체 삭제 실패 시 기록을 유지하고 공용 모달에 메시지�
     screen.queryByText('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.'),
   ).toBeNull()
 })
+
+it('삭제 직전에 토큰이 없으면 삭제 요청 없이 로그인으로 이동한다', async () => {
+  vi.spyOn(axios, 'get').mockResolvedValue({
+    data: {
+      data: {
+        searchHistories: [{ searchHistoryId: 802, keyword: '충전기' }],
+        nextCursor: null,
+        hasNext: false,
+      },
+      error: null,
+    },
+  })
+  const remove = vi.spyOn(axios, 'delete')
+
+  render(<SearchPage />)
+  await screen.findByText('충전기')
+  window.sessionStorage.removeItem('accessToken')
+  fireEvent.click(screen.getByText('×'))
+
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/auth/login'),
+  )
+  expect(remove).not.toHaveBeenCalled()
+  expect(screen.getByText('충전기')).toBeDefined()
+})
