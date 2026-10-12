@@ -25,6 +25,7 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
       '/bff/liked-items',
       '/bff/exchanged-items',
       '/bff/search',
+      '/bff/search-histories',
     ].includes(requestUrl) || requestUrl.startsWith('/bff/like/')
   const hasAccessToken = request.headers.get('Authorization')
 
