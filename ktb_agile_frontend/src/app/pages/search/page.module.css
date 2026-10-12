@@ -56,10 +56,36 @@
   line-height: 1.5;
 }
 
-.searchHistories {
+.historyBar {
   display: flex;
   width: 100%;
   min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.clearHistoriesButton {
+  min-height: 34px;
+  flex: none;
+  padding: 0 10px;
+  border: 1px solid #e9c6c6;
+  border-radius: 999px;
+  color: #a34646;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.clearHistoriesButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.searchHistories {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   gap: 8px;
   overflow-x: auto;
 }

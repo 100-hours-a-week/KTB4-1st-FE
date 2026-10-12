@@ -81,7 +81,10 @@ function SearchPageContent() {
   const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
     null,
   )
-  const [isDeleteErrorOpen, setIsDeleteErrorOpen] = useState(false)
+  const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  )
   const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
@@ -222,7 +225,7 @@ function SearchPageContent() {
   }
 
   async function deleteSearchHistory(searchHistoryId: number) {
-    if (deletingHistoryId !== null) return
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
     const token = window.sessionStorage.getItem('accessToken')
     if (!token) {
       router.replace('/auth/login')
@@ -247,9 +250,34 @@ function SearchPageContent() {
         ),
       )
     } catch {
-      setIsDeleteErrorOpen(true)
+      setDeleteErrorMessage('서버 문제로 검색 기록을 삭제하지 못했습니다.')
     } finally {
       setDeletingHistoryId(null)
+    }
+  }
+
+  async function deleteAllSearchHistories() {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+
+    setIsDeletingAllHistories(true)
+    try {
+      const response = await axios.delete('/bff/search-histories', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      })
+      if (response.status !== 204) throw new Error('Unexpected delete response')
+      setSearchHistories([])
+    } catch {
+      setDeleteErrorMessage('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setIsDeletingAllHistories(false)
     }
   }
 
@@ -289,22 +317,37 @@ function SearchPageContent() {
           검색 기록을 가져오는데 실패했습니다
         </p>
       ) : searchHistories.length > 0 ? (
-        <div className={styles.searchHistories}>
-          {searchHistories.map((history) => (
-            <span className={styles.historyChip} key={history.searchHistoryId}>
-              <span>{history.keyword}</span>
-              <button
-                type="button"
-                className={styles.historyRemove}
-                onClick={() =>
-                  void deleteSearchHistory(history.searchHistoryId)
-                }
-                disabled={deletingHistoryId !== null}
+        <div className={styles.historyBar}>
+          <button
+            type="button"
+            className={styles.clearHistoriesButton}
+            onClick={() => void deleteAllSearchHistories()}
+            disabled={deletingHistoryId !== null || isDeletingAllHistories}
+          >
+            전체 삭제
+          </button>
+          <div className={styles.searchHistories}>
+            {searchHistories.map((history) => (
+              <span
+                className={styles.historyChip}
+                key={history.searchHistoryId}
               >
-                ×
-              </button>
-            </span>
-          ))}
+                <span>{history.keyword}</span>
+                <button
+                  type="button"
+                  className={styles.historyRemove}
+                  onClick={() =>
+                    void deleteSearchHistory(history.searchHistoryId)
+                  }
+                  disabled={
+                    deletingHistoryId !== null || isDeletingAllHistories
+                  }
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       ) : null}
 
@@ -359,10 +402,10 @@ function SearchPageContent() {
           onConfirm={() => setIsSmartSearchNoticeOpen(false)}
         />
       )}
-      {isDeleteErrorOpen && (
+      {deleteErrorMessage && (
         <ModalDefault
-          message="서버 문제로 검색 기록을 삭제하지 못했습니다."
-          onConfirm={() => setIsDeleteErrorOpen(false)}
+          message={deleteErrorMessage}
+          onConfirm={() => setDeleteErrorMessage(null)}
         />
       )}
       <Navbar />
