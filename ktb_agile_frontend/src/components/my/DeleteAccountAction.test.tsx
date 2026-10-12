@@ -62,6 +62,24 @@ it('취소하면 요청하지 않는다', () => {
   expect(fetchMock).not.toHaveBeenCalled()
 })
 
+it('모달이 열리면 전체 앱 화면을 비활성화하고 닫으면 복원한다', async () => {
+  const { container } = render(
+    <div className="app-shell">
+      <DeleteAccountAction />
+    </div>,
+  )
+  const appShell = container.querySelector('.app-shell')!
+
+  fireEvent.click(screen.getByRole('button', { name: '탈퇴하기' }))
+
+  await waitFor(() => expect(appShell.hasAttribute('inert')).toBe(true))
+  const modal = screen.getByText('정말 탈퇴하시겠습니까?').closest('section')!
+  expect(modal.parentElement?.parentElement).toBe(document.body)
+
+  fireEvent.click(within(modal).getByRole('button', { name: '취소' }))
+  await waitFor(() => expect(appShell.hasAttribute('inert')).toBe(false))
+})
+
 it('실패하면 지정된 오류 모달을 띄우고 토큰을 유지한다', async () => {
   window.sessionStorage.setItem('accessToken', 'test-token')
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 404 }))

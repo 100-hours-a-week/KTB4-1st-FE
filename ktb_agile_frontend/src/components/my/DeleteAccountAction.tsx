@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './DeleteAccountAction.module.css'
@@ -9,6 +10,15 @@ export default function DeleteAccountAction() {
   const router = useRouter()
   const [modal, setModal] = useState<'confirm' | 'error' | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  useEffect(() => {
+    if (!modal) return
+
+    const appShell = document.querySelector('.app-shell')
+    appShell?.setAttribute('inert', '')
+
+    return () => appShell?.removeAttribute('inert')
+  }, [modal])
 
   async function deleteAccount() {
     if (isDeleting) return
@@ -46,22 +56,26 @@ export default function DeleteAccountAction() {
       >
         탈퇴하기
       </button>
-      {modal === 'confirm' && (
-        <ModalDefault
-          message="정말 탈퇴하시겠습니까?"
-          confirmLabel={isDeleting ? '처리 중...' : '탈퇴하기'}
-          onConfirm={() => void deleteAccount()}
-          onCancel={() => setModal(null)}
-          confirmDisabled={isDeleting}
-          cancelDisabled={isDeleting}
-        />
-      )}
-      {modal === 'error' && (
-        <ModalDefault
-          message="탈퇴에 실패했습니다. 조금 후에 다시 시도해주세요"
-          onConfirm={() => setModal(null)}
-        />
-      )}
+      {modal === 'confirm' &&
+        createPortal(
+          <ModalDefault
+            message="정말 탈퇴하시겠습니까?"
+            confirmLabel={isDeleting ? '처리 중...' : '탈퇴하기'}
+            onConfirm={() => void deleteAccount()}
+            onCancel={() => setModal(null)}
+            confirmDisabled={isDeleting}
+            cancelDisabled={isDeleting}
+          />,
+          document.body,
+        )}
+      {modal === 'error' &&
+        createPortal(
+          <ModalDefault
+            message="탈퇴에 실패했습니다. 조금 후에 다시 시도해주세요"
+            onConfirm={() => setModal(null)}
+          />,
+          document.body,
+        )}
     </>
   )
 }
