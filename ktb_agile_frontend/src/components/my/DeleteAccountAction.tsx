@@ -1,15 +1,40 @@
 'use client'
 
 import { useState } from 'react'
-import DeleteAccountUnavailableModal from './DeleteAccountUnavailableModal'
+import { useRouter } from 'next/navigation'
+import ModalDefault from '@/components/common/modal/Default'
 import styles from './DeleteAccountAction.module.css'
 
 export default function DeleteAccountAction() {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const router = useRouter()
+  const [modal, setModal] = useState<'confirm' | 'error' | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
-  function closeModal() {
-    // TODO: 회원 탈퇴 기능을 지원할 때 별도 API 호출과 토큰 삭제, 로그인 화면 이동을 연결합니다.
-    setIsModalOpen(false)
+  async function deleteAccount() {
+    if (isDeleting) return
+
+    setIsDeleting(true)
+    try {
+      const accessToken = window.sessionStorage.getItem('accessToken')
+
+      const response = await fetch('/bff/users/me', {
+        method: 'DELETE',
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          Accept: 'application/json',
+        },
+      })
+
+      if (response.status !== 204) throw new Error('Account deletion failed')
+
+      window.sessionStorage.removeItem('accessToken')
+      setModal(null)
+      router.replace('/auth/login')
+    } catch {
+      setModal('error')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -17,12 +42,25 @@ export default function DeleteAccountAction() {
       <button
         className={styles.deleteAccount}
         type="button"
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => setModal('confirm')}
       >
         탈퇴하기
       </button>
-      {isModalOpen && (
-        <DeleteAccountUnavailableModal onClose={closeModal} />
+      {modal === 'confirm' && (
+        <ModalDefault
+          message="정말 탈퇴하시겠습니까?"
+          confirmLabel={isDeleting ? '처리 중...' : '탈퇴하기'}
+          onConfirm={() => void deleteAccount()}
+          onCancel={() => setModal(null)}
+          confirmDisabled={isDeleting}
+          cancelDisabled={isDeleting}
+        />
+      )}
+      {modal === 'error' && (
+        <ModalDefault
+          message="탈퇴에 실패했습니다. 조금 후에 다시 시도해주세요"
+          onConfirm={() => setModal(null)}
+        />
       )}
     </>
   )
