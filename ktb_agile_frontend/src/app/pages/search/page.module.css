@@ -56,6 +56,86 @@
   line-height: 1.5;
 }
 
+.historyBar {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.clearHistoriesButton {
+  min-height: 34px;
+  flex: none;
+  padding: 0 10px;
+  border: 1px solid #e9c6c6;
+  border-radius: 999px;
+  color: #a34646;
+  background: #fff;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.clearHistoriesButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.searchHistories {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.historyChip {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 34px;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid #d9f3e8;
+  border-radius: 999px;
+  color: #3d5146;
+  background: #f3fbf7;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.historyChip span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyRemove {
+  flex: none;
+  padding: 0;
+  border: 0;
+  color: #748278;
+  background: transparent;
+  font-family: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.historyRemove:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.historyError {
+  color: #c73535;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .smartSearchLink {
   position: relative;
   display: flex;

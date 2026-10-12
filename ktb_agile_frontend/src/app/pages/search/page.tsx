@@ -11,6 +11,10 @@ import ItemCard from '@/components/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
+import type {
+  SearchHistory,
+  SearchHistoryResponse,
+} from '@/types/searchHistory'
 import styles from './page.module.css'
 
 type SearchCriteria = {
@@ -72,6 +76,15 @@ function SearchPageContent() {
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
+  const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
+  const [historyError, setHistoryError] = useState(false)
+  const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
+    null,
+  )
+  const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  )
   const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
@@ -80,6 +93,37 @@ function SearchPageContent() {
       router.replace('/auth/login')
     }
   }, [router])
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    const controller = new AbortController()
+
+    async function loadSearchHistories() {
+      try {
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (controller.signal.aborted) return
+        setSearchHistories(response.data.data.searchHistories)
+        setHistoryError(false)
+      } catch (error) {
+        if (!axios.isCancel(error) && !controller.signal.aborted) {
+          setSearchHistories([])
+          setHistoryError(true)
+        }
+      }
+    }
+
+    void loadSearchHistories()
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!searchRequest) return
@@ -179,6 +223,60 @@ function SearchPageContent() {
     setMoreLoading(false)
   }
 
+  async function requestAllHistoryDelete(path: string) {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return false
+    }
+
+    const response = await axios.delete(path, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+    if (response.status !== 204) throw new Error('Unexpected delete response')
+    return true
+  }
+
+  async function deleteSingleSearchHistory(searchHistoryId: number) {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
+
+    setDeletingHistoryId(searchHistoryId)
+    try {
+      if (
+        !(await requestAllHistoryDelete(
+          `/bff/search-histories/${searchHistoryId}`,
+        ))
+      )
+        return
+      setSearchHistories((current) =>
+        current.filter(
+          (history) => history.searchHistoryId !== searchHistoryId,
+        ),
+      )
+    } catch {
+      setDeleteErrorMessage('서버 문제로 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setDeletingHistoryId(null)
+    }
+  }
+
+  async function deleteAllSearchHistories() {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
+
+    setIsDeletingAllHistories(true)
+    try {
+      if (!(await requestAllHistoryDelete('/bff/search-histories'))) return
+      setSearchHistories([])
+    } catch {
+      setDeleteErrorMessage('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setIsDeletingAllHistories(false)
+    }
+  }
+
   return (
     <section className={styles.page}>
       <header className={styles.header}>
@@ -209,6 +307,45 @@ function SearchPageContent() {
         }}
         onSearch={handleSearchClick}
       />
+
+      {historyError ? (
+        <p className={styles.historyError}>
+          검색 기록을 가져오는데 실패했습니다
+        </p>
+      ) : searchHistories.length > 0 ? (
+        <div className={styles.historyBar}>
+          <button
+            type="button"
+            className={styles.clearHistoriesButton}
+            onClick={() => void deleteAllSearchHistories()}
+            disabled={deletingHistoryId !== null || isDeletingAllHistories}
+          >
+            전체 삭제
+          </button>
+          <div className={styles.searchHistories}>
+            {searchHistories.map((history) => (
+              <span
+                className={styles.historyChip}
+                key={history.searchHistoryId}
+              >
+                <span>{history.keyword}</span>
+                <button
+                  type="button"
+                  className={styles.historyRemove}
+                  onClick={() =>
+                    void deleteSingleSearchHistory(history.searchHistoryId)
+                  }
+                  disabled={
+                    deletingHistoryId !== null || isDeletingAllHistories
+                  }
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {groups.length === 0 && (
         <p className={styles.searchMessage}>
@@ -259,6 +396,12 @@ function SearchPageContent() {
         <ModalDefault
           message="AI 스마트 검색은 개발 중입니다."
           onConfirm={() => setIsSmartSearchNoticeOpen(false)}
+        />
+      )}
+      {deleteErrorMessage && (
+        <ModalDefault
+          message={deleteErrorMessage}
+          onConfirm={() => setDeleteErrorMessage(null)}
         />
       )}
       <Navbar />
