@@ -56,6 +56,44 @@
   line-height: 1.5;
 }
 
+.searchHistories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.historyChip {
+  display: inline-flex;
+  max-width: 100%;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid #d9f3e8;
+  border-radius: 999px;
+  color: #3d5146;
+  background: #f3fbf7;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.historyChip span:first-child {
+  overflow-wrap: anywhere;
+}
+
+.historyRemove {
+  flex: none;
+  color: #748278;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.historyError {
+  color: #c73535;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .smartSearchLink {
   position: relative;
   display: flex;

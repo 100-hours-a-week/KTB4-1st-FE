@@ -11,6 +11,10 @@ import ItemCard from '@/components/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
+import type {
+  SearchHistory,
+  SearchHistoryResponse,
+} from '@/types/searchHistory'
 import styles from './page.module.css'
 
 type SearchCriteria = {
@@ -72,6 +76,8 @@ function SearchPageContent() {
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
+  const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
+  const [historyError, setHistoryError] = useState(false)
   const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
@@ -80,6 +86,38 @@ function SearchPageContent() {
       router.replace('/auth/login')
     }
   }, [router])
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) return
+    const controller = new AbortController()
+
+    async function loadSearchHistories() {
+      try {
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (controller.signal.aborted) return
+        setSearchHistories(response.data.data.searchHistories)
+        setHistoryError(false)
+      } catch (error) {
+        if (!axios.isCancel(error) && !controller.signal.aborted) {
+          setSearchHistories([])
+          setHistoryError(true)
+        }
+      }
+    }
+
+    void loadSearchHistories()
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!searchRequest) return
@@ -209,6 +247,21 @@ function SearchPageContent() {
         }}
         onSearch={handleSearchClick}
       />
+
+      {historyError ? (
+        <p className={styles.historyError}>
+          검색 기록을 가져오는데 실패했습니다
+        </p>
+      ) : searchHistories.length > 0 ? (
+        <div className={styles.searchHistories}>
+          {searchHistories.map((history) => (
+            <span className={styles.historyChip} key={history.searchHistoryId}>
+              <span>{history.keyword}</span>
+              <span className={styles.historyRemove}>×</span>
+            </span>
+          ))}
+        </div>
+      ) : null}
 
       {groups.length === 0 && (
         <p className={styles.searchMessage}>
