@@ -16,12 +16,117 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }))
 beforeEach(() => {
   vi.clearAllMocks()
   window.sessionStorage.setItem('accessToken', 'access-token')
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: { nickname: '테스트', profileImageUrl: null },
+        error: null,
+      }),
+    }),
+  )
 })
 
 afterEach(() => {
   cleanup()
   window.sessionStorage.clear()
   vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+
+it('BFF에서 조회한 닉네임과 프로필 이미지를 표시한다', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      data: {
+        nickname: '민지',
+        profileImageUrl: 'https://example.com/profile.jpg',
+      },
+      error: null,
+    }),
+  })
+  vi.stubGlobal('fetch', fetchMock)
+
+  const { container } = render(<AccountCard />)
+
+  expect(await screen.findByText('안녕하세요 민지님!')).toBeDefined()
+  expect(fetchMock).toHaveBeenCalledWith('/bff/users/me', {
+    headers: {
+      Authorization: 'Bearer access-token',
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  })
+  expect(container.querySelector('[style]')?.getAttribute('style')).toContain(
+    'profile.jpg',
+  )
+  expect(screen.queryByText(/사진이 안 보일 수 있어요/)).toBeNull()
+})
+
+it.each([null, undefined, ''])(
+  '프로필 이미지가 %s이면 안내 말풍선을 보여준다',
+  async (profileImageUrl) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: { nickname: '민지', profileImageUrl },
+          error: null,
+        }),
+      }),
+    )
+    render(<AccountCard />)
+
+    expect(
+      await screen.findByText(
+        "로그인 시 '선택'을 누르지 않으면 사진이 안 보일 수 있어요.",
+      ),
+    ).toBeDefined()
+  },
+)
+
+it('말풍선 밖을 터치하면 말풍선을 서서히 숨긴다', async () => {
+  render(<AccountCard />)
+  const notice = await screen.findByText(/사진이 안 보일 수 있어요/)
+
+  fireEvent.pointerDown(notice)
+  expect(notice.className).not.toContain('imageNoticeHidden')
+
+  fireEvent.pointerDown(document.body)
+  expect(notice.className).toContain('imageNoticeHidden')
+})
+
+it('프로필 조회가 실패하면 모달을 보여주고 확인 시 로그인으로 이동한다', async () => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
+  render(<AccountCard />)
+
+  expect(
+    await screen.findByText(
+      '프로필 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.',
+    ),
+  ).toBeDefined()
+  expect(replace).not.toHaveBeenCalled()
+  expect(screen.queryByText(/사진이 안 보일 수 있어요/)).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: '로그인' }))
+  expect(window.sessionStorage.getItem('accessToken')).toBeNull()
+  expect(replace).toHaveBeenCalledWith('/auth/login')
+})
+
+it('액세스 토큰이 없어도 프로필 실패 모달을 보여준다', async () => {
+  window.sessionStorage.removeItem('accessToken')
+  const fetchMock = vi.fn()
+  vi.stubGlobal('fetch', fetchMock)
+  render(<AccountCard />)
+
+  expect(
+    await screen.findByText(
+      '프로필 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.',
+    ),
+  ).toBeDefined()
+  expect(fetchMock).not.toHaveBeenCalled()
 })
 
 it('204 응답을 받으면 Access Token을 삭제하고 메인으로 이동한다', async () => {
