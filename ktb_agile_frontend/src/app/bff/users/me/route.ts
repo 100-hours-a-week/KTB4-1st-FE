@@ -7,6 +7,48 @@ const backendUrl = (
     : 'http://127.0.0.1:8080')
 ).replace(/\/+$/, '')
 
+export async function GET(request: Request) {
+  const authorization = request.headers.get('Authorization')
+
+  if (!authorization?.startsWith('Bearer ')) {
+    return Response.json(
+      {
+        data: null,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: AUTH_ERRORS.LOGIN_REQUIRED,
+          details: [],
+        },
+      },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
+  try {
+    const response = await fetch(`${backendUrl}/users/me`, {
+      headers: { Authorization: authorization, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+
+    return Response.json(await response.json(), {
+      status: response.status,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+  } catch {
+    return Response.json(
+      {
+        data: null,
+        error: {
+          code: 'BAD_GATEWAY',
+          message: '프로필 정보를 불러오지 못했습니다.',
+          details: [],
+        },
+      },
+      { status: 502, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+}
+
 export async function DELETE(request: Request) {
   const authorization = request.headers.get('Authorization')
 
