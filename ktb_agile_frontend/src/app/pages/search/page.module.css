@@ -58,14 +58,17 @@
 
 .searchHistories {
   display: flex;
-  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
   gap: 8px;
+  overflow-x: auto;
 }
 
 .historyChip {
   display: inline-flex;
   max-width: 100%;
   min-height: 34px;
+  flex: none;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
@@ -78,7 +81,10 @@
 }
 
 .historyChip span:first-child {
-  overflow-wrap: anywhere;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .historyRemove {
