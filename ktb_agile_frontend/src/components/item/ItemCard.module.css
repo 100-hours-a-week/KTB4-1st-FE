@@ -57,8 +57,17 @@
   letter-spacing: -0.02em;
 }
 
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
 .time {
-  flex-basis: 100%;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: -0.02em;
   color: rgb(61 81 70 / 74%);
 }
 
@@ -79,7 +88,6 @@
   min-height: 30px;
   align-items: center;
   justify-content: center;
-  margin-top: 10px;
   padding: 5px 12px;
   border-radius: 999px;
   font-size: 12px;
