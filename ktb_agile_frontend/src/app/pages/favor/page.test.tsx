@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
-import axios, { type AxiosResponse } from 'axios'
+import axios, { AxiosError, type AxiosResponse } from 'axios'
 import { afterEach, expect, it, vi } from 'vitest'
 import PreferenceSetup from './page'
 
@@ -24,6 +24,11 @@ afterEach(() => {
 
 it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유지한 채 저장에 성공한다', async () => {
   window.sessionStorage.setItem('accessToken', 'test-token')
+  vi.spyOn(axios, 'get').mockRejectedValue(
+    new AxiosError('Not found', undefined, undefined, undefined, {
+      status: 404,
+    } as AxiosResponse),
+  )
 
   const post = vi
     .spyOn(axios, 'post')
@@ -31,6 +36,10 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
     .mockResolvedValueOnce({ status: 201 } as AxiosResponse)
 
   const { container } = render(<PreferenceSetup />)
+
+  await waitFor(() =>
+    expect(container.querySelector('section[inert]')).toBeNull(),
+  )
 
   fireEvent.click(screen.getByRole('button', { name: '담백하게' }))
   fireEvent.click(screen.getByRole('button', { name: '적당히' }))
@@ -59,7 +68,7 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
 
   fireEvent.click(completeButton)
 
-  await waitFor(() => expect(replace).toHaveBeenCalledWith('/pages/groups'))
+  await waitFor(() => expect(replace).toHaveBeenCalledWith('/pages/items'))
   expect(post).toHaveBeenCalledTimes(2)
 
   const expectedAnswers = [
@@ -71,7 +80,7 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
   for (const attempt of [1, 2]) {
     expect(post).toHaveBeenNthCalledWith(
       attempt,
-      'http://127.0.0.1:8080/users/preferences',
+      '/bff/preferences',
       { answers: expectedAnswers },
       expect.objectContaining({
         headers: expect.objectContaining({
@@ -80,4 +89,31 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
       }),
     )
   }
+})
+
+it('이미 취향 설문이 있으면 안내 모달을 보여주고 확인 시 물품 목록으로 이동한다', async () => {
+  window.sessionStorage.setItem('accessToken', 'test-token')
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValue({ status: 200 } as AxiosResponse)
+  const post = vi.spyOn(axios, 'post')
+
+  const { container } = render(<PreferenceSetup />)
+
+  expect(
+    await screen.findByText(
+      '취향 설문을 이미 작성하셨습니다. 추가로 작성할 수 없습니다.',
+    ),
+  ).toBeDefined()
+  expect(container.querySelector('section[inert]')).not.toBeNull()
+  expect(get).toHaveBeenCalledWith(
+    '/bff/preferences',
+    expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer test-token' }),
+    }),
+  )
+  expect(post).not.toHaveBeenCalled()
+
+  fireEvent.click(screen.getByRole('button', { name: '확인' }))
+  expect(replace).toHaveBeenCalledWith('/pages/items')
 })
