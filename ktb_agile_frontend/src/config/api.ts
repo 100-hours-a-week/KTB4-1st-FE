@@ -22,6 +22,7 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
       '/bff/group',
       '/bff/chat-rooms',
       '/bff/my-items',
+      '/bff/preferences',
       '/bff/liked-items',
       '/bff/exchanged-items',
       '/bff/search',
