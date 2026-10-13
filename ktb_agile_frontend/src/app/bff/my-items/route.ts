@@ -48,3 +48,5 @@ export async function GET(request: Request) {
     )
   }
 }
+
+export const GET = withAuth(getMyItems)
