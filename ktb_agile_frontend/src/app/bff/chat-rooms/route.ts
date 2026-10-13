@@ -1,12 +1,6 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -18,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   const requestParams = new URL(request.url).searchParams
-  const backendRequestUrl = new URL(`${backendUrl}/chat-rooms`)
+  const backendRequestUrl = new URL(`${BACKEND_URL}/chat-rooms`)
   for (const key of ['size', 'direction', 'cursor']) {
     const value = requestParams.get(key)
     if (value !== null) backendRequestUrl.searchParams.set(key, value)

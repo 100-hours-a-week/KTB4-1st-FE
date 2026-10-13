@@ -8,4 +8,5 @@ export const EXCHANGE_ERRORS = {
   REQUEST_INVALID: '교환 요청 정보가 올바르지 않습니다.',
   REQUEST_LOAD_FAILED: '교환 요청을 불러오지 못했습니다.',
   REQUEST_NOT_EDITABLE: '수정할 수 없는 교환 요청입니다.',
+  EXCHANGED_ITEMS_LOAD_FAILED: '교환 내역을 불러오지 못했습니다.',
 } as const

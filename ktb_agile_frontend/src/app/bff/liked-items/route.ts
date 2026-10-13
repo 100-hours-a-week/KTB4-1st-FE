@@ -1,11 +1,6 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
+import { ITEM_ERRORS } from '@/constants/errors/item'
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -24,7 +19,7 @@ export async function GET(request: Request) {
     )
   }
 
-  const backendRequestUrl = new URL(`${backendUrl}/users/me/liked-items`)
+  const backendRequestUrl = new URL(`${BACKEND_URL}/users/me/liked-items`)
   backendRequestUrl.searchParams.set('size', '10')
   const cursor = new URL(request.url).searchParams.get('cursor')
   if (cursor !== null) backendRequestUrl.searchParams.set('cursor', cursor)
@@ -45,7 +40,7 @@ export async function GET(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '관심 물품 목록을 불러오지 못했습니다.',
+          message: ITEM_ERRORS.LIKED_ITEMS_LOAD_FAILED,
           details: [],
         },
       },
