@@ -1,24 +1,8 @@
 import { BACKEND_URL } from '@/config/backend'
-import { AUTH_ERRORS } from '@/constants/errors/auth'
 import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
+import { withAuth } from '@/utils/with-auth'
 
-export async function GET(request: Request) {
-  const authorization = request.headers.get('Authorization')
-
-  if (!authorization?.startsWith('Bearer ')) {
-    return Response.json(
-      {
-        data: null,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: AUTH_ERRORS.LOGIN_REQUIRED,
-          details: [],
-        },
-      },
-      { status: 401, headers: { 'Cache-Control': 'no-store' } },
-    )
-  }
-
+async function getExchangedItems(request: Request, authorization: string) {
   const backendRequestUrl = new URL(`${BACKEND_URL}/users/me/exchanged-items`)
   backendRequestUrl.searchParams.set('size', '10')
   const cursor = new URL(request.url).searchParams.get('cursor')
@@ -48,3 +32,5 @@ export async function GET(request: Request) {
     )
   }
 }
+
+export const GET = withAuth(getExchangedItems)
