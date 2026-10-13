@@ -1,11 +1,5 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
 
 function unauthorized() {
   return Response.json(
@@ -25,7 +19,7 @@ export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
   if (!authorization?.startsWith('Bearer ')) return unauthorized()
 
-  const url = new URL(`${backendUrl}/search-histories`)
+  const url = new URL(`${BACKEND_URL}/search-histories`)
   const cursor = new URL(request.url).searchParams.get('cursor')
   if (cursor !== null) url.searchParams.set('cursor', cursor)
 
@@ -58,7 +52,7 @@ export async function DELETE(request: Request) {
   if (!authorization?.startsWith('Bearer ')) return unauthorized()
 
   try {
-    const response = await fetch(`${backendUrl}/search-histories`, {
+    const response = await fetch(`${BACKEND_URL}/search-histories`, {
       method: 'DELETE',
       headers: { Authorization: authorization, Accept: 'application/json' },
       cache: 'no-store',

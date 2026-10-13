@@ -1,11 +1,5 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
 
 function unauthorized() {
   return Response.json(
@@ -40,7 +34,7 @@ export async function GET(request: Request) {
   if (!authorization?.startsWith('Bearer ')) return unauthorized()
 
   try {
-    const response = await fetch(`${backendUrl}/users/preferences`, {
+    const response = await fetch(`${BACKEND_URL}/users/preferences`, {
       headers: { Authorization: authorization, Accept: 'application/json' },
       cache: 'no-store',
     })
@@ -58,7 +52,7 @@ export async function POST(request: Request) {
   if (!authorization?.startsWith('Bearer ')) return unauthorized()
 
   try {
-    const response = await fetch(`${backendUrl}/users/preferences`, {
+    const response = await fetch(`${BACKEND_URL}/users/preferences`, {
       method: 'POST',
       headers: {
         Authorization: authorization,

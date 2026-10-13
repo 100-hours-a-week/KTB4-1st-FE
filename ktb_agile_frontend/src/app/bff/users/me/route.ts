@@ -1,11 +1,5 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -25,7 +19,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/users/me`, {
+    const response = await fetch(`${BACKEND_URL}/users/me`, {
       headers: { Authorization: authorization, Accept: 'application/json' },
       cache: 'no-store',
     })
@@ -67,7 +61,7 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const response = await fetch(`${backendUrl}/users/me`, {
+    const response = await fetch(`${BACKEND_URL}/users/me`, {
       method: 'DELETE',
       headers: { Authorization: authorization, Accept: 'application/json' },
       cache: 'no-store',
