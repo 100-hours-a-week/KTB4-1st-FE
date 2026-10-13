@@ -1,14 +1,25 @@
-import { withAuth } from '@/utils/with-auth'
+import { BACKEND_URL } from '@/config/backend'
+import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { ITEM_ERRORS } from '@/constants/errors/item'
 
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
+export async function GET(request: Request) {
+  const authorization = request.headers.get('Authorization')
 
-async function getMyItems(request: Request, authorization: string) {
-  const backendRequestUrl = new URL(`${backendUrl}/users/me/items`)
+  if (!authorization?.startsWith('Bearer ')) {
+    return Response.json(
+      {
+        data: null,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: AUTH_ERRORS.LOGIN_REQUIRED,
+          details: [],
+        },
+      },
+      { status: 401, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
+  const backendRequestUrl = new URL(`${BACKEND_URL}/users/me/items`)
   backendRequestUrl.searchParams.set('size', '10')
   const cursor = new URL(request.url).searchParams.get('cursor')
   if (cursor !== null) backendRequestUrl.searchParams.set('cursor', cursor)
@@ -29,7 +40,7 @@ async function getMyItems(request: Request, authorization: string) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '물품 목록을 불러오지 못했습니다.',
+          message: ITEM_ERRORS.MY_ITEMS_LOAD_FAILED,
           details: [],
         },
       },

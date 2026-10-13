@@ -1,11 +1,6 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
+import { SEARCH_ERRORS } from '@/constants/errors/search'
 
 type RouteContext = {
   params: Promise<{ searchHistoryId: string }>
@@ -37,7 +32,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         data: null,
         error: {
           code: 'BAD_REQUEST',
-          message: '검색 기록 ID가 올바르지 않습니다.',
+          message: SEARCH_ERRORS.HISTORY_ID_INVALID,
           details: [],
         },
       },
@@ -47,7 +42,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
 
   try {
     const response = await fetch(
-      `${backendUrl}/search-histories/${searchHistoryId}`,
+      `${BACKEND_URL}/search-histories/${searchHistoryId}`,
       {
         method: 'DELETE',
         headers: {
@@ -73,7 +68,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '검색 기록을 삭제하지 못했습니다.',
+          message: SEARCH_ERRORS.HISTORY_DELETE_FAILED,
           details: [],
         },
       },
