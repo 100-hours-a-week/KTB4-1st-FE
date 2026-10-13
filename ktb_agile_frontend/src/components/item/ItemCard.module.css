@@ -5,9 +5,14 @@
   gap: 16px;
   min-height: 144px;
   padding: 12px;
-  border: 1px solid #e1e5ea;
-  border-radius: 16px;
-  background: #fff;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 20px;
+  background: rgb(255 251 246 / 65%);
+  box-shadow:
+    0 8px 24px rgb(61 81 70 / 10%),
+    inset 0 1px 0 rgb(255 255 255 / 80%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
 }
 
 .link {
@@ -18,8 +23,9 @@
   width: 112px;
   aspect-ratio: 1;
   align-self: center;
-  border-radius: 12px;
-  background: #d4d8de;
+  border-radius: 14px;
+  border: 1px solid rgb(255 255 255 / 70%);
+  background-color: #d1d8d3;
   background-position: center;
   background-size: cover;
 }
@@ -36,7 +42,7 @@
 .title {
   width: 100%;
   overflow: hidden;
-  color: #161b26;
+  color: #3d5146;
   font-size: 16px;
   font-weight: 700;
   line-height: 1.4;
@@ -49,23 +55,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: 2px 12px;
-  margin-top: 8px;
-  color: #4f5968;
-  font-size: 13px;
+  margin-top: 6px;
+  color: rgb(61 81 70 / 60%);
+  font-size: 12px;
   line-height: 1.45;
   letter-spacing: -0.02em;
 }
 
 .time {
-  color: #969ca5;
+  flex-basis: 100%;
+  color: rgb(61 81 70 / 60%);
 }
 
 .preview {
   width: 100%;
   margin-top: 6px;
   overflow: hidden;
-  color: #929292;
-  font-size: 12px;
+  color: rgb(61 81 70 / 85%);
+  font-size: 13px;
   line-height: 1.45;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
@@ -86,15 +93,15 @@
 }
 
 .available {
-  border: 1px solid #d2d8df;
-  color: #161b26;
-  background: #f8fafb;
+  border: 1px solid rgb(148 227 192 / 80%);
+  color: #3d5146;
+  background: rgb(174 235 203 / 45%);
 }
 
 .completed {
-  border: 1px solid #161b26;
-  color: #fff;
-  background: #161b26;
+  border: 1px solid rgb(61 81 70 / 70%);
+  color: #fffbf6;
+  background: rgb(61 81 70 / 82%);
 }
 
 @media (max-width: 390px) {
