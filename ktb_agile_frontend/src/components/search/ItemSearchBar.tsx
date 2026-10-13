@@ -7,9 +7,11 @@ type ItemSearchBarProps = {
   groups: JoinedGroupOption[]
   selectedGroupId: number | null
   keyword: string
+  isCheckBoxSelected: boolean
   disabled: boolean
   onGroupChange: (groupId: number | null) => void
   onKeywordChange: (keyword: string) => void
+  onCheckBoxSelectedChange: (checked: boolean) => void
   onSearch: () => void
 }
 
@@ -17,48 +19,62 @@ export default function ItemSearchBar({
   groups,
   selectedGroupId,
   keyword,
+  isCheckBoxSelected,
   disabled,
   onGroupChange,
   onKeywordChange,
+  onCheckBoxSelectedChange,
   onSearch,
 }: ItemSearchBarProps) {
   return (
-    <div className={styles.searchControls}>
-      <div className={styles.groupField}>
-        <select
-          value={selectedGroupId ?? ''}
-          disabled={groups.length === 0}
-          onChange={(event) =>
-            onGroupChange(
-              event.target.value ? Number(event.target.value) : null,
-            )
+    <div className={styles.searchArea}>
+      <div className={styles.searchControls}>
+        <div className={styles.groupField}>
+          <select
+            value={selectedGroupId ?? ''}
+            disabled={groups.length === 0}
+            onChange={(event) =>
+              onGroupChange(
+                event.target.value ? Number(event.target.value) : null,
+              )
+            }
+          >
+            {groups.length === 0 && <option value="">그룹 선택</option>}
+            {groups.map((group) => (
+              <option key={group.groupId} value={group.groupId}>
+                {group.groupName}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.searchField}>
+          <input
+            type="search"
+            value={keyword}
+            maxLength={255}
+            onChange={(event) => onKeywordChange(event.target.value)}
+            placeholder="물품 검색"
+          />
+        </div>
+        <button
+          type="button"
+          className={styles.searchButton}
+          onClick={onSearch}
+          disabled={
+            disabled || groups.length === 0 || keyword.trim().length === 0
           }
         >
-          {groups.length === 0 && <option value="">그룹 선택</option>}
-          {groups.map((group) => (
-            <option key={group.groupId} value={group.groupId}>
-              {group.groupName}
-            </option>
-          ))}
-        </select>
+          검색
+        </button>
       </div>
-      <div className={styles.searchField}>
+      <label className={styles.stateFilter}>
         <input
-          type="search"
-          value={keyword}
-          maxLength={255}
-          onChange={(event) => onKeywordChange(event.target.value)}
-          placeholder="물품 검색"
+          type="checkbox"
+          checked={isCheckBoxSelected}
+          onChange={(event) => onCheckBoxSelectedChange(event.target.checked)}
         />
-      </div>
-      <button
-        type="button"
-        className={styles.searchButton}
-        onClick={onSearch}
-        disabled={disabled || groups.length === 0 || keyword.trim().length === 0}
-      >
-        검색
-      </button>
+        거래 완료된 물품 제외
+      </label>
     </div>
   )
 }

@@ -20,6 +20,7 @@ import styles from './page.module.css'
 type SearchCriteria = {
   keyword: string
   groupId: number
+  itemState: 'AVAILABLE' | null
 }
 
 type SearchResult = SearchCriteria & {
@@ -71,6 +72,7 @@ function SearchPageContent() {
     )
   })
   const [keyword, setKeyword] = useState('')
+  const [isCheckBoxSelected, setIsCheckBoxSelected] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [moreLoading, setMoreLoading] = useState(false)
@@ -143,6 +145,7 @@ function SearchPageContent() {
           params: {
             groupId: criteria.groupId,
             keyword: criteria.keyword,
+            ...(criteria.itemState ? { itemState: criteria.itemState } : {}),
             ...(cursor ? { cursor } : {}),
           },
           headers: {
@@ -156,7 +159,8 @@ function SearchPageContent() {
         if (cursor) {
           setResult((current) =>
             current?.groupId === criteria.groupId &&
-            current.keyword === criteria.keyword
+            current.keyword === criteria.keyword &&
+            current.itemState === criteria.itemState
               ? {
                   ...criteria,
                   items: [...current.items, ...page.items],
@@ -197,7 +201,11 @@ function SearchPageContent() {
       setSearchError('검색할 그룹을 선택해주세요.')
       return
     }
-    const criteria = { groupId: selectedGroupId, keyword: keyword.trim() }
+    const criteria: SearchCriteria = {
+      groupId: selectedGroupId,
+      keyword: keyword.trim(),
+      itemState: isCheckBoxSelected ? 'AVAILABLE' : null,
+    }
     setResult(null)
     setSearchError('')
     setIsLoading(true)
@@ -210,8 +218,29 @@ function SearchPageContent() {
     setMoreLoading(true)
     setSearchError('')
     setSearchRequest({
-      criteria: { groupId: result.groupId, keyword: result.keyword },
+      criteria: {
+        groupId: result.groupId,
+        keyword: result.keyword,
+        itemState: result.itemState,
+      },
       cursor: result.nextCursor,
+    })
+  }
+
+  function changeCheckBoxSelected(checked: boolean) {
+    setIsCheckBoxSelected(checked)
+    if (!searchRequest) return
+
+    setResult(null)
+    setSearchError('')
+    setIsLoading(true)
+    setMoreLoading(false)
+    setSearchRequest({
+      criteria: {
+        ...searchRequest.criteria,
+        itemState: checked ? 'AVAILABLE' : null,
+      },
+      cursor: null,
     })
   }
 
@@ -296,6 +325,7 @@ function SearchPageContent() {
         groups={groups}
         selectedGroupId={selectedGroupId}
         keyword={keyword}
+        isCheckBoxSelected={isCheckBoxSelected}
         disabled={isLoading}
         onGroupChange={(groupId) => {
           setSelectedGroupId(groupId)
@@ -306,6 +336,7 @@ function SearchPageContent() {
           changeCriteria()
         }}
         onSearch={handleSearchClick}
+        onCheckBoxSelectedChange={changeCheckBoxSelected}
       />
 
       {historyError ? (
