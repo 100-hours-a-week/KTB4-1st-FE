@@ -27,11 +27,14 @@ export const ITEM_ERRORS = {
   MODERATION_ID_MISSING: '검수 ID가 반환되지 않았습니다.',
   REGISTER_FAILED: '물품 등록에 실패했습니다. 다시 시도해주세요.',
   NOT_FOUND: '물품을 찾을 수 없습니다.',
-  DETAIL_LOAD_FAILED: '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.',
+  DETAIL_LOAD_FAILED:
+    '물품 정보를 불러오지 못했습니다.\n잠시 후 다시 시도해주세요.',
   EDIT_LOAD_FAILED: '물품 정보를 불러오지 못했습니다. 다시 시도해주세요.',
   DELETE_NOT_FOUND: '삭제할 물품을 찾을 수 없습니다.',
   DELETE_FAILED: '물품 삭제에 실패했습니다. 다시 시도해주세요.',
   NEW_IMAGE_ON_EDIT_UNSUPPORTED:
     '현재 수정 API에서는 새 이미지 추가를 지원하지 않습니다.',
   UPDATE_FAILED: '물품 수정에 실패했습니다. 다시 시도해주세요.',
+  MY_ITEMS_LOAD_FAILED: '물품 목록을 불러오지 못했습니다.',
+  LIKED_ITEMS_LOAD_FAILED: '관심 물품 목록을 불러오지 못했습니다.',
 } as const

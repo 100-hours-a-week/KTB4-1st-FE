@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '로그아웃 처리 중 서버에 연결하지 못했습니다.',
+          message: AUTH_ERRORS.LOGOUT_SERVER_UNAVAILABLE,
           details: [],
         },
       } satisfies AuthErrorResponse,

@@ -1,5 +1,6 @@
 import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { USER_ERRORS } from '@/constants/errors/user'
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '프로필 정보를 불러오지 못했습니다.',
+          message: USER_ERRORS.PROFILE_LOAD_FAILED,
           details: [],
         },
       },
@@ -86,7 +87,7 @@ export async function DELETE(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '회원 탈퇴 요청을 처리하지 못했습니다.',
+          message: USER_ERRORS.DELETE_FAILED,
           details: [],
         },
       },

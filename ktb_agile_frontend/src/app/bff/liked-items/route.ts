@@ -1,5 +1,6 @@
 import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { ITEM_ERRORS } from '@/constants/errors/item'
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '관심 물품 목록을 불러오지 못했습니다.',
+          message: ITEM_ERRORS.LIKED_ITEMS_LOAD_FAILED,
           details: [],
         },
       },

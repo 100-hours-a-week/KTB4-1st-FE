@@ -1,5 +1,6 @@
 import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { SEARCH_ERRORS } from '@/constants/errors/search'
 
 function unauthorized() {
   return Response.json(
@@ -38,7 +39,7 @@ export async function GET(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '검색 기록을 가져오는데 실패했습니다',
+          message: SEARCH_ERRORS.HISTORY_LOAD_FAILED,
           details: [],
         },
       },
@@ -73,7 +74,7 @@ export async function DELETE(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '전체 검색 기록을 삭제하지 못했습니다.',
+          message: SEARCH_ERRORS.ALL_HISTORY_DELETE_FAILED,
           details: [],
         },
       },

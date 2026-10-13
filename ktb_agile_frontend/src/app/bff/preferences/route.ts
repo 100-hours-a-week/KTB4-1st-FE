@@ -1,5 +1,6 @@
 import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { PREFERENCE_ERRORS } from '@/constants/errors/preference'
 
 function unauthorized() {
   return Response.json(
@@ -21,7 +22,7 @@ function unavailable() {
       data: null,
       error: {
         code: 'BAD_GATEWAY',
-        message: '취향 설문 요청을 처리하지 못했습니다.',
+        message: PREFERENCE_ERRORS.REQUEST_FAILED,
         details: [],
       },
     },

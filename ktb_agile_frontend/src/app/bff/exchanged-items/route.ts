@@ -1,5 +1,6 @@
 import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 
 export async function GET(request: Request) {
   const authorization = request.headers.get('Authorization')
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
         data: null,
         error: {
           code: 'BAD_GATEWAY',
-          message: '교환 내역을 불러오지 못했습니다.',
+          message: EXCHANGE_ERRORS.EXCHANGED_ITEMS_LOAD_FAILED,
           details: [],
         },
       },
