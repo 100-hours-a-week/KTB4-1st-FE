@@ -28,8 +28,8 @@ export default function ItemCard({ item }: ItemCardProps) {
           <h2 className={styles.title}>{item.title}</h2>
           <p className={styles.preview}>{item.contentPreview}</p>
           <p className={styles.meta}>
-            <span>수량: {item.quantity}개</span>
             <span>등록자: {item.owner.nickname}</span>
+            <span>수량: {item.quantity}개</span>
             <span>조회 수 : {item.viewCount}</span>
             <span>교환 요청 수 : {item.exchangeRequestCount}</span>
           </p>

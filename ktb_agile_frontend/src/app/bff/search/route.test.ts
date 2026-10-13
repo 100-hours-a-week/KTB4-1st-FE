@@ -5,7 +5,7 @@ import { GET } from './route'
 
 afterEach(() => vi.unstubAllGlobals())
 
-it('선택 그룹, 검색어, 커서를 백엔드 검색 API로 전달한다', async () => {
+it('선택 그룹, 검색어, 물품 상태, 커서를 백엔드 검색 API로 전달한다', async () => {
   const body = {
     data: { items: [], nextCursor: null, hasNext: false },
     error: null,
@@ -15,7 +15,7 @@ it('선택 그룹, 검색어, 커서를 백엔드 검색 API로 전달한다', a
 
   const response = await GET(
     new Request(
-      'http://localhost/bff/search?groupId=12&keyword=%20%EC%B6%A9%EC%A0%84%EA%B8%B0%20&cursor=next',
+      'http://localhost/bff/search?groupId=12&keyword=%20%EC%B6%A9%EC%A0%84%EA%B8%B0%20&itemState=AVAILABLE&cursor=next',
       {
         headers: { Authorization: 'Bearer access-token' },
       },
@@ -26,10 +26,31 @@ it('선택 그룹, 검색어, 커서를 백엔드 검색 API로 전달한다', a
   expect(new URL(url).pathname).toBe('/items')
   expect(new URL(url).searchParams.get('groupId')).toBe('12')
   expect(new URL(url).searchParams.get('keyword')).toBe('충전기')
+  expect(new URL(url).searchParams.get('itemState')).toBe('AVAILABLE')
   expect(new URL(url).searchParams.get('cursor')).toBe('next')
   expect(options.headers.Authorization).toBe('Bearer access-token')
   expect(options.cache).toBe('no-store')
   expect(await response.json()).toEqual(body)
+})
+
+it('상태를 선택하지 않으면 물품 상태 조건을 전달하지 않는다', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(
+    Response.json({
+      data: { items: [], nextCursor: null, hasNext: false },
+      error: null,
+    }),
+  )
+  vi.stubGlobal('fetch', fetchMock)
+
+  await GET(
+    new Request('http://localhost/bff/search?groupId=12&keyword=충전기', {
+      headers: { Authorization: 'Bearer access-token' },
+    }),
+  )
+
+  expect(
+    new URL(fetchMock.mock.calls[0][0]).searchParams.has('itemState'),
+  ).toBe(false)
 })
 
 it('인증 또는 그룹 ID가 없으면 백엔드를 호출하지 않는다', async () => {

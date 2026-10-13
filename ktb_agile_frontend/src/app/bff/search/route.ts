@@ -26,6 +26,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const groupId = params.get('groupId')
   const keyword = params.get('keyword')?.trim() ?? ''
+  const itemState = params.get('itemState')
   if (
     !groupId ||
     !/^[1-9]\d*$/.test(groupId) ||
@@ -56,10 +57,28 @@ export async function GET(request: Request) {
       { status: 400, headers: { 'Cache-Control': 'no-store' } },
     )
   }
+  if (
+    itemState !== null &&
+    itemState !== 'AVAILABLE' &&
+    itemState !== 'UNAVAILABLE'
+  ) {
+    return Response.json(
+      {
+        data: null,
+        error: {
+          code: 'BAD_REQUEST',
+          message: '올바른 물품 상태를 선택해주세요.',
+          details: [],
+        },
+      },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
 
   const url = new URL(`${backendUrl}/items`)
   url.searchParams.set('groupId', groupId)
   url.searchParams.set('keyword', keyword)
+  if (itemState !== null) url.searchParams.set('itemState', itemState)
   const cursor = params.get('cursor')
   if (cursor !== null) url.searchParams.set('cursor', cursor)
 

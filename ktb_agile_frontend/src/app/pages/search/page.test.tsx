@@ -107,6 +107,66 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
   expect(post).not.toHaveBeenCalled()
 })
 
+it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 변경 시 첫 페이지를 다시 조회한다', async () => {
+  const get = vi.spyOn(axios, 'get').mockImplementation((url) => {
+    if (url === '/bff/search') {
+      return Promise.resolve({
+        data: {
+          data: { items: [], nextCursor: 'next', hasNext: true },
+          error: null,
+        },
+      })
+    }
+    return Promise.resolve({
+      data: {
+        data: { searchHistories: [], nextCursor: null, hasNext: false },
+        error: null,
+      },
+    })
+  })
+
+  render(<SearchPage />)
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: '거래 완료된 물품 제외' }),
+  )
+  fireEvent.change(screen.getByPlaceholderText('물품 검색'), {
+    target: { value: '충전기' },
+  })
+  fireEvent.click(screen.getByText('검색'))
+
+  await screen.findByText('검색 결과가 없습니다.')
+  let searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+  expect(searchCalls[0][1]?.params).toEqual({
+    groupId: 12,
+    keyword: '충전기',
+    itemState: 'AVAILABLE',
+  })
+
+  fireEvent.click(screen.getByText('더 보기'))
+  await waitFor(() => {
+    searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+    expect(searchCalls).toHaveLength(2)
+  })
+  expect(searchCalls[1][1]?.params).toEqual({
+    groupId: 12,
+    keyword: '충전기',
+    itemState: 'AVAILABLE',
+    cursor: 'next',
+  })
+
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: '거래 완료된 물품 제외' }),
+  )
+  await waitFor(() => {
+    searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+    expect(searchCalls).toHaveLength(3)
+  })
+  expect(searchCalls[2][1]?.params).toEqual({
+    groupId: 12,
+    keyword: '충전기',
+  })
+})
+
 it('x를 누르면 해당 검색 기록만 삭제한다', async () => {
   vi.spyOn(axios, 'get').mockResolvedValue({
     data: {
