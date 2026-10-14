@@ -21,6 +21,7 @@ function isBffRequest(request: InternalAxiosRequestConfig) {
       '/bff/group',
       '/bff/chat-rooms',
       '/bff/my-items',
+      '/bff/me/groups',
       '/bff/preferences',
       '/bff/liked-items',
       '/bff/exchanged-items',
