@@ -14,6 +14,7 @@ import type {
 } from '@/types/smartSearch'
 import styles from './page.module.css'
 
+const SEARCH_RESULT_PATH = '/pages/search/ai-smart-search/result'
 const SEARCH_FAILED_MESSAGE = '스마트 검색 결과를 불러오지 못했습니다.'
 
 export default function Page() {
@@ -22,20 +23,12 @@ export default function Page() {
     useSmartSearch()
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
-  // 검색한 뒤 조건이 바뀌면 이전 결과 안내는 더 이상 보여주지 않는다.
-  const [searchResult, setSearchResult] = useState<{
-    count: number
-    request: string
-  } | null>(null)
-
-  const currentRequest = JSON.stringify({ groupId, items, preferenceText })
 
   async function search() {
     if (isSearching || items.length === 0 || !groupId) return
 
     setIsSearching(true)
     setSearchError(null)
-    setSearchResult(null)
 
     const request: SmartSearchRequest = {
       groupId,
@@ -56,10 +49,7 @@ export default function Page() {
       if (!response.data.data || response.data.error) {
         throw new Error(response.data.error?.message || SEARCH_FAILED_MESSAGE)
       }
-      setSearchResult({
-        count: response.data.data.items.length,
-        request: currentRequest,
-      })
+      router.push(SEARCH_RESULT_PATH)
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         return
@@ -133,11 +123,6 @@ export default function Page() {
           >
             {isSearching ? '검색 중...' : '검색하기'}
           </button>
-          {searchResult?.request === currentRequest && (
-            <p className={styles.searchMessage} role="status">
-              검색 결과 {searchResult.count}건을 가져왔습니다.
-            </p>
-          )}
         </div>
       </div>
       {searchError && (

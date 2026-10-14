@@ -19,7 +19,7 @@ function renderPage() {
   )
 }
 
-const router = { back: vi.fn(), replace: vi.fn() }
+const router = { back: vi.fn(), push: vi.fn(), replace: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/config/api', () => ({}))
 
@@ -85,7 +85,7 @@ it('그룹을 선택하기 전에는 내 물품을 불러오거나 보여주지 
   )
 })
 
-it('물품과 조건을 보내고 현재 페이지에서 결과를 받는다', async () => {
+it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다', async () => {
   const get = mockLists()
   const post = vi.spyOn(axios, 'post').mockResolvedValue({
     data: { data: { items: [{ itemId: 202 }] }, error: null },
@@ -138,9 +138,10 @@ it('물품과 조건을 보내고 현재 페이지에서 결과를 받는다', a
       },
     },
   )
-  expect(await screen.findByRole('status')).toHaveProperty(
-    'textContent',
-    '검색 결과 1건을 가져왔습니다.',
+  await waitFor(() =>
+    expect(router.push).toHaveBeenCalledWith(
+      '/pages/search/ai-smart-search/result',
+    ),
   )
 })
 
@@ -295,4 +296,40 @@ it('말풍선 아래 드롭다운에서 선택한 그룹 ID로 검색한다', as
       { itemId: 102, quantity: 1 },
     ],
   })
+})
+
+it('페이지를 떠났다 돌아와도 선택한 그룹과 물품, 조건이 유지된다', async () => {
+  mockLists()
+
+  const { rerender } = renderPage()
+  await selectGroup()
+  fireEvent.click(
+    await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
+  )
+  fireEvent.change(
+    screen.getByPlaceholderText('예) 과자 물 칫솔 등과 바꾸고 싶어'),
+    { target: { value: '야식으로 먹을 거 찾아요' } },
+  )
+
+  // layout(Provider)은 그대로 두고 page만 교체하는 이동을 흉내 낸다.
+  rerender(
+    <SmartSearchProvider>
+      <div />
+    </SmartSearchProvider>,
+  )
+  rerender(
+    <SmartSearchProvider>
+      <AiSmartSearchPage />
+    </SmartSearchProvider>,
+  )
+
+  expect(
+    await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
+  ).toHaveProperty('checked', true)
+  expect(
+    screen.getByRole('combobox', { name: '검색할 그룹' }),
+  ).toHaveProperty('value', '1')
+  expect(
+    screen.getByPlaceholderText('예) 과자 물 칫솔 등과 바꾸고 싶어'),
+  ).toHaveProperty('value', '야식으로 먹을 거 찾아요')
 })
