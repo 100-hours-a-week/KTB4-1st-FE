@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
+import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
@@ -77,8 +78,6 @@ function SearchPageContent() {
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
-<<<<<<< HEAD
-=======
   const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
   const [historyError, setHistoryError] = useState(false)
   const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
@@ -88,8 +87,6 @@ function SearchPageContent() {
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
     null,
   )
-  const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
->>>>>>> origin/dev
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -423,6 +420,12 @@ function SearchPageContent() {
           )}
         </section>
       ) : null}
+      {deleteErrorMessage && (
+        <ModalDefault
+          message={deleteErrorMessage}
+          onConfirm={() => setDeleteErrorMessage(null)}
+        />
+      )}
       <Navbar />
     </section>
   )
