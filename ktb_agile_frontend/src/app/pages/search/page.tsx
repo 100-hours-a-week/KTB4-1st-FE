@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
-import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
@@ -72,7 +71,6 @@ function SearchPageContent() {
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
-  const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -218,16 +216,14 @@ function SearchPageContent() {
       )}
       {searchError && <p className={styles.searchMessage}>{searchError}</p>}
 
-      <button
-        type="button"
+      <Link
+        href="/pages/search/ai-smart-search"
         className={styles.smartSearchLink}
-        onClick={() => setIsSmartSearchNoticeOpen(true)}
       >
         <span className={styles.sparkle}>✦</span>
         AI 스마트 검색
         <span className={styles.chevron}>›</span>
-        <span className={styles.soonLabel}>soon</span>
-      </button>
+      </Link>
 
       {isLoading ? (
         <p className={styles.resultMessage}>검색 결과를 불러오는 중입니다.</p>
@@ -255,12 +251,6 @@ function SearchPageContent() {
           )}
         </section>
       ) : null}
-      {isSmartSearchNoticeOpen && (
-        <ModalDefault
-          message="AI 스마트 검색은 개발 중입니다."
-          onConfirm={() => setIsSmartSearchNoticeOpen(false)}
-        />
-      )}
       <Navbar />
     </section>
   )
