@@ -1,12 +1,12 @@
 'use client'
 
 import { PREFERENCE_ERRORS } from '@/constants/errors/preference'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './favor.module.css'
 import axios from 'axios'
-import { API_BASE_URL } from '@/config/api'
+import '@/config/api'
 
 const preferenceQuestions = [
   {
@@ -50,8 +50,43 @@ type PreferenceAnswer = {
 export default function PreferenceSetup() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [preferenceStatus, setPreferenceStatus] = useState<
+    'checking' | 'available' | 'exists' | 'failed'
+  >('checking')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [selectedAnswers, setSelectedAnswers] = useState<PreferenceAnswer[]>([])
+
+  useEffect(() => {
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    const controller = new AbortController()
+    async function checkPreferences() {
+      try {
+        await axios.get('/bff/preferences', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        })
+        if (!controller.signal.aborted) setPreferenceStatus('exists')
+      } catch (error) {
+        if (controller.signal.aborted) return
+        setPreferenceStatus(
+          axios.isAxiosError(error) && error.response?.status === 404
+            ? 'available'
+            : 'failed',
+        )
+      }
+    }
+
+    void checkPreferences()
+    return () => controller.abort()
+  }, [router])
 
   const selectedCount = selectedAnswers.length
   const isComplete = selectedCount === preferenceQuestions.length
@@ -82,6 +117,7 @@ export default function PreferenceSetup() {
   }
 
   async function submitResult() {
+    if (preferenceStatus !== 'available') return
     const result = selectedAnswers.map((v) => v)
     const accessToken = window.sessionStorage.getItem('accessToken')
 
@@ -95,7 +131,7 @@ export default function PreferenceSetup() {
 
     try {
       await axios.post(
-        `${API_BASE_URL}/users/preferences`,
+        '/bff/preferences',
         { answers: result },
         {
           headers: {
@@ -118,7 +154,11 @@ export default function PreferenceSetup() {
     <>
       <section
         className={styles.page}
-        inert={errorMessage !== null ? true : undefined}
+        inert={
+          preferenceStatus !== 'available' || errorMessage !== null
+            ? true
+            : undefined
+        }
       >
         <header className={styles.header}>
           <h1 className={styles.title}>거래 취향 설정</h1>
@@ -185,7 +225,9 @@ export default function PreferenceSetup() {
           <button
             className={styles.completeButton}
             type="button"
-            disabled={!isComplete || isSubmitting}
+            disabled={
+              !isComplete || isSubmitting || preferenceStatus !== 'available'
+            }
             onClick={submitResult}
           >
             완료
@@ -206,6 +248,18 @@ export default function PreferenceSetup() {
             setErrorMessage(null)
             if(errorMessage.includes('로그인')) router.replace('/auth/login')
           }}
+        />
+      )}
+      {preferenceStatus === 'exists' && (
+        <ModalDefault
+          message="취향 설문을 이미 작성하셨습니다. 추가로 작성할 수 없습니다. 수정은 추후 마이페이지에서 가능합니다."
+          onConfirm={() => router.replace('/pages/items')}
+        />
+      )}
+      {preferenceStatus === 'failed' && (
+        <ModalDefault
+          message="취향 설문을 확인하지 못했습니다. 다시 접속해주세요."
+          onConfirm={() => router.replace('/pages/items')}
         />
       )}
     </>

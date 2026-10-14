@@ -22,10 +22,14 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
       '/bff/group',
       '/bff/chat-rooms',
       '/bff/my-items',
+      '/bff/preferences',
       '/bff/liked-items',
       '/bff/exchanged-items',
       '/bff/search',
-    ].includes(requestUrl) || requestUrl.startsWith('/bff/like/')
+      '/bff/search-histories',
+    ].includes(requestUrl) ||
+    requestUrl.startsWith('/bff/like/') ||
+    requestUrl.startsWith('/bff/search-histories/')
   const hasAccessToken = request.headers.get('Authorization')
 
   return (isBackendRequest || isBffRequest) && hasAccessToken

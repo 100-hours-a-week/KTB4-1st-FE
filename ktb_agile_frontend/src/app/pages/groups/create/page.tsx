@@ -29,7 +29,22 @@ export default function CreateGroup() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isGroupCreateModalOpen, setIsGroupCreateModalOpen] = useState<boolean>(false);
 
+  function openGroupCreateModal() {
+    if (!groupAddressInfo?.roadAddress?.trim()) {
+      setErrorMessage(GROUP_ERRORS.ROAD_ADDRESS_REQUIRED)
+      return
+    }
+
+    setIsGroupCreateModalOpen(true)
+  }
+
   async function createProcess(){
+    if (!groupAddressInfo?.roadAddress?.trim()) {
+      setIsGroupCreateModalOpen(false)
+      setErrorMessage(GROUP_ERRORS.ROAD_ADDRESS_REQUIRED)
+      return
+    }
+
     const accessToken = window.sessionStorage.getItem('accessToken')
     if (!accessToken) {
       setErrorMessage(AUTH_ERRORS.LOGIN_REQUIRED)
@@ -142,7 +157,7 @@ export default function CreateGroup() {
           </div>
 
           <div className={styles.createArea}>
-            <button className={styles.createButton} type="button" onClick={()=>setIsGroupCreateModalOpen(true)}>
+            <button className={styles.createButton} type="button" onClick={openGroupCreateModal}>
               그룹 생성
             </button>
             <p className={styles.notice}>

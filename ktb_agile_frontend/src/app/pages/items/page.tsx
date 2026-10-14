@@ -8,7 +8,7 @@ import { API_BASE_URL } from '@/config/api'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import Navbar from '@/components/common/navbar/Navbar'
-import ItemCard from '@/components/item/ItemCard'
+import ItemCardList from '@/components/item/ItemCardList'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import styles from './page.module.css'
 
@@ -210,27 +210,23 @@ export default function ItemList() {
           </Link>
         </div>
       </header>
-      {selectedGroup && !isLoadingItems && items.length > 0 ? (
-        <div className={styles.itemList}>
-          {items.map((item) => (
-            <ItemCard item={item} key={item.itemId} />
-          ))}
-        </div>
+      {isLoadingGroups || isLoadingItems || (selectedGroup && items.length > 0) ? (
+        <ItemCardList
+          className={styles.itemList}
+          isLoading={isLoadingGroups || isLoadingItems}
+          items={items}
+        />
       ) : (
         <div className={styles.emptyState}>
           <h1 className={styles.emptyTitle}>
-            {isLoadingGroups || isLoadingItems
-              ? '물품 목록을 불러오는 중입니다.'
-              : selectedGroup
-                ? '등록된 물건이 없습니다.'
-                : '그룹에 가입하지 않았습니다.'}
+            {selectedGroup
+              ? '등록된 물건이 없습니다.'
+              : '그룹에 가입하지 않았습니다.'}
           </h1>
           <p className={styles.emptyDescription}>
-            {isLoadingGroups || isLoadingItems
-              ? '잠시만 기다려주세요.'
-              : selectedGroup
-                ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
-                : '그룹에 가입해서 물품들을 구경해보아요.'}
+            {selectedGroup
+              ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
+              : '그룹에 가입해서 물품들을 구경해보아요.'}
           </p>
         </div>
       )}

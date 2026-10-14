@@ -10,11 +10,16 @@ import ItemCard from '@/components/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
+import type {
+  SearchHistory,
+  SearchHistoryResponse,
+} from '@/types/searchHistory'
 import styles from './page.module.css'
 
 type SearchCriteria = {
   keyword: string
   groupId: number
+  itemState: 'AVAILABLE' | null
 }
 
 type SearchResult = SearchCriteria & {
@@ -66,11 +71,25 @@ function SearchPageContent() {
     )
   })
   const [keyword, setKeyword] = useState('')
+  const [isCheckBoxSelected, setIsCheckBoxSelected] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
+<<<<<<< HEAD
+=======
+  const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
+  const [historyError, setHistoryError] = useState(false)
+  const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
+    null,
+  )
+  const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  )
+  const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
+>>>>>>> origin/dev
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -78,6 +97,37 @@ function SearchPageContent() {
       router.replace('/auth/login')
     }
   }, [router])
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    const controller = new AbortController()
+
+    async function loadSearchHistories() {
+      try {
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (controller.signal.aborted) return
+        setSearchHistories(response.data.data.searchHistories)
+        setHistoryError(false)
+      } catch (error) {
+        if (!axios.isCancel(error) && !controller.signal.aborted) {
+          setSearchHistories([])
+          setHistoryError(true)
+        }
+      }
+    }
+
+    void loadSearchHistories()
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!searchRequest) return
@@ -97,6 +147,7 @@ function SearchPageContent() {
           params: {
             groupId: criteria.groupId,
             keyword: criteria.keyword,
+            ...(criteria.itemState ? { itemState: criteria.itemState } : {}),
             ...(cursor ? { cursor } : {}),
           },
           headers: {
@@ -110,7 +161,8 @@ function SearchPageContent() {
         if (cursor) {
           setResult((current) =>
             current?.groupId === criteria.groupId &&
-            current.keyword === criteria.keyword
+            current.keyword === criteria.keyword &&
+            current.itemState === criteria.itemState
               ? {
                   ...criteria,
                   items: [...current.items, ...page.items],
@@ -151,7 +203,11 @@ function SearchPageContent() {
       setSearchError('검색할 그룹을 선택해주세요.')
       return
     }
-    const criteria = { groupId: selectedGroupId, keyword: keyword.trim() }
+    const criteria: SearchCriteria = {
+      groupId: selectedGroupId,
+      keyword: keyword.trim(),
+      itemState: isCheckBoxSelected ? 'AVAILABLE' : null,
+    }
     setResult(null)
     setSearchError('')
     setIsLoading(true)
@@ -164,8 +220,29 @@ function SearchPageContent() {
     setMoreLoading(true)
     setSearchError('')
     setSearchRequest({
-      criteria: { groupId: result.groupId, keyword: result.keyword },
+      criteria: {
+        groupId: result.groupId,
+        keyword: result.keyword,
+        itemState: result.itemState,
+      },
       cursor: result.nextCursor,
+    })
+  }
+
+  function changeCheckBoxSelected(checked: boolean) {
+    setIsCheckBoxSelected(checked)
+    if (!searchRequest) return
+
+    setResult(null)
+    setSearchError('')
+    setIsLoading(true)
+    setMoreLoading(false)
+    setSearchRequest({
+      criteria: {
+        ...searchRequest.criteria,
+        itemState: checked ? 'AVAILABLE' : null,
+      },
+      cursor: null,
     })
   }
 
@@ -175,6 +252,60 @@ function SearchPageContent() {
     setSearchError('')
     setIsLoading(false)
     setMoreLoading(false)
+  }
+
+  async function requestAllHistoryDelete(path: string) {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return false
+    }
+
+    const response = await axios.delete(path, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+    if (response.status !== 204) throw new Error('Unexpected delete response')
+    return true
+  }
+
+  async function deleteSingleSearchHistory(searchHistoryId: number) {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
+
+    setDeletingHistoryId(searchHistoryId)
+    try {
+      if (
+        !(await requestAllHistoryDelete(
+          `/bff/search-histories/${searchHistoryId}`,
+        ))
+      )
+        return
+      setSearchHistories((current) =>
+        current.filter(
+          (history) => history.searchHistoryId !== searchHistoryId,
+        ),
+      )
+    } catch {
+      setDeleteErrorMessage('서버 문제로 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setDeletingHistoryId(null)
+    }
+  }
+
+  async function deleteAllSearchHistories() {
+    if (deletingHistoryId !== null || isDeletingAllHistories) return
+
+    setIsDeletingAllHistories(true)
+    try {
+      if (!(await requestAllHistoryDelete('/bff/search-histories'))) return
+      setSearchHistories([])
+    } catch {
+      setDeleteErrorMessage('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setIsDeletingAllHistories(false)
+    }
   }
 
   return (
@@ -196,6 +327,7 @@ function SearchPageContent() {
         groups={groups}
         selectedGroupId={selectedGroupId}
         keyword={keyword}
+        isCheckBoxSelected={isCheckBoxSelected}
         disabled={isLoading}
         onGroupChange={(groupId) => {
           setSelectedGroupId(groupId)
@@ -206,7 +338,47 @@ function SearchPageContent() {
           changeCriteria()
         }}
         onSearch={handleSearchClick}
+        onCheckBoxSelectedChange={changeCheckBoxSelected}
       />
+
+      {historyError ? (
+        <p className={styles.historyError}>
+          검색 기록을 가져오는데 실패했습니다
+        </p>
+      ) : searchHistories.length > 0 ? (
+        <div className={styles.historyBar}>
+          <button
+            type="button"
+            className={styles.clearHistoriesButton}
+            onClick={() => void deleteAllSearchHistories()}
+            disabled={deletingHistoryId !== null || isDeletingAllHistories}
+          >
+            전체 삭제
+          </button>
+          <div className={styles.searchHistories}>
+            {searchHistories.map((history) => (
+              <span
+                className={styles.historyChip}
+                key={history.searchHistoryId}
+              >
+                <span>{history.keyword}</span>
+                <button
+                  type="button"
+                  className={styles.historyRemove}
+                  onClick={() =>
+                    void deleteSingleSearchHistory(history.searchHistoryId)
+                  }
+                  disabled={
+                    deletingHistoryId !== null || isDeletingAllHistories
+                  }
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {groups.length === 0 && (
         <p className={styles.searchMessage}>

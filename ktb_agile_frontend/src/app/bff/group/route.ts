@@ -1,3 +1,4 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import type {
@@ -9,11 +10,6 @@ import type {
 
 const KAKAO_ADDRESS_SEARCH_URL =
   'https://dapi.kakao.com/v2/local/search/address.json'
-
-const backendUrl = process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
 
 function toCoordinate(value: string | undefined): number | null {
   if (value === undefined || value === '') return null
@@ -45,7 +41,7 @@ export async function GET(request: Request) {
 
   try {
     // Spring에서 토큰을 검증한 뒤에만 카카오 주소 검색을 호출합니다.
-    const authResponse = await fetch(`${backendUrl}/users/me/groups`, {
+    const authResponse = await fetch(`${BACKEND_URL}/users/me/groups`, {
       headers: { Authorization: authorization },
       cache: 'no-store',
     })

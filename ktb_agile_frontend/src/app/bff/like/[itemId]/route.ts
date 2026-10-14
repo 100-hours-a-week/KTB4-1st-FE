@@ -1,12 +1,6 @@
+import { BACKEND_URL } from '@/config/backend'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import axios from 'axios'
-
-const backendUrl = (
-  process.env.BACKEND_API_BASE_URL ||
-  (process.env.NODE_ENV === 'production'
-    ? 'http://springboot:8080'
-    : 'http://127.0.0.1:8080')
-).replace(/\/+$/, '')
 
 type RouteContext = {
   params: Promise<{ itemId: string }>
@@ -28,7 +22,7 @@ async function proxyLikeRequest(
 
   try {
     const response = await axios.request({
-      url: `${backendUrl}/items/${encodeURIComponent(itemId)}/likes`,
+      url: `${BACKEND_URL}/items/${encodeURIComponent(itemId)}/likes`,
       method,
       headers: {
         Authorization: authorization,
