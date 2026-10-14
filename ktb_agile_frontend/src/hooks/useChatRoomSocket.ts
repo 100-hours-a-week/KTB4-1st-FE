@@ -60,11 +60,10 @@ export function useChatRoomSocket({
     const client = new Client({
       brokerURL: `${getWebSocketUrl()}/ws`,
       beforeConnect: async () => {
-        const accessToken = window.sessionStorage.getItem('accessToken')
         try {
           // HTTP 인증 요청에서 401을 처리한 뒤 최신 토큰으로 연결합니다.
-          await axios.get(`${API_BASE_URL}/users/me/groups`, {
-            headers: { Authorization: `Bearer ${accessToken || ''}` },
+          await axios.get('/bff/me/groups', {
+            headers: { Accept: 'application/json' },
           })
           const latestToken = window.sessionStorage.getItem('accessToken')
           if (!latestToken) {

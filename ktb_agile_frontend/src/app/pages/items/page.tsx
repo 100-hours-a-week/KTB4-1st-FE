@@ -46,13 +46,6 @@ export default function ItemList() {
   })}`
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
-
     const requestedGroupId = Number(
       new URLSearchParams(window.location.search).get('groupId'),
     )
@@ -61,10 +54,9 @@ export default function ItemList() {
     async function fetchJoinedGroups() {
       try {
         const response = await axios.get<GroupListResponse>(
-          `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+          '/bff/me/groups',
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -97,7 +89,7 @@ export default function ItemList() {
     fetchJoinedGroups()
 
     return () => controller.abort()
-  }, [router])
+  }, [])
 
   useEffect(() => {
     if (selectedGroupId === null) return
