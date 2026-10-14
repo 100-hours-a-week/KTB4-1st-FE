@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import type { ItemListItem } from '@/types/item'
 import type { SmartSearchRequest } from '@/types/smartSearch'
 
 type SmartSearchItems = SmartSearchRequest['items']
@@ -16,9 +17,12 @@ type SmartSearchContextValue = {
   groupId: number | null
   items: SmartSearchItems
   preferenceText: string
+  // null은 아직 검색하지 않은 상태, []는 검색했지만 결과가 없는 상태
+  results: ItemListItem[] | null
   setGroupId: (groupId: number | null) => void
   setItems: (items: SmartSearchItems) => void
   setPreferenceText: (preferenceText: string) => void
+  setResults: (results: ItemListItem[] | null) => void
   reset: () => void
 }
 
@@ -33,11 +37,13 @@ export default function SmartSearchProvider({
   const [groupId, setGroupId] = useState<number | null>(null)
   const [items, setItems] = useState<SmartSearchItems>([])
   const [preferenceText, setPreferenceText] = useState('')
+  const [results, setResults] = useState<ItemListItem[] | null>(null)
 
   const reset = useCallback(() => {
     setGroupId(null)
     setItems([])
     setPreferenceText('')
+    setResults(null)
   }, [])
 
   const value = useMemo(
@@ -45,12 +51,14 @@ export default function SmartSearchProvider({
       groupId,
       items,
       preferenceText,
+      results,
       setGroupId,
       setItems,
       setPreferenceText,
+      setResults,
       reset,
     }),
-    [groupId, items, preferenceText, reset],
+    [groupId, items, preferenceText, results, reset],
   )
 
   return (

@@ -19,7 +19,7 @@ const SEARCH_FAILED_MESSAGE = '스마트 검색 결과를 불러오지 못했습
 
 export default function Page() {
   const router = useRouter()
-  const { groupId, items, preferenceText, setPreferenceText } =
+  const { groupId, items, preferenceText, setPreferenceText, setResults } =
     useSmartSearch()
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -49,6 +49,7 @@ export default function Page() {
       if (!response.data.data || response.data.error) {
         throw new Error(response.data.error?.message || SEARCH_FAILED_MESSAGE)
       }
+      setResults(response.data.data.items)
       router.push(SEARCH_RESULT_PATH)
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
