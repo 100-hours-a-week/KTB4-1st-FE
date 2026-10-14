@@ -1,0 +1,95 @@
+.itemCard {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #e5eee8;
+  border-radius: 16px;
+  background: #fbfdfb;
+}
+
+.itemSelection {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.itemCard:has(input:disabled) {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.itemCard input {
+  flex: none;
+  accent-color: #3d5146;
+}
+
+.thumbnail {
+  width: 62px;
+  height: 62px;
+  flex: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #d9f3e8, #aeebcb);
+  background-position: center;
+  background-size: cover;
+}
+
+.itemInfo {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+  color: #56675d;
+  font-size: 12px;
+}
+
+.itemInfo strong,
+.preview,
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemInfo strong {
+  color: #3d5146;
+  font-size: 14px;
+}
+
+.itemInfo small,
+.groupName {
+  color: #748278;
+  font-size: 11px;
+}
+
+.itemStatus {
+  flex: none;
+  color: #3d5146;
+  font-size: 11px;
+}
+
+.quantityRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #748278;
+  font-size: 11px;
+}
+
+@media (max-width: 359px) {
+  .thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+
+  .itemCard {
+    padding: 9px;
+  }
+
+  .itemSelection {
+    gap: 7px;
+  }
+}

@@ -1,0 +1,69 @@
+.quantity {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  color: #111827;
+}
+
+.quantity button,
+.quantity span {
+  display: grid;
+  width: 29px;
+  height: 29px;
+  place-items: center;
+  border: 1px solid #d1d5df;
+  border-radius: 50%;
+  background: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quantity button {
+  cursor: pointer;
+}
+
+.quantity button:disabled {
+  color: #c0c5ce;
+  cursor: not-allowed;
+}
+
+.requestTarget button,
+.requestTarget span {
+  border-color: #ffad94;
+  color: #3d5146;
+  background: #fff;
+}
+
+.requestOffer button,
+.requestOffer span {
+  border-color: #aeebcb;
+  color: #3d5146;
+  background: #fff;
+}
+
+.requestTarget button,
+.requestOffer button {
+  border: 0;
+  transition: background-color 160ms ease;
+}
+
+.requestTarget span,
+.requestOffer span {
+  border: 0;
+}
+
+.requestTarget button:not(:disabled):active {
+  background-color: #ffdbd1;
+}
+
+.requestOffer button:not(:disabled):active {
+  background-color: #d9f3e8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .requestTarget button,
+  .requestOffer button {
+    transition: none;
+  }
+}

@@ -1,20 +1,22 @@
 'use client'
 
-import styles from './ExchangeForm.module.css'
+import styles from './QuantityControl.module.css'
 
 export default function QuantityControl({
   value,
   maximum,
   disabled = false,
+  variant,
   onChange,
 }: {
   value: number
   maximum: number
   disabled?: boolean
+  variant?: 'requestTarget' | 'requestOffer'
   onChange: (value: number) => void
 }) {
   return (
-    <div className={styles.quantity}>
+    <div className={`${styles.quantity} ${variant ? styles[variant] : ''}`}>
       <button
         type="button"
         disabled={disabled || value <= 1}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { ItemListItem } from '@/types/item'
-import ItemCard from './ItemCard'
+import ItemCard from '@/components/common/item/ItemCard'
 import styles from './ItemCardList.module.css'
 
 type ItemCardListProps = {

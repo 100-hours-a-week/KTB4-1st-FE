@@ -32,22 +32,15 @@ function ItemRegisterContent() {
   const requestedGroupId = Number(searchParams.get('groupId'))
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
-
     const controller = new AbortController()
     async function loadGroups() {
       try {
         const response = await axios.get<{
           data: { groups: JoinedGroupOption[] }
         }>(
-          `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+          '/bff/me/groups',
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -65,7 +58,7 @@ function ItemRegisterContent() {
     }
     void loadGroups()
     return () => controller.abort()
-  }, [router])
+  }, [])
 
   async function handleItemSubmit(
     values: ItemRegisterFormValues,

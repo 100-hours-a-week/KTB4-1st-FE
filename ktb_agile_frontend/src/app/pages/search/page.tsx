@@ -7,7 +7,7 @@ import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
-import ItemCard from '@/components/item/ItemCard'
+import ItemCard from '@/components/common/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
@@ -87,7 +87,6 @@ function SearchPageContent() {
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
     null,
   )
-  const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -386,16 +385,14 @@ function SearchPageContent() {
       )}
       {searchError && <p className={styles.searchMessage}>{searchError}</p>}
 
-      <button
-        type="button"
+      <Link
+        href="/pages/search/ai-smart-search"
         className={styles.smartSearchLink}
-        onClick={() => setIsSmartSearchNoticeOpen(true)}
       >
         <span className={styles.sparkle}>✦</span>
         AI 스마트 검색
         <span className={styles.chevron}>›</span>
-        <span className={styles.soonLabel}>soon</span>
-      </button>
+      </Link>
 
       {isLoading ? (
         <p className={styles.resultMessage}>검색 결과를 불러오는 중입니다.</p>
@@ -423,12 +420,6 @@ function SearchPageContent() {
           )}
         </section>
       ) : null}
-      {isSmartSearchNoticeOpen && (
-        <ModalDefault
-          message="AI 스마트 검색은 개발 중입니다."
-          onConfirm={() => setIsSmartSearchNoticeOpen(false)}
-        />
-      )}
       {deleteErrorMessage && (
         <ModalDefault
           message={deleteErrorMessage}

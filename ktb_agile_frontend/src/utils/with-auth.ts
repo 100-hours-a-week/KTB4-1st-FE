@@ -19,7 +19,13 @@ export function withAuth(handler: AuthenticatedHandler) {
             details: [],
           },
         },
-        { status: 401, headers: { 'Cache-Control': 'no-store' } },
+        {
+          status: 401,
+          headers: {
+            'Cache-Control': 'no-store',
+            'X-Auth-Required': 'true',
+          },
+        },
       )
     }
 

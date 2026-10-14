@@ -10,7 +10,7 @@ import type { ItemDetail, ItemDetailResponse, ItemListItem } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import OfferingItemCard from './OfferingItemCard'
-import QuantityControl from './QuantityControl'
+import QuantityControl from '../common/exchange/QuantityControl'
 import ItemImage from './ItemImage'
 import styles from './ExchangeForm.module.css'
 
@@ -285,6 +285,7 @@ function ExchangeFormContent({
                         <QuantityControl
                           value={requestedQuantity}
                           maximum={item.quantity}
+                          variant={closeHref ? undefined : 'requestTarget'}
                           disabled={
                             isSubmitting ||
                             item.itemState !== 'AVAILABLE' ||
@@ -320,6 +321,7 @@ function ExchangeFormContent({
                           selected={selectedIds.includes(owned.itemId)}
                           quantity={offeredQuantities[owned.itemId] ?? 1}
                           disabled={isSubmitting}
+                          requestPage={!closeHref}
                           onSelectionChange={(selected) =>
                             setSelectedIds((ids) =>
                               selected

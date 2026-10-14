@@ -40,6 +40,7 @@ it('인증 헤더가 없으면 백엔드를 호출하지 않는다', async () =>
   const response = await GET(new Request('http://localhost/bff/my-items'))
 
   expect(response.status).toBe(401)
+  expect(response.headers.get('X-Auth-Required')).toBe('true')
   expect(fetchMock).not.toHaveBeenCalled()
 })
 

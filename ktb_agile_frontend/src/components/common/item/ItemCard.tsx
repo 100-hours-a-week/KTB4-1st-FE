@@ -2,7 +2,7 @@ import type { ItemListItem } from '@/types/item'
 import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
 import styles from './ItemCard.module.css'
 import Link from 'next/link'
-import LikeButton from './like/LikeButton'
+import LikeButton from '@/components/item/like/LikeButton'
 
 type ItemCardProps = {
   item: ItemListItem

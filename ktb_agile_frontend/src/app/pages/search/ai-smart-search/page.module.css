@@ -107,27 +107,12 @@
   font-weight: 700;
 }
 
-.itemsSection {
-  margin-bottom: 22px;
-}
-
-.itemsSection h2,
 .conditionSection h2 {
   margin-bottom: 10px;
   color: #3d5146;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.message {
-  padding: 26px 12px;
-  border: 1px solid #e5eee8;
-  border-radius: 16px;
-  color: #748278;
-  background: #fbfdfb;
-  font-size: 13px;
-  text-align: center;
 }
 
 .conditionSection {
@@ -159,6 +144,7 @@
   min-height: 50px;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: 15px;
   color: #fff;
   background: #3d5146;
@@ -170,6 +156,11 @@
   transition:
     background-color 160ms ease,
     transform 160ms ease;
+}
+
+.searchButton:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .searchButton:active {
