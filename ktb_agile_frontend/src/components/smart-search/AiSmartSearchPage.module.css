@@ -120,16 +120,6 @@
   letter-spacing: -0.02em;
 }
 
-.message {
-  padding: 26px 12px;
-  border: 1px solid #e5eee8;
-  border-radius: 16px;
-  color: #748278;
-  background: #fbfdfb;
-  font-size: 13px;
-  text-align: center;
-}
-
 .conditionSection {
   margin-bottom: 18px;
 }

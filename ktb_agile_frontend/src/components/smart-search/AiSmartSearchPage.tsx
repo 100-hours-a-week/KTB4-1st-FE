@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import SmartSearchMyItems from './SmartSearchMyItems'
 import styles from './AiSmartSearchPage.module.css'
 
 export default function AiSmartSearchPage() {
@@ -41,7 +42,7 @@ export default function AiSmartSearchPage() {
 
         <section className={styles.itemsSection}>
           <h2>내 물건 목록</h2>
-          <p className={styles.message}>내가 등록한 물품이 없습니다.</p>
+          <SmartSearchMyItems />
         </section>
 
         <section className={styles.conditionSection}>

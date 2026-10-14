@@ -1,0 +1,118 @@
+.message {
+  padding: 26px 12px;
+  border: 1px solid #e5eee8;
+  border-radius: 16px;
+  color: #748278;
+  background: #fbfdfb;
+  font-size: 13px;
+  text-align: center;
+}
+
+.message button {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border: 1px solid #dfe9e2;
+  border-radius: 8px;
+  color: #3d5146;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.itemList {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.itemCard {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e5eee8;
+  border-radius: 16px;
+  background: #fbfdfb;
+  cursor: pointer;
+}
+
+.itemCard:has(input:disabled) {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.itemCard input {
+  flex: none;
+  accent-color: #3d5146;
+}
+
+.thumbnail {
+  width: 62px;
+  height: 62px;
+  flex: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #d9f3e8, #aeebcb);
+  background-position: center;
+  background-size: cover;
+}
+
+.itemInfo {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+  color: #56675d;
+  font-size: 12px;
+}
+
+.itemInfo strong,
+.preview,
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemInfo strong {
+  color: #3d5146;
+  font-size: 14px;
+}
+
+.itemInfo small,
+.groupName {
+  color: #748278;
+  font-size: 11px;
+}
+
+.itemStatus {
+  flex: none;
+  color: #3d5146;
+  font-size: 11px;
+}
+
+.moreButton {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #dfe9e2;
+  border-radius: 12px;
+  color: #3d5146;
+  background: #f8fbf9;
+  font: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 359px) {
+  .thumbnail {
+    width: 48px;
+    height: 48px;
+  }
+
+  .itemCard {
+    gap: 7px;
+    padding: 9px;
+  }
+}
