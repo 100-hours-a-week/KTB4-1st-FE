@@ -27,14 +27,20 @@
 }
 
 .itemCard {
-  display: flex;
+  display: grid;
+  gap: 8px;
   min-width: 0;
-  align-items: center;
-  gap: 10px;
   padding: 12px;
   border: 1px solid #e5eee8;
   border-radius: 16px;
   background: #fbfdfb;
+}
+
+.itemSelection {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
 }
 
@@ -92,6 +98,15 @@
   font-size: 11px;
 }
 
+.quantityRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  color: #748278;
+  font-size: 11px;
+}
+
 .moreButton {
   display: block;
   width: 100%;
@@ -112,7 +127,10 @@
   }
 
   .itemCard {
-    gap: 7px;
     padding: 9px;
+  }
+
+  .itemSelection {
+    gap: 7px;
   }
 }

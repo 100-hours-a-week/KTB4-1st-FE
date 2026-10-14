@@ -40,7 +40,7 @@ export type GroupAddressResponse = {
 }
 
 export type GroupCardData = {
-  groupId:number
+  groupId: number
   groupName: string
   memberCount: number
   roadAddress: string
@@ -53,4 +53,13 @@ export type GroupCardData = {
 export type JoinedGroupOption = {
   groupId: number
   groupName: string
+}
+
+export type JoinedGroupListResponse = {
+  data: {
+    groups: JoinedGroupOption[]
+    nextCursor: string | null
+    hasNext: boolean
+  } | null
+  error: { code: string; message: string; details: unknown[] } | null
 }

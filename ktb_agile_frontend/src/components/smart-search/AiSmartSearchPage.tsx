@@ -1,22 +1,31 @@
 'use client'
 
-import axios from 'axios'
+import axios, { type AxiosResponse } from 'axios'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
-import type { ItemListItem, MyItemListItem } from '@/types/item'
+import { GROUP_ERRORS } from '@/constants/errors/group'
+import type { JoinedGroupListResponse, JoinedGroupOption } from '@/types/group'
+import type { ItemListItem } from '@/types/item'
 import type {
   SmartSearchRequest,
   SmartSearchResponse,
 } from '@/types/smartSearch'
 import SmartSearchMyItems from './SmartSearchMyItems'
+import type { SelectedSmartSearchItem } from './SmartSearchMyItems'
 import styles from './AiSmartSearchPage.module.css'
 
 export default function AiSmartSearchPage() {
   const router = useRouter()
-  const [selectedItems, setSelectedItems] = useState<MyItemListItem[]>([])
+  const [groups, setGroups] = useState<JoinedGroupOption[]>([])
+  const [selectedItems, setSelectedItems] = useState<SelectedSmartSearchItem[]>(
+    [],
+  )
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
+  const [groupError, setGroupError] = useState<string | null>(null)
+  const [groupRetryCount, setGroupRetryCount] = useState(0)
   const [preferenceText, setPreferenceText] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -24,18 +33,74 @@ export default function AiSmartSearchPage() {
     null,
   )
 
-  const commonGroups = selectedItems.length
-    ? selectedItems[0].groups.filter((group) =>
-        selectedItems.every((item) =>
-          item.groups.some((itemGroup) => itemGroup.groupId === group.groupId),
-        ),
-      )
-    : []
-  const groupId = commonGroups.some(
-    (group) => group.groupId === selectedGroupId,
-  )
-    ? selectedGroupId
-    : commonGroups[0]?.groupId
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadGroups() {
+      setIsLoadingGroups(true)
+      setGroupError(null)
+
+      try {
+        const loadedGroups: JoinedGroupOption[] = []
+        const seenCursors = new Set<string>()
+        let cursor: string | null = null
+
+        while (true) {
+          const response: AxiosResponse<JoinedGroupListResponse> =
+            await axios.get<JoinedGroupListResponse>('/bff/me/groups', {
+              params: cursor ? { cursor } : undefined,
+              headers: { Accept: 'application/json' },
+              signal: controller.signal,
+            })
+          if (controller.signal.aborted) return
+
+          const page: JoinedGroupListResponse['data'] = response.data.data
+          if (!page || response.data.error) {
+            throw new Error(
+              response.data.error?.message ||
+                GROUP_ERRORS.GROUP_LIST_LOAD_FAILED,
+            )
+          }
+
+          loadedGroups.push(
+            ...page.groups.map(({ groupId, groupName }) => ({
+              groupId,
+              groupName,
+            })),
+          )
+          if (
+            !page.hasNext ||
+            !page.nextCursor ||
+            seenCursors.has(page.nextCursor)
+          ) {
+            break
+          }
+          seenCursors.add(page.nextCursor)
+          cursor = page.nextCursor
+        }
+
+        setGroups(loadedGroups)
+      } catch (error) {
+        if (axios.isCancel(error) || controller.signal.aborted) return
+        if (axios.isAxiosError(error) && error.response?.status === 401) return
+        setGroupError(
+          axios.isAxiosError<JoinedGroupListResponse>(error)
+            ? error.response?.data.error?.message ||
+                GROUP_ERRORS.GROUP_LIST_LOAD_FAILED
+            : error instanceof Error
+              ? error.message
+              : GROUP_ERRORS.GROUP_LIST_LOAD_FAILED,
+        )
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingGroups(false)
+      }
+    }
+
+    void loadGroups()
+    return () => controller.abort()
+  }, [groupRetryCount])
+
+  const groupId = selectedGroupId
 
   async function search() {
     if (isSearching || selectedItems.length === 0 || !groupId) return
@@ -46,9 +111,9 @@ export default function AiSmartSearchPage() {
 
     const request: SmartSearchRequest = {
       groupId,
-      items: selectedItems.map((item) => ({
+      items: selectedItems.map(({ item, quantity }) => ({
         itemId: item.itemId,
-        quantity: 1,
+        quantity,
       })),
       preferenceText: preferenceText.trim(),
     }
@@ -120,45 +185,61 @@ export default function AiSmartSearchPage() {
           </p>
         </section>
 
-        <section className={styles.itemsSection}>
-          <h2>내 물건 목록</h2>
-          <SmartSearchMyItems
-            onSelectionChange={(items) => {
-              setSelectedItems(items)
-              setSearchResults(null)
-              setSearchError(null)
-            }}
-          />
-          {selectedItems.length > 0 && (
-            <p className={styles.quantityNote}>
-              선택한 물품은 각각 1개 기준으로 검색합니다.
-            </p>
-          )}
-          {commonGroups.length > 1 && (
-            <label className={styles.groupField}>
-              검색할 그룹
-              <select
-                value={groupId ?? ''}
-                onChange={(event) => {
-                  setSelectedGroupId(Number(event.target.value))
-                  setSearchResults(null)
-                  setSearchError(null)
-                }}
+        <section className={styles.groupSection}>
+          <label className={styles.groupField}>
+            검색할 그룹
+            <select
+              value={selectedGroupId ?? ''}
+              disabled={isLoadingGroups || groups.length === 0}
+              onChange={(event) => {
+                setSelectedGroupId(Number(event.target.value))
+                setSelectedItems([])
+                setSearchResults(null)
+                setSearchError(null)
+              }}
+            >
+              <option value="" disabled>
+                {isLoadingGroups
+                  ? '그룹을 불러오는 중...'
+                  : '그룹을 선택해주세요'}
+              </option>
+              {groups.map((group) => (
+                <option key={group.groupId} value={group.groupId}>
+                  {group.groupName}
+                </option>
+              ))}
+            </select>
+          </label>
+          {groupError && (
+            <div className={styles.groupNotice}>
+              <p role="alert">{groupError}</p>
+              <button
+                type="button"
+                onClick={() => setGroupRetryCount((count) => count + 1)}
               >
-                {commonGroups.map((group) => (
-                  <option key={group.groupId} value={group.groupId}>
-                    {group.groupName}
-                  </option>
-                ))}
-              </select>
-            </label>
+                다시 시도
+              </button>
+            </div>
           )}
-          {selectedItems.length > 0 && commonGroups.length === 0 && (
-            <p className={styles.searchMessage} role="alert">
-              선택한 물품들이 속한 공통 그룹이 없습니다.
-            </p>
+          {!isLoadingGroups && !groupError && groups.length === 0 && (
+            <p className={styles.groupNotice}>가입한 그룹이 없습니다.</p>
           )}
         </section>
+
+        {selectedGroupId !== null && (
+          <section className={styles.itemsSection}>
+            <h2>내 물건 목록</h2>
+            <SmartSearchMyItems
+              key={selectedGroupId}
+              groupId={selectedGroupId}
+              onSelectionChange={(items) => {
+                setSelectedItems(items)
+                setSearchResults(null)
+                setSearchError(null)
+              }}
+            />
+          </section>
+        )}
 
         <section className={styles.conditionSection}>
           <h2>교환을 희망하는 조건</h2>

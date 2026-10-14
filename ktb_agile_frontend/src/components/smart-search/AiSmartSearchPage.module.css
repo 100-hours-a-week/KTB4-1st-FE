@@ -107,6 +107,31 @@
   font-weight: 700;
 }
 
+.groupSection {
+  margin-bottom: 18px;
+}
+
+.groupSection .groupField {
+  margin-top: 0;
+}
+
+.groupNotice {
+  margin-top: 8px;
+  color: #748278;
+  font-size: 12px;
+}
+
+.groupNotice button {
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 1px solid #dfe9e2;
+  border-radius: 8px;
+  color: #3d5146;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
 .itemsSection {
   margin-bottom: 22px;
 }
@@ -131,12 +156,6 @@
   color: #3d5146;
   font-size: 13px;
   font-weight: 700;
-}
-
-.quantityNote {
-  margin-top: 10px;
-  color: #748278;
-  font-size: 11px;
 }
 
 .groupField select {
