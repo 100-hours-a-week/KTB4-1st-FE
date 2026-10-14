@@ -8,7 +8,16 @@ import {
 } from '@testing-library/react'
 import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
-import AiSmartSearchPage from './AiSmartSearchPage'
+import SmartSearchProvider from '@/components/smart-search/SmartSearchProvider'
+import AiSmartSearchPage from './page'
+
+function renderPage() {
+  return render(
+    <SmartSearchProvider>
+      <AiSmartSearchPage />
+    </SmartSearchProvider>,
+  )
+}
 
 const router = { back: vi.fn(), replace: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
@@ -63,7 +72,7 @@ afterEach(() => {
 it('그룹을 선택하기 전에는 내 물품을 불러오거나 보여주지 않는다', async () => {
   const get = mockLists()
 
-  render(<AiSmartSearchPage />)
+  renderPage()
 
   await waitFor(() =>
     expect(get).toHaveBeenCalledWith('/bff/me/groups', expect.anything()),
@@ -82,7 +91,7 @@ it('물품과 조건을 보내고 현재 페이지에서 결과를 받는다', a
     data: { data: { items: [{ itemId: 202 }] }, error: null },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await waitFor(() =>
     expect(get).toHaveBeenCalledWith(
       '/bff/me/groups',
@@ -141,7 +150,7 @@ it('물품별 수량을 독립적으로 선택하고 감소 버튼은 1개 아�
     data: { data: { items: [] }, error: null },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await selectGroup()
   fireEvent.click(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
@@ -190,7 +199,7 @@ it('검색 실패 시 서버 메시지를 모달로 표시하고 확인하면 �
     },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await selectGroup()
   fireEvent.click(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
@@ -209,7 +218,7 @@ it('인증 오류는 검색 오류 모달로 표시하지 않는다', async () =
     response: { status: 401 },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await selectGroup()
   fireEvent.click(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
@@ -231,7 +240,7 @@ it('검색 직전에 토큰이 없어져도 BFF 요청의 401 처리에 맡긴�
     data: { data: { items: [] }, error: null },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await selectGroup()
   fireEvent.click(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
@@ -269,7 +278,7 @@ it('말풍선 아래 드롭다운에서 선택한 그룹 ID로 검색한다', as
     data: { data: { items: [] }, error: null },
   })
 
-  render(<AiSmartSearchPage />)
+  renderPage()
   await selectGroup(2)
   expect(screen.queryByRole('checkbox', { name: /탁상 시계/ })).toBeNull()
   fireEvent.click(

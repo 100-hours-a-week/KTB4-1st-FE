@@ -107,36 +107,6 @@
   font-weight: 700;
 }
 
-.groupSection {
-  margin-bottom: 18px;
-}
-
-.groupSection .groupField {
-  margin-top: 0;
-}
-
-.groupNotice {
-  margin-top: 8px;
-  color: #748278;
-  font-size: 12px;
-}
-
-.groupNotice button {
-  margin-top: 6px;
-  padding: 6px 12px;
-  border: 1px solid #dfe9e2;
-  border-radius: 8px;
-  color: #3d5146;
-  background: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.itemsSection {
-  margin-bottom: 22px;
-}
-
-.itemsSection h2,
 .conditionSection h2 {
   margin-bottom: 10px;
   color: #3d5146;
@@ -147,24 +117,6 @@
 
 .conditionSection {
   margin-bottom: 18px;
-}
-
-.groupField {
-  display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  color: #3d5146;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.groupField select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #dfe9e2;
-  border-radius: 10px;
-  background: #f8fbf9;
-  font: inherit;
 }
 
 .searchMessage {
