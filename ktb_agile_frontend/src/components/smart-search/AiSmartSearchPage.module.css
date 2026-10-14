@@ -124,6 +124,37 @@
   margin-bottom: 18px;
 }
 
+.groupField {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  color: #3d5146;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.quantityNote {
+  margin-top: 10px;
+  color: #748278;
+  font-size: 11px;
+}
+
+.groupField select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dfe9e2;
+  border-radius: 10px;
+  background: #f8fbf9;
+  font: inherit;
+}
+
+.searchMessage {
+  margin-top: 10px;
+  color: #56675d;
+  font-size: 13px;
+  text-align: center;
+}
+
 .conditionSection textarea {
   display: block;
   width: 100%;
@@ -149,6 +180,7 @@
   min-height: 50px;
   align-items: center;
   justify-content: center;
+  border: 0;
   border-radius: 15px;
   color: #fff;
   background: #3d5146;
@@ -160,6 +192,11 @@
   transition:
     background-color 160ms ease,
     transform 160ms ease;
+}
+
+.searchButton:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .searchButton:active {

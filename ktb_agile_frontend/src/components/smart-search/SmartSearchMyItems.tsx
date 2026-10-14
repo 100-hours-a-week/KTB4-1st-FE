@@ -1,15 +1,19 @@
 'use client'
 
 import axios from 'axios'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import '@/config/api'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
 import { getItemStateLabel } from '@/utils/item'
 import styles from './SmartSearchMyItems.module.css'
 
-export default function SmartSearchMyItems() {
-  const router = useRouter()
+type SmartSearchMyItemsProps = {
+  onSelectionChange: (items: MyItemListItem[]) => void
+}
+
+export default function SmartSearchMyItems({
+  onSelectionChange,
+}: SmartSearchMyItemsProps) {
   const [items, setItems] = useState<MyItemListItem[]>([])
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
@@ -20,12 +24,6 @@ export default function SmartSearchMyItems() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
-
     const controller = new AbortController()
 
     async function loadMyItems() {
@@ -36,7 +34,6 @@ export default function SmartSearchMyItems() {
         const response = await axios.get<MyItemListResponse>('/bff/my-items', {
           params: cursor ? { cursor } : undefined,
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
           signal: controller.signal,
@@ -80,14 +77,14 @@ export default function SmartSearchMyItems() {
 
     void loadMyItems()
     return () => controller.abort()
-  }, [cursor, retryCount, router])
+  }, [cursor, retryCount])
 
   function toggleItem(itemId: number) {
-    setSelectedItemIds((current) =>
-      current.includes(itemId)
-        ? current.filter((id) => id !== itemId)
-        : [...current, itemId],
-    )
+    const nextIds = selectedItemIds.includes(itemId)
+      ? selectedItemIds.filter((id) => id !== itemId)
+      : [...selectedItemIds, itemId]
+    setSelectedItemIds(nextIds)
+    onSelectionChange(items.filter((item) => nextIds.includes(item.itemId)))
   }
 
   return (
@@ -100,7 +97,7 @@ export default function SmartSearchMyItems() {
                 <input
                   type="checkbox"
                   checked={selectedItemIds.includes(item.itemId)}
-                  disabled={item.itemState !== 'AVAILABLE'}
+                  disabled={item.itemState !== 'AVAILABLE' || item.quantity < 1}
                   onChange={() => toggleItem(item.itemId)}
                 />
                 <span
