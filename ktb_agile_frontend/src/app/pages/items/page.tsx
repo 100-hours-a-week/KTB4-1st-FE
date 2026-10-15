@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
+import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCardList from '@/components/item/ItemCardList'
@@ -222,6 +223,7 @@ export default function ItemList() {
         </div>
       )}
       <FloatingInquiryButton />
+      <ChatbotButton />
       <Navbar />
     </section>
   )
