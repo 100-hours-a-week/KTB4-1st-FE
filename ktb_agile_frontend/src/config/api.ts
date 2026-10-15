@@ -27,6 +27,7 @@ function isBffRequest(request: InternalAxiosRequestConfig) {
       '/bff/exchanged-items',
       '/bff/search',
       '/bff/smart-search',
+      '/bff/chatbot',
       '/bff/search-histories',
     ].includes(requestUrl) ||
     requestUrl.startsWith('/bff/like/') ||
