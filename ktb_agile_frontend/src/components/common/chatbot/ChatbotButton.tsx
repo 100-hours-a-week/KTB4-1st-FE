@@ -8,6 +8,7 @@ const GREETING = '안녕하세요! 바꾸까 AI예요. 궁금한 점을 편하�
 
 export default function ChatbotButton() {
   const [isOpen, setIsOpen] = useState(false)
+  const [draft, setDraft] = useState('')
 
   useEffect(() => {
     if (!isOpen) return
@@ -58,9 +59,16 @@ export default function ChatbotButton() {
               </p>
             </div>
           </div>
-          <div className={styles.composer} aria-hidden="true">
-            <div className={styles.input}>메시지를 입력하세요</div>
-            <span className={styles.sendButton}>
+          <div className={styles.composer}>
+            <input
+              className={styles.input}
+              value={draft}
+              maxLength={300}
+              placeholder="메시지를 입력하세요"
+              aria-label="메시지 입력"
+              onChange={(event) => setDraft(event.target.value)}
+            />
+            <span className={styles.sendButton} aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M4 12 20 4l-4.5 16-3.5-6.5L4 12Z" />
               </svg>
