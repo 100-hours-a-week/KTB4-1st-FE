@@ -270,6 +270,19 @@
   border: 0;
   border-radius: 50%;
   background: #ff8f70;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 160ms ease;
+}
+
+.sendButton:disabled {
+  background: #d1d8d3;
+  cursor: default;
+}
+
+.sendButton:focus-visible {
+  outline: 2px solid #3d5146;
+  outline-offset: 2px;
 }
 
 .sendButton svg {

@@ -1,20 +1,42 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import axios from 'axios'
+import { useEffect, useRef, useState } from 'react'
+import '@/config/api'
+import type { ChatbotAskResponse, ChatbotMessage } from '@/types/chatbot'
 import SparkleIcon from './SparkleIcon'
 import styles from './ChatbotButton.module.css'
 
+const MAX_HISTORY_LENGTH = 10
 const GREETING = '안녕하세요! 바꾸까 AI예요. 궁금한 점을 편하게 물어보세요.'
 
 export default function ChatbotButton() {
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState('')
+  const [history, setHistory] = useState<ChatbotMessage[]>([])
+  const [isSending, setIsSending] = useState(false)
+  const listRef = useRef<HTMLDivElement>(null)
+  const sessionRef = useRef(0)
+
+  useEffect(() => {
+    const list = listRef.current
+    if (list) list.scrollTop = list.scrollHeight
+  }, [history, isOpen])
+
+  // 모달을 닫으면 대화 이력이 사라지므로, 진행 중이던 요청의 응답도 무시한다.
+  function closePanel() {
+    sessionRef.current += 1
+    setIsOpen(false)
+    setHistory([])
+    setDraft('')
+    setIsSending(false)
+  }
 
   useEffect(() => {
     if (!isOpen) return
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false)
+      if (event.key === 'Escape') closePanel()
     }
 
     document.addEventListener('keydown', closeOnEscape)
@@ -23,6 +45,44 @@ export default function ChatbotButton() {
       document.removeEventListener('keydown', closeOnEscape)
     }
   }, [isOpen])
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const message = draft.trim()
+    if (!message || isSending) return
+
+    const session = sessionRef.current
+    const previousHistory = history.slice(-MAX_HISTORY_LENGTH)
+
+    setHistory((current) => [...current, { role: 'user', content: message }])
+    setDraft('')
+    setIsSending(true)
+
+    try {
+      const response = await axios.post<ChatbotAskResponse>(
+        '/bff/chatbot',
+        { message, history: previousHistory },
+        { headers: { Accept: 'application/json' } },
+      )
+      const answer = response.data.data?.answer
+      if (!answer) throw new Error(response.data.error?.message)
+      if (session !== sessionRef.current) return
+
+      setHistory((current) => [
+        ...current,
+        { role: 'assistant', content: answer },
+      ])
+    } catch (error) {
+      console.error(error)
+      if (session !== sessionRef.current) return
+
+      // 답변을 받지 못하면 보낸 메시지를 되돌려 다시 보낼 수 있게 한다.
+      setHistory((current) => current.slice(0, -1))
+      setDraft(message)
+    } finally {
+      if (session === sessionRef.current) setIsSending(false)
+    }
+  }
 
   return (
     <div className={styles.container}>
@@ -44,12 +104,17 @@ export default function ChatbotButton() {
               className={styles.closeButton}
               type="button"
               aria-label="채팅창 닫기"
-              onClick={() => setIsOpen(false)}
+              onClick={closePanel}
             >
               ×
             </button>
           </header>
-          <div className={styles.messages}>
+          <div
+            className={styles.messages}
+            ref={listRef}
+            role="log"
+            aria-live="polite"
+          >
             <div className={styles.row}>
               <span className={styles.avatar} aria-hidden="true">
                 <SparkleIcon className={styles.avatarIcon} />
@@ -58,8 +123,29 @@ export default function ChatbotButton() {
                 {GREETING}
               </p>
             </div>
+            {history.map((message, index) => (
+              <div
+                key={index}
+                className={`${styles.row} ${
+                  message.role === 'user' ? styles.userRow : ''
+                }`}
+              >
+                {message.role === 'assistant' && (
+                  <span className={styles.avatar} aria-hidden="true">
+                    <SparkleIcon className={styles.avatarIcon} />
+                  </span>
+                )}
+                <p
+                  className={`${styles.bubble} ${
+                    message.role === 'user' ? styles.userBubble : styles.botBubble
+                  }`}
+                >
+                  {message.content}
+                </p>
+              </div>
+            ))}
           </div>
-          <div className={styles.composer}>
+          <form className={styles.composer} onSubmit={handleSubmit}>
             <input
               className={styles.input}
               value={draft}
@@ -68,12 +154,17 @@ export default function ChatbotButton() {
               aria-label="메시지 입력"
               onChange={(event) => setDraft(event.target.value)}
             />
-            <span className={styles.sendButton} aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none">
+            <button
+              className={styles.sendButton}
+              type="submit"
+              aria-label="보내기"
+              disabled={!draft.trim() || isSending}
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M4 12 20 4l-4.5 16-3.5-6.5L4 12Z" />
               </svg>
-            </span>
-          </div>
+            </button>
+          </form>
         </section>
       )}
       <button
@@ -81,7 +172,7 @@ export default function ChatbotButton() {
         type="button"
         aria-label={isOpen ? '챗봇 닫기' : '챗봇 열기'}
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((open) => !open)}
+        onClick={() => (isOpen ? closePanel() : setIsOpen(true))}
       >
         <span className={styles.buttonLabel}>AI</span>
         <SparkleIcon className={styles.buttonIcon} />
