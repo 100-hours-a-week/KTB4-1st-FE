@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
-import RegisterIcon from '@/components/common/icons/RegisterIcon'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCardList from '@/components/item/ItemCardList'
@@ -220,19 +219,6 @@ export default function ItemList() {
               ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
               : '그룹에 가입해서 물품들을 구경해보아요.'}
           </p>
-        </div>
-      )}
-      {selectedGroup && (
-        <div className={styles.registerArea}>
-          <Link
-            className={styles.registerButton}
-            href={`/pages/items/register?groupId=${selectedGroup.groupId}`}
-          >
-            <span className={styles.registerIcon}>
-              <RegisterIcon />
-            </span>
-            <span>등록하기</span>
-          </Link>
         </div>
       )}
       <FloatingInquiryButton />
