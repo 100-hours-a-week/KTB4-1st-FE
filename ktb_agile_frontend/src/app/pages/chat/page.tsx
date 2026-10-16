@@ -1,5 +1,6 @@
 'use client'
 
+import { CHAT_ROOM_STATUS } from '@/constants/chat'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
@@ -137,7 +138,9 @@ export default function Chat() {
       user: room.otherUser.nickname,
       direction: room.direction,
       status:
-        room.chatRoomStatus === 'CLOSED' ? 'CLOSED' : room.exchangeStatus,
+        room.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+          ? CHAT_ROOM_STATUS.CLOSED
+          : room.exchangeStatus,
       itemId: String(room.targetItem.itemId),
       exchangeRequestId: String(room.exchangeRequestId),
     })

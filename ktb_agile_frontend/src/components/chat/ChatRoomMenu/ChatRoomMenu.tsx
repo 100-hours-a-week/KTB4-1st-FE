@@ -1,10 +1,10 @@
-import type { ChatRoom } from '@/types/chatRoom'
-import type { ExchangeStatus } from '../ChatRoomInfo/ChatRoomInfo'
+import type { ChatRoom, ChatExchangeStatus } from '@/types/chatRoom'
+import { CHAT_EXCHANGE_STATUS } from '@/constants/chat'
 import styles from './ChatRoomMenu.module.css'
 
 type ChatRoomMenuProps = {
   isRequester: boolean
-  exchangeStatus: ExchangeStatus
+  exchangeStatus: ChatExchangeStatus
   itemAvailable: boolean | null
   exchangeRequestId: ChatRoom['exchangeRequestId']
   isUpdatingExchange: boolean
@@ -25,7 +25,7 @@ export default function ChatRoomMenu({
 }: ChatRoomMenuProps) {
   const canCancel =
     isRequester &&
-    exchangeStatus === 'available' &&
+    exchangeStatus === CHAT_EXCHANGE_STATUS.AVAILABLE &&
     itemAvailable === true &&
     Number.isSafeInteger(exchangeRequestId) &&
     exchangeRequestId > 0

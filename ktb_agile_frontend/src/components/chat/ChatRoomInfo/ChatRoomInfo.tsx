@@ -1,62 +1,52 @@
-import ChatExchangeActions, {
-  type ExchangeActionStatus,
-} from './ChatExchangeActions'
+import ChatExchangeActions from './ChatExchangeActions'
+import { CHAT_ROOM_STATUS, CHAT_EXCHANGE_STATUS_LABEL } from '@/constants/chat'
+import { EXCHANGE_STATUS } from '@/constants/exchange'
 import styles from './ChatRoomInfo.module.css'
-import type { ChatRoomDetail } from '@/types/chatRoom'
+import type {
+  ChatRoom,
+  ChatRoomDetail,
+  ExchangeActionStatus,
+} from '@/types/chatRoom'
 
-export type ExchangeStatus =
-  'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
-
-type ChatRoomInfoProps = {
-  title: string
-  group: string
-  otherUser: string
-  image: string | null
-  isSeller: boolean
-  isRequester: boolean
-  exchangeRequest: ChatRoomDetail['exchangeRequest']
-  itemId: number
-  exchangeRequestId: number
-  exchangeStatus: ExchangeStatus
-  itemAvailable: boolean | null
-  isUpdatingExchange: boolean
-  returnTo: string
-  onUpdateExchange: (status: ExchangeActionStatus) => void
-  onEditExchange: (
-    itemId: number,
-    exchangeRequestId: number,
-    returnTo: string,
-  ) => void
-}
-
-const statusLabel: Record<ExchangeStatus, string> = {
-  available: '거래 가능',
-  completed: '거래 완료',
-  rejected: '거래 거절',
-  canceled: '제안 취소',
-  closed: '채팅 종료',
-}
+type ChatRoomInfoProps = Pick<ChatRoom, 'chatRoomStatus'> &
+  Pick<ChatRoomDetail, 'exchangeRequest'> & {
+    group: NonNullable<ChatRoom['group']>['groupName']
+    otherUser: ChatRoom['otherUser']['nickname']
+    direction: ChatRoom['direction'] | null
+    itemAvailable: boolean | null
+    isUpdatingExchange: boolean
+    returnTo: string
+    onUpdateExchange: (status: ExchangeActionStatus) => void
+    onEditExchange: (
+      itemId: ChatRoomDetail['exchangeRequest']['requestedItem']['itemId'],
+      exchangeRequestId: ChatRoom['exchangeRequestId'],
+      returnTo: string,
+    ) => void
+  }
 
 export default function ChatRoomInfo({
-  title,
   group,
   otherUser,
-  image,
-  isSeller,
-  isRequester,
+  direction,
+  chatRoomStatus,
   exchangeRequest,
-  itemId,
-  exchangeRequestId,
-  exchangeStatus,
   itemAvailable,
   isUpdatingExchange,
   returnTo,
   onUpdateExchange,
   onEditExchange,
 }: ChatRoomInfoProps) {
+  const { requestedItem, exchangeRequestId } = exchangeRequest
+  const { title, itemId, thumbnailImageUrl: image } = requestedItem
+  const isSeller = direction === 'RECEIVED'
+  const isRequester = direction === 'SENT'
+  const exchangeStatus =
+    chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+      ? CHAT_ROOM_STATUS.CLOSED
+      : exchangeRequest.exchangeStatus
   const canEdit =
     isRequester &&
-    exchangeStatus === 'available' &&
+    exchangeStatus === EXCHANGE_STATUS.PENDING &&
     itemAvailable === true &&
     Number.isSafeInteger(itemId) &&
     itemId > 0 &&
@@ -81,9 +71,10 @@ export default function ChatRoomInfo({
         <div className={styles.productTitleRow}>
           <strong>상품명: {title}</strong>
           <span>
-            {exchangeStatus === 'available' && itemAvailable === false
+            {exchangeStatus === EXCHANGE_STATUS.PENDING &&
+            itemAvailable === false
               ? '재고 부족'
-              : statusLabel[exchangeStatus]}
+              : CHAT_EXCHANGE_STATUS_LABEL[exchangeStatus]}
           </span>
         </div>
         <p>
@@ -132,7 +123,9 @@ export default function ChatRoomInfo({
       )}
       <ChatExchangeActions
         isSeller={
-          isSeller && exchangeStatus === 'available' && itemAvailable === true
+          isSeller &&
+          exchangeStatus === EXCHANGE_STATUS.PENDING &&
+          itemAvailable === true
         }
         exchangeRequestId={exchangeRequestId}
         isUpdating={isUpdatingExchange}

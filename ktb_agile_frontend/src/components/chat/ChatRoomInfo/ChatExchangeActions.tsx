@@ -1,6 +1,7 @@
 import styles from './ChatRoomInfo.module.css'
 
-export type ExchangeActionStatus = 'COMPLETED' | 'REJECTED'
+import { EXCHANGE_STATUS } from '@/constants/exchange'
+import type { ExchangeActionStatus } from '@/types/chatRoom'
 
 type ChatExchangeActionsProps = {
   isSeller: boolean
@@ -26,14 +27,14 @@ export default function ChatExchangeActions({
     <div className={styles.exchangeActions}>
       <button
         type="button"
-        onClick={() => onUpdate('COMPLETED')}
+        onClick={() => onUpdate(EXCHANGE_STATUS.COMPLETED)}
         disabled={disabled}
       >
         교환 완료
       </button>
       <button
         type="button"
-        onClick={() => onUpdate('REJECTED')}
+        onClick={() => onUpdate(EXCHANGE_STATUS.REJECTED)}
         disabled={disabled}
       >
         교환 거절

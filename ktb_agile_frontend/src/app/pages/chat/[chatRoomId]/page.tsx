@@ -1,5 +1,7 @@
 'use client'
 
+import { CHAT_ROOM_STATUS, CHAT_EXCHANGE_STATUS } from '@/constants/chat'
+import { EXCHANGE_STATUS } from '@/constants/exchange'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +15,11 @@ import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
-import type { ChatRoomDetail, ChatRoomDetailResponse } from '@/types/chatRoom'
+import type {
+  ChatRoomDetail,
+  ChatRoomDetailResponse,
+  ExchangeUpdateStatus,
+} from '@/types/chatRoom'
 import styles from './page.module.css'
 
 type ChatMessageDto = {
@@ -68,8 +74,13 @@ function ChatRoomContent() {
   const searchParams = useSearchParams()
   const group = searchParams.get('group') ?? ''
   const otherUser = searchParams.get('user') ?? ''
-  const isSeller = searchParams.get('direction') === 'RECEIVED'
-  const isRequester = searchParams.get('direction') === 'SENT'
+  const directionParam = searchParams.get('direction')
+  const direction =
+    directionParam === 'SENT' || directionParam === 'RECEIVED'
+      ? directionParam
+      : null
+  const isSeller = direction === 'RECEIVED'
+  const isRequester = direction === 'SENT'
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
   const lastMessageIdRef = useRef<number | null>(null)
@@ -94,7 +105,6 @@ function ChatRoomContent() {
   const detailError =
     detailFailure?.chatRoomId === chatRoomId ? detailFailure.message : null
   const exchangeRequest = detail?.exchangeRequest
-  const itemId = exchangeRequest?.requestedItem.itemId ?? 0
   const exchangeRequestId = exchangeRequest?.exchangeRequestId ?? 0
   const itemAvailable = exchangeRequest
     ? exchangeRequest.requestedQuantity > 0 &&
@@ -107,15 +117,15 @@ function ChatRoomContent() {
       )
     : null
   const exchangeStatus =
-    detail?.chatRoomStatus === 'CLOSED'
-      ? 'closed'
-      : exchangeRequest?.exchangeStatus === 'COMPLETED'
-        ? 'completed'
-        : exchangeRequest?.exchangeStatus === 'REJECTED'
-          ? 'rejected'
-          : exchangeRequest?.exchangeStatus === 'CANCELED'
-            ? 'canceled'
-            : 'available'
+    detail?.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+      ? CHAT_EXCHANGE_STATUS.CLOSED
+      : exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.COMPLETED
+        ? CHAT_EXCHANGE_STATUS.COMPLETED
+        : exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.REJECTED
+          ? CHAT_EXCHANGE_STATUS.REJECTED
+          : exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.CANCELED
+            ? CHAT_EXCHANGE_STATUS.CANCELED
+            : CHAT_EXCHANGE_STATUS.AVAILABLE
   const [actionError, setActionError] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const isComposingRef = useRef(false)
@@ -358,16 +368,22 @@ function ChatRoomContent() {
     }
   }
 
-  async function changeExchangeStatus(
-    status: 'COMPLETED' | 'REJECTED' | 'CANCELED',
-  ) {
-    if (itemAvailable !== true || exchangeStatus !== 'available' || !detail)
+  async function changeExchangeStatus(status: ExchangeUpdateStatus) {
+    if (
+      itemAvailable !== true ||
+      exchangeStatus !== CHAT_EXCHANGE_STATUS.AVAILABLE ||
+      !detail
+    )
       return
-    if (status === 'CANCELED' ? !isRequester : !isSeller) return
+    if (status === EXCHANGE_STATUS.CANCELED ? !isRequester : !isSeller) return
     if (!Number.isSafeInteger(exchangeRequestId) || exchangeRequestId < 1)
       return
     const action =
-      status === 'COMPLETED' ? '완료' : status === 'REJECTED' ? '거절' : '취소'
+      status === EXCHANGE_STATUS.COMPLETED
+        ? '완료'
+        : status === EXCHANGE_STATUS.REJECTED
+          ? '거절'
+          : '취소'
     if (!window.confirm(`교환 제안을 ${action}하시겠습니까?`)) return
     const token = window.sessionStorage.getItem('accessToken')
     if (!token) {
@@ -377,7 +393,7 @@ function ChatRoomContent() {
     setIsUpdatingExchange(true)
     setActionError(null)
     try {
-      if (status === 'CANCELED') {
+      if (status === EXCHANGE_STATUS.CANCELED) {
         await axios.delete(
           `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
           {
@@ -455,7 +471,9 @@ function ChatRoomContent() {
                 exchangeRequestId={exchangeRequestId}
                 isUpdatingExchange={isUpdatingExchange}
                 isLeaving={isLeaving}
-                onCancelExchange={() => void changeExchangeStatus('CANCELED')}
+                onCancelExchange={() =>
+                  void changeExchangeStatus(EXCHANGE_STATUS.CANCELED)
+                }
                 onLeave={() => void leaveChatRoom()}
               />
             )}
@@ -463,18 +481,13 @@ function ChatRoomContent() {
         </header>
 
         <div className={styles.content}>
-          {exchangeRequest ? (
+          {detail && exchangeRequest ? (
             <ChatRoomInfo
-              title={exchangeRequest.requestedItem.title}
               exchangeRequest={exchangeRequest}
               group={group}
               otherUser={otherUser}
-              image={exchangeRequest.requestedItem.thumbnailImageUrl}
-              isSeller={isSeller}
-              isRequester={isRequester}
-              itemId={itemId}
-              exchangeRequestId={exchangeRequestId}
-              exchangeStatus={exchangeStatus}
+              direction={direction}
+              chatRoomStatus={detail.chatRoomStatus}
               itemAvailable={itemAvailable}
               isUpdatingExchange={isUpdatingExchange}
               returnTo={returnTo}
