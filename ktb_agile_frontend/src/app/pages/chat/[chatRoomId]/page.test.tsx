@@ -68,7 +68,15 @@ function mockResponses(value: ChatRoomDetail) {
     }
   })
 }
+const originalScrollTo = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  'scrollTo',
+)
 beforeEach(() => {
+  Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
+    configurable: true,
+    value: vi.fn(),
+  })
   window.sessionStorage.setItem('accessToken', 'access-token')
   params = new URLSearchParams({
     direction: 'RECEIVED',
@@ -82,6 +90,9 @@ beforeEach(() => {
 })
 afterEach(() => {
   cleanup()
+  if (originalScrollTo)
+    Object.defineProperty(HTMLElement.prototype, 'scrollTo', originalScrollTo)
+  else Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo')
   window.sessionStorage.clear()
   vi.restoreAllMocks()
   vi.clearAllMocks()
@@ -187,4 +198,110 @@ it('상세 조회 실패 시 동작을 노출하지 않고 재시도로 복구�
   fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
   await screen.findByText('상품명: 캠핑 의자')
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
+})
+
+it('메시지 이력을 BFF로 조회하고 SYSTEM 본문을 일반 말풍선과 구분한다', async () => {
+  const get = vi.spyOn(axios, 'get').mockImplementation(async (url) => {
+    if (url === '/api/chat-rooms/22')
+      return { data: { data: detail(), error: null } }
+    return {
+      data: {
+        data: {
+          messages: [
+            {
+              messageId: 101,
+              chatRoomId: 22,
+              userId: null,
+              messageType: 'SYSTEM',
+              content: '교환 요청이 접수되었습니다.',
+              createdAt: '2026-10-16T10:07:00',
+              userStatus: null,
+              groupMemberStatus: null,
+              payload: null,
+            },
+            {
+              messageId: 102,
+              chatRoomId: 22,
+              userId: 9,
+              messageType: 'TEXT',
+              content: '네, 가능합니다.',
+              createdAt: '2026-10-16T10:08:00',
+              userStatus: 'ACTIVE',
+              groupMemberStatus: 'ACTIVE',
+              payload: null,
+            },
+          ],
+          nextCursor: null,
+          hasNext: false,
+        },
+        error: null,
+      },
+    }
+  })
+  render(<ChatRoomPage />)
+  const system = await screen.findByText('교환 요청이 접수되었습니다.')
+  expect(system.className).toContain('systemContent')
+  expect(system.parentElement?.className).toContain('system')
+  expect(system.parentElement?.querySelector('time')).toBeNull()
+  expect(system.parentElement?.querySelector('[aria-hidden]')).toBeNull()
+  expect(screen.getByText('네, 가능합니다.').className).toContain('bubble')
+  expect(get).toHaveBeenCalledWith(
+    '/bff/chat/rooms/22/messages',
+    expect.objectContaining({
+      headers: {
+        Authorization: 'Bearer access-token',
+        Accept: 'application/json',
+      },
+    }),
+  )
+})
+
+it('이전 메시지도 BFF로 같은 커서를 전달하고 중복 없이 앞에 추가한다', async () => {
+  const message = (id: number, content: string) => ({
+    messageId: id,
+    chatRoomId: 22,
+    userId: null,
+    messageType: 'SYSTEM',
+    content,
+    createdAt: '2026-10-16T10:07:00',
+    userStatus: null,
+    groupMemberStatus: null,
+    payload: null,
+  })
+  const get = vi.spyOn(axios, 'get').mockImplementation(async (url, config) => {
+    if (url === '/api/chat-rooms/22')
+      return { data: { data: detail(), error: null } }
+    const older = Boolean(
+      (config?.params as { cursor?: string } | undefined)?.cursor,
+    )
+    return {
+      data: {
+        data: {
+          messages: older
+            ? [message(100, '이전 안내'), message(101, '최신 안내')]
+            : [message(101, '최신 안내')],
+          nextCursor: older ? null : 'opaque+/=',
+          hasNext: !older,
+        },
+        error: null,
+      },
+    }
+  })
+  render(<ChatRoomPage />)
+  fireEvent.click(
+    await screen.findByRole('button', { name: '이전 메시지 보기' }),
+  )
+  await screen.findByText('이전 안내')
+  expect(get).toHaveBeenCalledWith(
+    '/bff/chat/rooms/22/messages',
+    expect.objectContaining({ params: { cursor: 'opaque+/=' } }),
+  )
+  expect(screen.getAllByText('최신 안내')).toHaveLength(1)
+  expect(
+    screen
+      .getByText('이전 안내')
+      .compareDocumentPosition(screen.getByText('최신 안내')) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy()
+  expect(screen.queryByRole('button', { name: '이전 메시지 보기' })).toBeNull()
 })

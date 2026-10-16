@@ -20,27 +20,8 @@ import type {
   ChatRoomDetailResponse,
   ExchangeUpdateStatus,
 } from '@/types/chatRoom'
+import type { ChatMessageDto, ChatMessageResponse } from '@/types/chatMessage'
 import styles from './page.module.css'
-
-type ChatMessageDto = {
-  messageId: number
-  sender?: { userId: number; nickname: string }
-  userId?: number
-  content: string
-  messageType: string
-  isMine?: boolean
-  createdAt: string
-}
-
-type ChatMessageResponse = {
-  data: {
-    chatRoomId?: number
-    messages: ChatMessageDto[]
-    nextCursor: string | null
-    hasNext: boolean
-  } | null
-  error: { code: string; message: string } | null
-}
 
 function timeLabel(date: Date) {
   if (Number.isNaN(date.getTime())) return ''
@@ -52,19 +33,21 @@ function timeLabel(date: Date) {
 }
 
 function toMessage(
-  message: ChatMessageDto,
+  message: Pick<
+    ChatMessageDto,
+    'messageId' | 'userId' | 'content' | 'messageType' | 'createdAt'
+  >,
   userId: number | null,
   otherUser: string,
 ): ChatMessage {
-  const mine =
-    message.isMine ??
-    (userId !== null && (message.sender?.userId ?? message.userId) === userId)
+  const mine = userId !== null && message.userId === userId
   return {
     id: message.messageId,
+    messageType: message.messageType,
     side: mine ? 'mine' : 'theirs',
     content: message.content,
     time: timeLabel(new Date(message.createdAt)),
-    senderName: message.sender?.nickname ?? otherUser,
+    senderName: otherUser,
   }
 }
 
@@ -245,7 +228,7 @@ function ChatRoomContent() {
           throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
         }
         const response = await axios.get<ChatMessageResponse>(
-          `${API_BASE_URL}/chat/rooms/${chatRoomId}/messages`,
+          `/bff/chat/rooms/${chatRoomId}/messages`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -259,6 +242,7 @@ function ChatRoomContent() {
             response.data.error?.message || CHAT_ERRORS.MESSAGE_LOAD_FAILED,
           )
         }
+        if (controller.signal.aborted) return
         const page = response.data.data
         setMessages(
           page.messages.map((message) =>
@@ -297,7 +281,7 @@ function ChatRoomContent() {
     setMessageError(null)
     try {
       const response = await axios.get<ChatMessageResponse>(
-        `${API_BASE_URL}/chat/rooms/${chatRoomId}/messages`,
+        `/bff/chat/rooms/${chatRoomId}/messages`,
         {
           params: { cursor: nextCursor },
           headers: {
