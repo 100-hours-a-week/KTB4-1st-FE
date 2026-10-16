@@ -1,31 +1,12 @@
-const koreanDateFormatter = new Intl.DateTimeFormat('ko-KR', {
-  timeZone: 'Asia/Seoul',
-  year: 'numeric',
-  month: 'numeric',
-  day: 'numeric',
-})
+export function formatLastTime(createdAt: string) {
+  const elapsedMilliseconds = Date.now() - new Date(createdAt).getTime()
+  const elapsedMinutes = Math.max(0, Math.floor(elapsedMilliseconds / 60_000))
 
-function getKoreanDay(date: Date) {
-  const parts = Object.fromEntries(
-    koreanDateFormatter
-      .formatToParts(date)
-      .map(({ type, value }) => [type, Number(value)]),
-  )
+  if (elapsedMinutes < 1) return '방금 전'
+  if (elapsedMinutes < 60) return `${elapsedMinutes}분 전`
 
-  return Date.UTC(parts.year, parts.month - 1, parts.day) / 86_400_000
-}
+  const elapsedHours = Math.floor(elapsedMinutes / 60)
+  if (elapsedHours < 24) return `${elapsedHours}시간 전`
 
-export function formatCreatedDate(createdAt: string) {
-  const timestamp =
-    createdAt.includes('T') && !/(?:Z|[+-]\d{2}:?\d{2})$/i.test(createdAt)
-      ? `${createdAt}+09:00`
-      : createdAt
-  const date = new Date(timestamp)
-  if (Number.isNaN(date.getTime())) return ''
-
-  const daysAgo = Math.max(0, getKoreanDay(new Date()) - getKoreanDay(date))
-
-  if (daysAgo === 0) return '오늘'
-  if (daysAgo === 1) return '어제'
-  return `${daysAgo}일 전`
+  return `${Math.floor(elapsedHours / 24)}일 전`
 }
