@@ -1,3 +1,5 @@
+import type { GROUP_MEMBER_STATUS, USER_STATUS } from '@/constants/user'
+
 export type ChatRoom = {
   chatRoomId: number
   chatRoomStatus: 'OPEN' | 'CLOSED'
@@ -9,8 +11,9 @@ export type ChatRoom = {
     userId: number
     nickname: string
     profileImageUrl: string | null
-    userStatus: 'ACTIVE' | 'INACTIVE' | 'WITHDRAWN'
-    groupMemberStatus: 'ACTIVE' | 'LEFT' | null
+    userStatus: (typeof USER_STATUS)[keyof typeof USER_STATUS]
+    groupMemberStatus:
+      (typeof GROUP_MEMBER_STATUS)[keyof typeof GROUP_MEMBER_STATUS] | null
   }
   targetItem: {
     itemId: number
