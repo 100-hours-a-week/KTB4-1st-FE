@@ -8,6 +8,7 @@ import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
+import ChatRoomMenu from '@/components/chat/ChatRoomMenu/ChatRoomMenu'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
@@ -447,28 +448,16 @@ function ChatRoomContent() {
               <img src="/figma/chat/more.svg" alt="" width="24" height="24" />
             </button>
             {menuOpen && (
-              <div className={styles.menu}>
-                {isRequester &&
-                  exchangeStatus === 'available' &&
-                  itemAvailable === true &&
-                  Number.isSafeInteger(exchangeRequestId) &&
-                  exchangeRequestId > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => void changeExchangeStatus('CANCELED')}
-                      disabled={isUpdatingExchange}
-                    >
-                      제안 취소
-                    </button>
-                  )}
-                <button
-                  type="button"
-                  onClick={() => void leaveChatRoom()}
-                  disabled={isLeaving}
-                >
-                  {isLeaving ? '나가는 중...' : '채팅방 나가기'}
-                </button>
-              </div>
+              <ChatRoomMenu
+                isRequester={isRequester}
+                exchangeStatus={exchangeStatus}
+                itemAvailable={itemAvailable}
+                exchangeRequestId={exchangeRequestId}
+                isUpdatingExchange={isUpdatingExchange}
+                isLeaving={isLeaving}
+                onCancelExchange={() => void changeExchangeStatus('CANCELED')}
+                onLeave={() => void leaveChatRoom()}
+              />
             )}
           </div>
         </header>
