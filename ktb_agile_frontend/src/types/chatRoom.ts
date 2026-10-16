@@ -1,0 +1,37 @@
+export type ChatRoom = {
+  chatRoomId: number
+  chatRoomStatus: 'OPEN' | 'CLOSED'
+  exchangeStatus: 'PENDING' | 'COMPLETED' | 'REJECTED' | 'CANCELED'
+  exchangeRequestId: number
+  direction: 'SENT' | 'RECEIVED'
+  group: { groupId: number; groupName: string } | null
+  otherUser: {
+    userId: number
+    nickname: string
+    profileImageUrl: string | null
+    userStatus: 'ACTIVE' | 'INACTIVE' | 'WITHDRAWN'
+    groupMemberStatus: 'ACTIVE' | 'LEFT' | null
+  }
+  targetItem: {
+    itemId: number
+    title: string
+    thumbnailImageUrl: string | null
+  }
+  lastMessage: {
+    messageId: number
+    content: string
+    senderId: number | null
+    createdAt: string
+  } | null
+  unreadMessageCount: number
+  lastMessageAt: string
+}
+
+export type ChatRoomResponse = {
+  data: { chatRooms: ChatRoom[]; nextCursor: string | null; hasNext: boolean }
+  error: {
+    code: string
+    message: string
+    details: { field: string; reason: string }[]
+  } | null
+}
