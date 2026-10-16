@@ -1,5 +1,10 @@
 import { EXCHANGE_STATUS } from './exchange'
 
+export const CHAT_MESSAGE_TYPE = {
+  TEXT: 'TEXT',
+  SYSTEM: 'SYSTEM',
+} as const
+
 export const CHAT_ROOM_STATUS = {
   OPEN: 'OPEN',
   CLOSED: 'CLOSED',
