@@ -38,7 +38,7 @@ const room = (id: number): ChatRoom => ({
     nickname: '민지',
     profileImageUrl: null,
     userStatus: 'ACTIVE',
-    groupMemberStatus: null,
+    groupMemberStatus: 'ACTIVE',
   },
   targetItem: { itemId: id, title: `물품 ${id}`, thumbnailImageUrl: null },
   lastMessage: {
