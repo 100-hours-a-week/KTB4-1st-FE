@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import styles from './ChatRoomCard.module.css'
 
 const PREVIEW_MAX_LENGTH = 25
@@ -55,33 +54,18 @@ function formatTime(value: string | null) {
   }).format(date)
 }
 
-export default function ChatRoomCard({ room }: { room: ChatRoom }) {
+export default function ChatRoomCard({
+  room,
+  onClick,
+}: {
+  room: ChatRoom
+  onClick: () => void
+}) {
   return (
     <li>
-      <Link
-        href={{
-          pathname: `/pages/chat/${room.chatRoomId}`,
-          query: {
-            title: room.targetItem.title,
-            group: room.group.groupName,
-            user: room.otherUser.nickname,
-            userId: room.otherUser.userId,
-            direction: room.direction,
-            status: room.chatRoomStatus,
-            itemId: room.targetItem.itemId,
-            exchangeRequestId: room.exchangeRequestId,
-            ...(room.targetItem.thumbnailImageUrl
-              ? { image: room.targetItem.thumbnailImageUrl }
-              : {}),
-            ...(room.lastMessage
-              ? {
-                  lastMessage: room.lastMessage.content,
-                  senderId: room.lastMessage.senderId,
-                  lastMessageAt: room.lastMessage.createdAt,
-                }
-              : {}),
-          },
-        }}
+      <button
+        type="button"
+        onClick={onClick}
         className={styles.room}
         aria-label={`${room.otherUser.nickname}님과 ${room.targetItem.title} 채팅방 열기`}
       >
@@ -122,7 +106,7 @@ export default function ChatRoomCard({ room }: { room: ChatRoom }) {
             )}
           </div>
         </div>
-      </Link>
+      </button>
     </li>
   )
 }

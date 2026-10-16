@@ -4,6 +4,7 @@ import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
 import '@/config/api'
@@ -33,6 +34,7 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const [isNoticeOpen, setIsNoticeOpen] = useState(false)
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -127,7 +129,11 @@ export default function Chat() {
           {rooms.length > 0 && (
             <ul className={styles.list}>
               {rooms.map((room) => (
-                <ChatRoomCard key={room.chatRoomId} room={room} />
+                <ChatRoomCard
+                  key={room.chatRoomId}
+                  room={room}
+                  onClick={() => setIsNoticeOpen(true)}
+                />
               ))}
             </ul>
           )}
