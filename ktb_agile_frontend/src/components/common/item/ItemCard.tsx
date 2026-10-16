@@ -1,5 +1,6 @@
 import type { ItemListItem } from '@/types/item'
-import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
+import { getItemStateLabel } from '@/utils/item'
+import { formatLastTime } from '@/utils/date'
 import styles from './ItemCard.module.css'
 import Link from 'next/link'
 import LikeButton from '@/components/item/like/LikeButton'
@@ -34,7 +35,7 @@ export default function ItemCard({ item }: ItemCardProps) {
             <span>교환 요청 수 : {item.exchangeRequestCount}</span>
           </p>
           <div className={styles.footer}>
-            <p className={styles.time}>{formatRelativeTime(item.createdAt)}</p>
+            <p className={styles.time}>{formatLastTime(item.createdAt)}</p>
             <span
               className={`${styles.status} ${
                 isAvailable ? styles.available : styles.completed

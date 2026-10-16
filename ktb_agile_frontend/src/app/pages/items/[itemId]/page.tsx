@@ -9,7 +9,8 @@ import LikeButton from '@/components/item/like/LikeButton'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
-import { formatRelativeTime, getItemStateLabel } from '@/utils/item'
+import { getItemStateLabel } from '@/utils/item'
+import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
 
 export default function ItemDetailsPage() {
@@ -159,7 +160,7 @@ export default function ItemDetailsPage() {
             </div>
             <p className={styles.meta}>
               등록자: {item.owner.nickname} · 그룹: {groupNames || '없음'} ·{' '}
-              {formatRelativeTime(item.createdAt)}
+              {formatLastTime(item.createdAt)}
             </p>
 
             <section className={styles.informationCard}>
