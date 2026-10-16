@@ -38,3 +38,31 @@ export type ChatRoomResponse = {
     details: { field: string; reason: string }[]
   } | null
 }
+
+export type ChatRoomDetail = {
+  chatRoomId: number
+  chatRoomStatus: ChatRoom['chatRoomStatus']
+  exchangeRequest: {
+    exchangeRequestId: number
+    exchangeStatus: ChatRoom['exchangeStatus']
+    requestedItem: {
+      itemId: number
+      title: string
+      availableQuantity: number
+      thumbnailImageUrl: string | null
+    }
+    requestedQuantity: number
+    offeredItems: {
+      itemId: number
+      title: string
+      offeredQuantity: number
+      availableQuantity: number
+      thumbnailImageUrl: string | null
+    }[]
+  }
+}
+
+export type ChatRoomDetailResponse = {
+  data: ChatRoomDetail | null
+  error: ChatRoomResponse['error']
+}

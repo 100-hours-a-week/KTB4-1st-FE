@@ -2,6 +2,7 @@ import ChatExchangeActions, {
   type ExchangeActionStatus,
 } from './ChatExchangeActions'
 import styles from './ChatRoomInfo.module.css'
+import type { ChatRoomDetail } from '@/types/chatRoom'
 
 export type ExchangeStatus =
   'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
@@ -12,6 +13,8 @@ type ChatRoomInfoProps = {
   otherUser: string
   image: string | null
   isSeller: boolean
+  isRequester: boolean
+  exchangeRequest: ChatRoomDetail['exchangeRequest']
   itemId: number
   exchangeRequestId: number
   exchangeStatus: ExchangeStatus
@@ -40,6 +43,8 @@ export default function ChatRoomInfo({
   otherUser,
   image,
   isSeller,
+  isRequester,
+  exchangeRequest,
   itemId,
   exchangeRequestId,
   exchangeStatus,
@@ -50,7 +55,7 @@ export default function ChatRoomInfo({
   onEditExchange,
 }: ChatRoomInfoProps) {
   const canEdit =
-    !isSeller &&
+    isRequester &&
     exchangeStatus === 'available' &&
     itemAvailable === true &&
     Number.isSafeInteger(itemId) &&
@@ -77,17 +82,48 @@ export default function ChatRoomInfo({
           <strong>상품명: {title}</strong>
           <span>
             {exchangeStatus === 'available' && itemAvailable === false
-              ? '거래 완료'
+              ? '재고 부족'
               : statusLabel[exchangeStatus]}
           </span>
         </div>
-        <p>그룹: {group}</p>
-        <p>상대: {otherUser}</p>
+        <p>
+          요청 수량: {exchangeRequest.requestedQuantity}개 / 재고:{' '}
+          {exchangeRequest.requestedItem.availableQuantity}개
+        </p>
+        {group && <p>그룹: {group}</p>}
+        {otherUser && <p>상대: {otherUser}</p>}
+        <div className={styles.offeredItems}>
+          <strong>제공 물품</strong>
+          {exchangeRequest.offeredItems.length === 0 ? (
+            <p>제공 물품이 없습니다.</p>
+          ) : (
+            <ul>
+              {exchangeRequest.offeredItems.map((item) => (
+                <li key={item.itemId}>
+                  <img
+                    src={
+                      item.thumbnailImageUrl ||
+                      '/icons/chat-image-placeholder.svg'
+                    }
+                    alt=""
+                    width="32"
+                    height="32"
+                  />
+                  <span>
+                    {item.title} · {item.offeredQuantity}개 / 재고:{' '}
+                    {item.availableQuantity}개
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
       {canEdit && (
         <div className={styles.exchangeActions}>
           <button
             type="button"
+            disabled={isUpdatingExchange}
             onClick={() => onEditExchange(itemId, exchangeRequestId, returnTo)}
           >
             제안 수정

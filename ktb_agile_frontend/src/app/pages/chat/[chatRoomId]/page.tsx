@@ -12,7 +12,7 @@ import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
-import type { ItemState } from '@/types/item'
+import type { ChatRoomDetail, ChatRoomDetailResponse } from '@/types/chatRoom'
 import styles from './page.module.css'
 
 type ChatMessageDto = {
@@ -31,8 +31,6 @@ type ChatMessageResponse = {
     messages: ChatMessageDto[]
     nextCursor: string | null
     hasNext: boolean
-    itemQuantity: number
-    itemState: ItemState
   } | null
   error: { code: string; message: string } | null
 }
@@ -67,13 +65,10 @@ function ChatRoomContent() {
   const router = useRouter()
   const { chatRoomId } = useParams<{ chatRoomId: string }>()
   const searchParams = useSearchParams()
-  const title = searchParams.get('title') ?? '게시글 제목1'
-  const group = searchParams.get('group') ?? '그룹1'
-  const otherUser = searchParams.get('user') ?? '사용자2'
-  const image = searchParams.get('image')
-  const isSeller = searchParams.get('direction') !== 'SENT'
-  const itemId = Number(searchParams.get('itemId'))
-  const exchangeRequestId = Number(searchParams.get('exchangeRequestId'))
+  const group = searchParams.get('group') ?? ''
+  const otherUser = searchParams.get('user') ?? ''
+  const isSeller = searchParams.get('direction') === 'RECEIVED'
+  const isRequester = searchParams.get('direction') === 'SENT'
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
   const lastMessageIdRef = useRef<number | null>(null)
@@ -87,32 +82,93 @@ function ChatRoomContent() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
-  const [itemAvailability, setItemAvailability] = useState<{
+  const [roomDetail, setRoomDetail] = useState<ChatRoomDetail | null>(null)
+  const [detailFailure, setDetailFailure] = useState<{
     chatRoomId: string
-    available: boolean
+    message: string
   } | null>(null)
-  const itemAvailable =
-    itemAvailability?.chatRoomId === chatRoomId
-      ? itemAvailability.available
-      : null
+  const [detailRetryCount, setDetailRetryCount] = useState(0)
+  const detail =
+    roomDetail?.chatRoomId === Number(chatRoomId) ? roomDetail : null
+  const detailError =
+    detailFailure?.chatRoomId === chatRoomId ? detailFailure.message : null
+  const exchangeRequest = detail?.exchangeRequest
+  const itemId = exchangeRequest?.requestedItem.itemId ?? 0
+  const exchangeRequestId = exchangeRequest?.exchangeRequestId ?? 0
+  const itemAvailable = exchangeRequest
+    ? exchangeRequest.requestedQuantity > 0 &&
+      exchangeRequest.requestedItem.availableQuantity >=
+        exchangeRequest.requestedQuantity &&
+      exchangeRequest.offeredItems.every(
+        (item) =>
+          item.offeredQuantity > 0 &&
+          item.availableQuantity >= item.offeredQuantity,
+      )
+    : null
+  const exchangeStatus =
+    detail?.chatRoomStatus === 'CLOSED'
+      ? 'closed'
+      : exchangeRequest?.exchangeStatus === 'COMPLETED'
+        ? 'completed'
+        : exchangeRequest?.exchangeStatus === 'REJECTED'
+          ? 'rejected'
+          : exchangeRequest?.exchangeStatus === 'CANCELED'
+            ? 'canceled'
+            : 'available'
   const [actionError, setActionError] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const isComposingRef = useRef(false)
   const [socketError, setSocketError] = useState<string | null>(null)
-  const [exchangeStatus, setExchangeStatus] = useState<
-    'available' | 'completed' | 'rejected' | 'canceled' | 'closed'
-  >(() => {
-    const status = searchParams.get('status')
-    return status === 'COMPLETED'
-      ? 'completed'
-      : status === 'REJECTED'
-        ? 'rejected'
-        : status === 'CANCELED'
-          ? 'canceled'
-          : status === 'CLOSED'
-            ? 'closed'
-            : 'available'
-  })
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return
+    }
+    const controller = new AbortController()
+    async function loadDetail() {
+      try {
+        if (
+          !Number.isSafeInteger(Number(chatRoomId)) ||
+          Number(chatRoomId) < 1
+        ) {
+          throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
+        }
+        const response = await axios.get<ChatRoomDetailResponse>(
+          `${API_BASE_URL}/chat-rooms/${chatRoomId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (!response.data.data || response.data.error) {
+          throw new Error(
+            response.data.error?.message || CHAT_ERRORS.ROOM_DETAIL_LOAD_FAILED,
+          )
+        }
+        if (controller.signal.aborted) return
+        setRoomDetail(response.data.data)
+        setDetailFailure(null)
+      } catch (cause) {
+        if (axios.isCancel(cause) || controller.signal.aborted) return
+        setDetailFailure({
+          chatRoomId,
+          message: axios.isAxiosError<ChatRoomDetailResponse>(cause)
+            ? cause.response?.data?.error?.message ||
+              CHAT_ERRORS.ROOM_DETAIL_LOAD_FAILED
+            : cause instanceof Error
+              ? cause.message
+              : CHAT_ERRORS.ROOM_DETAIL_LOAD_FAILED,
+        })
+      }
+    }
+    void loadDetail()
+    return () => controller.abort()
+  }, [chatRoomId, detailRetryCount, router])
 
   useEffect(() => {
     const lastMessage = messages.at(-1)
@@ -193,10 +249,6 @@ function ChatRoomContent() {
           )
         }
         const page = response.data.data
-        setItemAvailability({
-          chatRoomId,
-          available: page.itemState === 'AVAILABLE' && page.itemQuantity > 0,
-        })
         setMessages(
           page.messages.map((message) =>
             toMessage(message, getUserIdFromAccessToken(token!), otherUser),
@@ -260,10 +312,6 @@ function ChatRoomContent() {
       ])
       setNextCursor(page.nextCursor)
       setHasNext(page.hasNext)
-      setItemAvailability({
-        chatRoomId,
-        available: page.itemState === 'AVAILABLE' && page.itemQuantity > 0,
-      })
     } catch (cause) {
       setMessageError(
         axios.isAxiosError<ChatMessageResponse>(cause)
@@ -301,8 +349,7 @@ function ChatRoomContent() {
     } catch (cause) {
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
-          ? cause.response?.data?.error?.message ||
-              CHAT_ERRORS.LEAVE_FAILED
+          ? cause.response?.data?.error?.message || CHAT_ERRORS.LEAVE_FAILED
           : CHAT_ERRORS.LEAVE_FAILED,
       )
       setIsLeaving(false)
@@ -313,7 +360,9 @@ function ChatRoomContent() {
   async function changeExchangeStatus(
     status: 'COMPLETED' | 'REJECTED' | 'CANCELED',
   ) {
-    if (itemAvailable !== true) return
+    if (itemAvailable !== true || exchangeStatus !== 'available' || !detail)
+      return
+    if (status === 'CANCELED' ? !isRequester : !isSeller) return
     if (!Number.isSafeInteger(exchangeRequestId) || exchangeRequestId < 1)
       return
     const action =
@@ -350,12 +399,16 @@ function ChatRoomContent() {
           },
         )
       }
-      setExchangeStatus(
-        status === 'COMPLETED'
-          ? 'completed'
-          : status === 'REJECTED'
-            ? 'rejected'
-            : 'canceled',
+      setRoomDetail((current) =>
+        current?.chatRoomId === Number(chatRoomId)
+          ? {
+              ...current,
+              exchangeRequest: {
+                ...current.exchangeRequest,
+                exchangeStatus: status,
+              },
+            }
+          : current,
       )
       setMenuOpen(false)
     } catch (cause) {
@@ -395,7 +448,7 @@ function ChatRoomContent() {
             </button>
             {menuOpen && (
               <div className={styles.menu}>
-                {!isSeller &&
+                {isRequester &&
                   exchangeStatus === 'available' &&
                   itemAvailable === true &&
                   Number.isSafeInteger(exchangeRequestId) &&
@@ -421,25 +474,44 @@ function ChatRoomContent() {
         </header>
 
         <div className={styles.content}>
-          <ChatRoomInfo
-            title={title}
-            group={group}
-            otherUser={otherUser}
-            image={image}
-            isSeller={isSeller}
-            itemId={itemId}
-            exchangeRequestId={exchangeRequestId}
-            exchangeStatus={exchangeStatus}
-            itemAvailable={itemAvailable}
-            isUpdatingExchange={isUpdatingExchange}
-            returnTo={returnTo}
-            onUpdateExchange={(status) => void changeExchangeStatus(status)}
-            onEditExchange={(editItemId, editRequestId, editReturnTo) =>
-              router.push(
-                `/pages/chat/exchange/edit?${new URLSearchParams({ itemId: String(editItemId), exchangeRequestId: String(editRequestId), returnTo: editReturnTo }).toString()}`,
-              )
-            }
-          />
+          {exchangeRequest ? (
+            <ChatRoomInfo
+              title={exchangeRequest.requestedItem.title}
+              exchangeRequest={exchangeRequest}
+              group={group}
+              otherUser={otherUser}
+              image={exchangeRequest.requestedItem.thumbnailImageUrl}
+              isSeller={isSeller}
+              isRequester={isRequester}
+              itemId={itemId}
+              exchangeRequestId={exchangeRequestId}
+              exchangeStatus={exchangeStatus}
+              itemAvailable={itemAvailable}
+              isUpdatingExchange={isUpdatingExchange}
+              returnTo={returnTo}
+              onUpdateExchange={(status) => void changeExchangeStatus(status)}
+              onEditExchange={(editItemId, editRequestId, editReturnTo) =>
+                router.push(
+                  `/pages/chat/exchange/edit?${new URLSearchParams({ itemId: String(editItemId), exchangeRequestId: String(editRequestId), returnTo: editReturnTo }).toString()}`,
+                )
+              }
+            />
+          ) : detailError ? (
+            <div className={styles.state} role="alert">
+              <p>{detailError}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetailFailure(null)
+                  setDetailRetryCount((count) => count + 1)
+                }}
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : (
+            <p className={styles.state}>교환 요청 정보를 불러오는 중입니다.</p>
+          )}
 
           {actionError && <p className={styles.error}>{actionError}</p>}
           {socketError && <p className={styles.error}>{socketError}</p>}
@@ -504,7 +576,8 @@ function ChatRoomContent() {
             }}
             onKeyUp={(event) => {
               if (event.key !== 'Enter' || event.shiftKey) return
-              if (isComposingRef.current || event.nativeEvent.isComposing) return
+              if (isComposingRef.current || event.nativeEvent.isComposing)
+                return
               handleSendMessage(event.currentTarget.value)
             }}
           />
