@@ -3,10 +3,11 @@
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
-import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
+import ChatRoomCard from '@/components/chat/ChatRoomCard'
+import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
 import '@/config/api'
 import styles from './page.module.css'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
@@ -14,10 +15,6 @@ import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryBu
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
-type ChatRoomResponse = {
-  data: { chatRooms: ChatRoom[]; nextCursor: string | null; hasNext: boolean }
-  error: { code: string; message: string } | null
-}
 const tabs: { value: Tab; label: string }[] = [
   { value: 'ALL', label: '채팅 목록' },
   { value: 'RECEIVED', label: '받은 교환' },
@@ -30,11 +27,11 @@ export default function Chat() {
   const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [hasNext, setHasNext] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [isNoticeOpen, setIsNoticeOpen] = useState(false)
+  const listEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -47,26 +44,24 @@ export default function Chat() {
       setIsLoading(true)
       setErrorMessage(null)
       try {
-        const response = await axios.get<ChatRoomResponse>(
-          '/bff/chat-rooms',
-          {
-            params: {
-              size: 20,
-              ...(tab !== 'ALL' ? { direction: tab } : {}),
-              ...(cursor ? { cursor } : {}),
-            },
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+        const response = await axios.get<ChatRoomResponse>('/bff/chat-rooms', {
+          params: {
+            size: 20,
+            ...(tab !== 'ALL' ? { direction: tab } : {}),
+            ...(cursor ? { cursor } : {}),
           },
-        )
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        })
         if (response.data.error || !response.data.data) {
           throw new Error(
             response.data.error?.message || CHAT_ERRORS.ROOM_LIST_LOAD_FAILED,
           )
         }
+        if (controller.signal.aborted) return
         const page = response.data.data
         setRooms((current) =>
           cursor
@@ -82,7 +77,6 @@ export default function Chat() {
             : page.chatRooms,
         )
         setNextCursor(page.nextCursor)
-        setHasNext(page.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
         setErrorMessage(
@@ -98,13 +92,42 @@ export default function Chat() {
     return () => controller.abort()
   }, [tab, cursor, retryCount, router])
 
+  useEffect(() => {
+    const target = listEndRef.current
+    if (
+      !target ||
+      isLoading ||
+      errorMessage ||
+      !nextCursor ||
+      nextCursor === cursor
+    )
+      return
+
+    let active = true
+    let requested = false
+    const observer = new IntersectionObserver((entries) => {
+      if (
+        !active ||
+        requested ||
+        !entries.some((entry) => entry.isIntersecting)
+      )
+        return
+      requested = true
+      setCursor(nextCursor)
+    })
+    observer.observe(target)
+    return () => {
+      active = false
+      observer.disconnect()
+    }
+  }, [isLoading, errorMessage, nextCursor, cursor])
+
   function selectTab(next: Tab) {
     if (next === tab) return
     setTab(next)
     setRooms([])
     setCursor(null)
     setNextCursor(null)
-    setHasNext(false)
     setIsLoading(true)
     setErrorMessage(null)
   }
@@ -155,17 +178,21 @@ export default function Chat() {
           {!isLoading && !errorMessage && rooms.length === 0 && (
             <p className={styles.state}>채팅방이 없습니다.</p>
           )}
-          {!isLoading && !errorMessage && hasNext && nextCursor && (
-            <button
-              type="button"
-              className={styles.more}
-              onClick={() => setCursor(nextCursor)}
-            >
-              더 보기
-            </button>
+          {!isLoading && !errorMessage && nextCursor && (
+            <div
+              ref={listEndRef}
+              className={styles.listEnd}
+              aria-hidden="true"
+            />
           )}
         </div>
       </section>
+      {isNoticeOpen && (
+        <ModalDefault
+          message="잠시 채팅방 오류 수정 중이기에 사용하실 수 없습니다"
+          onConfirm={() => setIsNoticeOpen(false)}
+        />
+      )}
       <FloatingInquiryButton />
       <ChatbotButton />
       <Navbar />
