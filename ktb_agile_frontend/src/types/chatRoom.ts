@@ -1,9 +1,11 @@
+import type { CHAT_ROOM_STATUS, CHAT_EXCHANGE_STATUS } from '@/constants/chat'
+import type { EXCHANGE_STATUS } from '@/constants/exchange'
 import type { GROUP_MEMBER_STATUS, USER_STATUS } from '@/constants/user'
 
 export type ChatRoom = {
   chatRoomId: number
-  chatRoomStatus: 'OPEN' | 'CLOSED'
-  exchangeStatus: 'PENDING' | 'COMPLETED' | 'REJECTED' | 'CANCELED'
+  chatRoomStatus: (typeof CHAT_ROOM_STATUS)[keyof typeof CHAT_ROOM_STATUS]
+  exchangeStatus: (typeof EXCHANGE_STATUS)[keyof typeof EXCHANGE_STATUS]
   exchangeRequestId: number
   direction: 'SENT' | 'RECEIVED'
   group: { groupId: number; groupName: string } | null
@@ -66,3 +68,14 @@ export type ChatRoomDetailResponse = {
   data: ChatRoomDetail | null
   error: ChatRoomResponse['error']
 }
+
+export type ChatExchangeStatus =
+  (typeof CHAT_EXCHANGE_STATUS)[keyof typeof CHAT_EXCHANGE_STATUS]
+
+export type ExchangeActionStatus =
+  typeof EXCHANGE_STATUS.COMPLETED | typeof EXCHANGE_STATUS.REJECTED
+
+export type ExchangeUpdateStatus = Exclude<
+  ChatRoom['exchangeStatus'],
+  typeof EXCHANGE_STATUS.PENDING
+>
