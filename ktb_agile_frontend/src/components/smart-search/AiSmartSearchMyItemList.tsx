@@ -38,35 +38,58 @@ export default function AiSmartSearchMyItemList({
       setErrorMessage(null)
 
       try {
-        const response = await axios.get<MyItemListResponse>('/bff/my-items', {
-          params: { groupId, ...(cursor ? { cursor } : {}) },
-          headers: {
-            Accept: 'application/json',
-          },
-          signal: controller.signal,
-        })
-        if (controller.signal.aborted) return
-
-        const page = response.data.data
-        if (!page || response.data.error) {
-          throw new Error(
-            response.data.error?.message || '내 물품을 불러오지 못했습니다.',
+        let pageCursor = cursor
+        const seenCursors = new Set<string>()
+        if (pageCursor) seenCursors.add(pageCursor)
+        while (true) {
+          const response = await axios.get<MyItemListResponse>(
+            '/bff/my-items',
+            {
+              params: {
+                groupId,
+                ...(pageCursor ? { cursor: pageCursor } : {}),
+              },
+              headers: {
+                Accept: 'application/json',
+              },
+              signal: controller.signal,
+            },
           )
-        }
+          if (controller.signal.aborted) return
 
-        setItems((current) =>
-          cursor
-            ? [
-                ...current,
-                ...page.items.filter(
-                  (item) =>
-                    !current.some((loaded) => loaded.itemId === item.itemId),
-                ),
-              ]
-            : page.items,
-        )
-        setNextCursor(page.nextCursor)
-        setHasNext(page.hasNext)
+          const page = response.data.data
+          if (!page || response.data.error) {
+            throw new Error(
+              response.data.error?.message || '내 물품을 불러오지 못했습니다.',
+            )
+          }
+
+          const isNextPage = pageCursor !== null
+          setItems((current) =>
+            isNextPage
+              ? [
+                  ...current,
+                  ...page.items.filter(
+                    (item) =>
+                      !current.some((loaded) => loaded.itemId === item.itemId),
+                  ),
+                ]
+              : page.items,
+          )
+          setNextCursor(page.nextCursor)
+          setHasNext(page.hasNext)
+          const hasSelectableItems = page.items.some(
+            (item) =>
+              item.itemState === 'AVAILABLE' &&
+              item.groups.some((group) => group.groupId === groupId),
+          )
+          if (hasSelectableItems || !page.hasNext || !page.nextCursor) break
+          if (seenCursors.has(page.nextCursor)) {
+            throw new Error('내 물품을 불러오지 못했습니다.')
+          }
+          seenCursors.add(page.nextCursor)
+          pageCursor = page.nextCursor
+        }
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
         setErrorMessage(
@@ -156,17 +179,21 @@ export default function AiSmartSearchMyItemList({
         </div>
       )}
       {!isLoading && !errorMessage && groupItems.length === 0 && !hasNext && (
-        <p className={styles.message}>선택한 그룹에 등록한 물품이 없습니다.</p>
+        <p className={styles.message}>교환 대상으로 선택할 물품이 없습니다</p>
       )}
-      {!isLoading && !errorMessage && hasNext && nextCursor && (
-        <button
-          type="button"
-          className={styles.moreButton}
-          onClick={() => setCursor(nextCursor)}
-        >
-          더 보기
-        </button>
-      )}
+      {!isLoading &&
+        !errorMessage &&
+        groupItems.length > 0 &&
+        hasNext &&
+        nextCursor && (
+          <button
+            type="button"
+            className={styles.moreButton}
+            onClick={() => setCursor(nextCursor)}
+          >
+            더 보기
+          </button>
+        )}
     </section>
   )
 }
