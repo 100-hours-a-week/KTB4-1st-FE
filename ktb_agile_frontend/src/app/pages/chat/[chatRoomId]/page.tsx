@@ -52,6 +52,14 @@ function toMessage(
   }
 }
 
+function mergeMessages(current: ChatMessage[], incoming: ChatMessage[]) {
+  const merged = new Map(current.map((message) => [message.id, message]))
+  for (const message of incoming) {
+    if (!merged.has(message.id)) merged.set(message.id, message)
+  }
+  return [...merged.values()].sort((a, b) => a.id - b.id)
+}
+
 function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const router = useRouter()
   const { chatRoomId } = useParams<{ chatRoomId: string }>()
@@ -65,6 +73,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const lastMessageIdRef = useRef<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasNext, setHasNext] = useState(false)
@@ -183,17 +192,16 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         token ? getUserIdFromAccessToken(token) : null,
         otherUser,
       )
-      setMessages((current) =>
-        current.some((message) => message.id === incomingMessage.id)
-          ? current
-          : [...current, incomingMessage],
-      )
+      setMessages((current) => mergeMessages(current, [incomingMessage]))
       setSocketError(null)
     },
     onError: setSocketError,
   })
 
+  const canSendMessage = isConnected && !isLoading && isHistoryLoaded
+
   function handleSendMessage(value: string) {
+    if (!canSendMessage) return
     const content = value.trim()
     if (!content) return
     if (content.length > 2000) {
@@ -216,6 +224,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     }
     const controller = new AbortController()
     async function loadMessages() {
+      setIsLoading(true)
       try {
         if (
           !Number.isSafeInteger(Number(chatRoomId)) ||
@@ -240,11 +249,11 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         }
         if (controller.signal.aborted) return
         const page = response.data.data
-        setMessages(
-          page.messages.map((message) =>
-            toMessage(message, getUserIdFromAccessToken(token!), otherUser),
-          ),
+        const history = page.messages.map((message) =>
+          toMessage(message, getUserIdFromAccessToken(token!), otherUser),
         )
+        setMessages((current) => mergeMessages(current, history))
+        setIsHistoryLoaded(true)
         setNextCursor(page.nextCursor)
         setHasNext(page.hasNext)
         setMessageError(null)
@@ -295,12 +304,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       const older = page.messages.map((message) =>
         toMessage(message, getUserIdFromAccessToken(token), otherUser),
       )
-      setMessages((current) => [
-        ...older.filter(
-          (message) => !current.some((entry) => entry.id === message.id),
-        ),
-        ...current,
-      ])
+      setMessages((current) => mergeMessages(current, older))
       setNextCursor(page.nextCursor)
       setHasNext(page.hasNext)
     } catch (cause) {
@@ -514,7 +518,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             {!isLoading && messageError && (
               <div className={styles.state}>
                 <p>{messageError}</p>
-                {!messages.length && (
+                {!isHistoryLoaded && (
                   <button
                     type="button"
                     onClick={() => {
@@ -544,11 +548,17 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           <input
             id="chat-message"
             placeholder={
-              isConnected ? '메시지를 입력하세요' : '채팅 서버 연결 중...'
+              isLoading
+                ? '메시지를 불러오는 중입니다.'
+                : !isHistoryLoaded
+                  ? '메시지 이력을 불러오지 못했습니다.'
+                  : isConnected
+                    ? '메시지를 입력하세요'
+                    : '채팅 서버 연결 중...'
             }
             value={messageInput}
             maxLength={2000}
-            disabled={!isConnected}
+            disabled={!canSendMessage}
             onChange={(event) => setMessageInput(event.target.value)}
             onCompositionStart={() => {
               isComposingRef.current = true
@@ -566,7 +576,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           <button
             type="button"
             aria-label="메시지 보내기"
-            disabled={!isConnected || !messageInput.trim()}
+            disabled={!canSendMessage || !messageInput.trim()}
             onClick={() => handleSendMessage(messageInput)}
           >
             <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
@@ -580,6 +590,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
 
 function ChatRoomEntry() {
   const router = useRouter()
+  const { chatRoomId } = useParams<{ chatRoomId: string }>()
   const searchParams = useSearchParams()
   const direction = searchParams.get('direction')
 
@@ -591,7 +602,7 @@ function ChatRoomEntry() {
 
   if (direction !== 'SENT' && direction !== 'RECEIVED') return null
 
-  return <ChatRoomContent direction={direction} />
+  return <ChatRoomContent key={chatRoomId} direction={direction} />
 }
 
 export default function ChatRoomPage() {

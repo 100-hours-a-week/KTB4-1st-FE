@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -8,16 +9,22 @@ import {
 import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ChatRoomDetail } from '@/types/chatRoom'
+import type { ChatMessageDto } from '@/types/chatMessage'
+import type { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import ChatRoomPage from './page'
 
 const router = { replace: vi.fn(), push: vi.fn() }
 const useChatRoomSocketMock = vi.hoisted(() =>
-  vi.fn(() => ({ isConnected: false, sendMessage: vi.fn() })),
+  vi.fn<typeof useChatRoomSocket>(() => ({
+    isConnected: false,
+    sendMessage: vi.fn(() => false),
+  })),
 )
 let params: URLSearchParams
+let roomId = '22'
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
-  useParams: () => ({ chatRoomId: '22' }),
+  useParams: () => ({ chatRoomId: roomId }),
   useSearchParams: () => params,
 }))
 vi.mock('@/config/api', () => ({ API_BASE_URL: '/api' }))
@@ -76,6 +83,11 @@ const originalScrollTo = Object.getOwnPropertyDescriptor(
   'scrollTo',
 )
 beforeEach(() => {
+  roomId = '22'
+  useChatRoomSocketMock.mockReturnValue({
+    isConnected: false,
+    sendMessage: vi.fn(),
+  })
   Object.defineProperty(HTMLElement.prototype, 'scrollTo', {
     configurable: true,
     value: vi.fn(),
@@ -337,3 +349,131 @@ it.each(['SENT', 'RECEIVED'])(
     expect(useChatRoomSocketMock).toHaveBeenCalled()
   },
 )
+
+function historyMessage(id: number, content: string): ChatMessageDto {
+  return {
+    messageId: id,
+    chatRoomId: 22,
+    userId: 9,
+    messageType: 'TEXT',
+    content,
+    createdAt: '2026-10-17T10:08:00',
+    userStatus: 'ACTIVE',
+    groupMemberStatus: 'ACTIVE',
+    payload: null,
+  }
+}
+function messageResponse(
+  messages: ChatMessageDto[],
+  nextCursor: string | null = null,
+) {
+  return {
+    data: {
+      data: { messages, nextCursor, hasNext: nextCursor !== null },
+      error: null,
+    },
+  }
+}
+function receive(message: ChatMessageDto) {
+  act(() => useChatRoomSocketMock.mock.lastCall![0].onMessage(message))
+}
+
+it('이력이 늦게 도착해도 실시간 메시지를 보존하고 ID 중복 제거·정렬 후 입력을 허용한다', async () => {
+  const send = vi.fn(() => true)
+  useChatRoomSocketMock.mockReturnValue({
+    isConnected: true,
+    sendMessage: send,
+  })
+  let resolveHistory!: (value: ReturnType<typeof messageResponse>) => void
+  vi.spyOn(axios, 'get').mockImplementation(async (url) => {
+    if (url === '/bff/chat-rooms/22')
+      return { data: { data: detail(), error: null } }
+    return new Promise((resolve) => {
+      resolveHistory = resolve
+    })
+  })
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  const input = screen.getByLabelText('메시지') as HTMLInputElement
+  expect(input.disabled).toBe(true)
+  expect(input.placeholder).toBe('메시지를 불러오는 중입니다.')
+  expect(
+    (screen.getByRole('button', { name: '메시지 보내기' }) as HTMLButtonElement)
+      .disabled,
+  ).toBe(true)
+  fireEvent.keyUp(input, { key: 'Enter', target: { value: '대기 중 전송' } })
+  expect(send).not.toHaveBeenCalled()
+  receive(historyMessage(104, '메시지 104'))
+  receive(historyMessage(103, '메시지 103'))
+  receive(historyMessage(103, '메시지 103'))
+  await act(async () =>
+    resolveHistory(
+      messageResponse([
+        historyMessage(101, '메시지 101'),
+        historyMessage(103, '메시지 103'),
+      ]),
+    ),
+  )
+  expect(screen.getAllByText('메시지 103')).toHaveLength(1)
+  expect(
+    screen.getAllByText(/^메시지 10/).map((node) => node.textContent),
+  ).toEqual(['메시지 101', '메시지 103', '메시지 104'])
+  expect(input.disabled).toBe(false)
+  fireEvent.change(input, { target: { value: '전송 가능' } })
+  fireEvent.click(screen.getByRole('button', { name: '메시지 보내기' }))
+  expect(send).toHaveBeenCalledWith('전송 가능')
+})
+
+it('첫 이력 조회 실패 후 실시간 메시지가 있어도 재시도할 수 있고 성공 전까지 전송을 막는다', async () => {
+  useChatRoomSocketMock.mockReturnValue({
+    isConnected: true,
+    sendMessage: vi.fn(),
+  })
+  let rejectHistory!: (cause: Error) => void
+  let requested = false
+  vi.spyOn(axios, 'get').mockImplementation(async (url) => {
+    if (url === '/bff/chat-rooms/22')
+      return { data: { data: detail(), error: null } }
+    if (!requested) {
+      requested = true
+      return new Promise((_resolve, reject) => {
+        rejectHistory = reject
+      })
+    }
+    return messageResponse([historyMessage(100, '기존 이력')])
+  })
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  receive(historyMessage(101, '실시간 메시지'))
+  await act(async () => rejectHistory(new Error('이력 조회 실패')))
+  expect((screen.getByLabelText('메시지') as HTMLInputElement).disabled).toBe(
+    true,
+  )
+  fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+  await screen.findByText('기존 이력')
+  expect(screen.getByText('실시간 메시지')).toBeDefined()
+  expect((screen.getByLabelText('메시지') as HTMLInputElement).disabled).toBe(
+    false,
+  )
+})
+
+it('다른 방으로 이동하면 이전 방의 메시지를 새 이력에 합치지 않는다', async () => {
+  vi.spyOn(axios, 'get').mockImplementation(async (url) => {
+    if (url === `/bff/chat-rooms/${roomId}`)
+      return {
+        data: {
+          data: { ...detail(), chatRoomId: Number(roomId) },
+          error: null,
+        },
+      }
+    return messageResponse([
+      historyMessage(Number(roomId), `방 ${roomId} 메시지`),
+    ])
+  })
+  const { rerender } = render(<ChatRoomPage />)
+  await screen.findByText('방 22 메시지')
+  roomId = '23'
+  rerender(<ChatRoomPage />)
+  await screen.findByText('방 23 메시지')
+  expect(screen.queryByText('방 22 메시지')).toBeNull()
+})
