@@ -85,6 +85,69 @@ it('그룹을 선택하기 전에는 내 물품을 불러오거나 보여주지 
   )
 })
 
+it('선택한 그룹으로 페이지를 조회하고 그룹 변경 시 커서와 선택을 초기화한다', async () => {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockImplementation(async (url, config) => ({
+      data: {
+        data:
+          url === '/bff/me/groups'
+            ? { groups, nextCursor: null, hasNext: false }
+            : config?.params?.groupId === 2
+              ? {
+                  items: [
+                    {
+                      ...item,
+                      itemId: 102,
+                      title: '캠핑 랜턴',
+                      groups: [groups[1]],
+                    },
+                  ],
+                  nextCursor: null,
+                  hasNext: false,
+                }
+              : {
+                  items: [item],
+                  nextCursor: config?.params?.cursor ? null : 'next-page',
+                  hasNext: !config?.params?.cursor,
+                },
+        error: null,
+      },
+    }))
+
+  renderPage()
+  await selectGroup(1)
+  fireEvent.click(
+    await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
+  )
+  expect(get).toHaveBeenCalledWith(
+    '/bff/my-items',
+    expect.objectContaining({ params: { groupId: 1 } }),
+  )
+
+  fireEvent.click(screen.getByRole('button', { name: '더 보기' }))
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith(
+      '/bff/my-items',
+      expect.objectContaining({ params: { groupId: 1, cursor: 'next-page' } }),
+    ),
+  )
+
+  await selectGroup(2)
+  expect(
+    await screen.findByRole('checkbox', { name: /캠핑 랜턴/ }),
+  ).toBeTruthy()
+  expect(get).toHaveBeenLastCalledWith(
+    '/bff/my-items',
+    expect.objectContaining({ params: { groupId: 2 } }),
+  )
+  expect(screen.queryByRole('checkbox', { name: /아이폰 충전기/ })).toBeNull()
+  expect(screen.getByRole('button', { name: '검색하기' })).toHaveProperty(
+    'disabled',
+    true,
+  )
+})
+
 it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다', async () => {
   const get = mockLists()
   const post = vi.spyOn(axios, 'post').mockResolvedValue({
@@ -326,9 +389,10 @@ it('페이지를 떠났다 돌아와도 선택한 그룹과 물품, 조건이 �
   expect(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
   ).toHaveProperty('checked', true)
-  expect(
-    screen.getByRole('combobox', { name: '검색할 그룹' }),
-  ).toHaveProperty('value', '1')
+  expect(screen.getByRole('combobox', { name: '검색할 그룹' })).toHaveProperty(
+    'value',
+    '1',
+  )
   expect(
     screen.getByPlaceholderText('예) 과자 물 칫솔 등과 바꾸고 싶어'),
   ).toHaveProperty('value', '야식으로 먹을 거 찾아요')
