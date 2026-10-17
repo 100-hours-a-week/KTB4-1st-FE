@@ -16,6 +16,7 @@ import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import type {
+  ChatRoom,
   ChatRoomDetail,
   ChatRoomDetailResponse,
   ExchangeUpdateStatus,
@@ -51,17 +52,12 @@ function toMessage(
   }
 }
 
-function ChatRoomContent() {
+function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const router = useRouter()
   const { chatRoomId } = useParams<{ chatRoomId: string }>()
   const searchParams = useSearchParams()
   const group = searchParams.get('group') ?? ''
   const otherUser = searchParams.get('user') ?? ''
-  const directionParam = searchParams.get('direction')
-  const direction =
-    directionParam === 'SENT' || directionParam === 'RECEIVED'
-      ? directionParam
-      : null
   const isSeller = direction === 'RECEIVED'
   const isRequester = direction === 'SENT'
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
@@ -582,10 +578,26 @@ function ChatRoomContent() {
   )
 }
 
+function ChatRoomEntry() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const direction = searchParams.get('direction')
+
+  useEffect(() => {
+    if (direction !== 'SENT' && direction !== 'RECEIVED') {
+      router.replace('/pages/chat')
+    }
+  }, [direction, router])
+
+  if (direction !== 'SENT' && direction !== 'RECEIVED') return null
+
+  return <ChatRoomContent direction={direction} />
+}
+
 export default function ChatRoomPage() {
   return (
     <Suspense fallback={<p>채팅방을 불러오는 중입니다.</p>}>
-      <ChatRoomContent />
+      <ChatRoomEntry />
     </Suspense>
   )
 }

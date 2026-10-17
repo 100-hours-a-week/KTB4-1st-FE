@@ -11,6 +11,9 @@ import type { ChatRoomDetail } from '@/types/chatRoom'
 import ChatRoomPage from './page'
 
 const router = { replace: vi.fn(), push: vi.fn() }
+const useChatRoomSocketMock = vi.hoisted(() =>
+  vi.fn(() => ({ isConnected: false, sendMessage: vi.fn() })),
+)
 let params: URLSearchParams
 vi.mock('next/navigation', () => ({
   useRouter: () => router,
@@ -19,7 +22,7 @@ vi.mock('next/navigation', () => ({
 }))
 vi.mock('@/config/api', () => ({ API_BASE_URL: '/api' }))
 vi.mock('@/hooks/useChatRoomSocket', () => ({
-  useChatRoomSocket: () => ({ isConnected: false, sendMessage: vi.fn() }),
+  useChatRoomSocket: useChatRoomSocketMock,
 }))
 vi.mock('@/components/common/navbar/Navbar', () => ({ default: () => null }))
 
@@ -305,3 +308,32 @@ it('이전 메시지도 BFF로 같은 커서를 전달하고 중복 없이 앞�
   ).toBeTruthy()
   expect(screen.queryByRole('button', { name: '이전 메시지 보기' })).toBeNull()
 })
+
+it.each([null, '', 'UNKNOWN', 'sent'])(
+  'direction이 %s이면 채팅방을 실행하지 않고 목록으로 이동한다',
+  async (direction) => {
+    if (direction === null) params.delete('direction')
+    else params.set('direction', direction)
+    const get = vi.spyOn(axios, 'get')
+    render(<ChatRoomPage />)
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+    )
+    expect(screen.queryByRole('region', { name: '채팅방' })).toBeNull()
+    expect(get).not.toHaveBeenCalled()
+    expect(useChatRoomSocketMock).not.toHaveBeenCalled()
+  },
+)
+
+it.each(['SENT', 'RECEIVED'])(
+  'direction이 %s이면 직접 진입해도 채팅방을 연다',
+  async (direction) => {
+    params.set('direction', direction)
+    const get = mockResponses(detail())
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(get).toHaveBeenCalled()
+    expect(useChatRoomSocketMock).toHaveBeenCalled()
+  },
+)
