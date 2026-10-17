@@ -6,10 +6,16 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
-import axios from 'axios'
+import axios, { type AxiosRequestConfig } from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import SmartSearchProvider from '@/components/smart-search/SmartSearchProvider'
 import AiSmartSearchPage from './page'
+
+type ListRequestConfig = AxiosRequestConfig<unknown, unknown>
+
+function listParams(config?: ListRequestConfig) {
+  return config?.params as { groupId?: number; cursor?: string } | undefined
+}
 
 function renderPage() {
   return render(
@@ -83,6 +89,262 @@ it('그룹을 선택하기 전에는 내 물품을 불러오거나 보여주지 
     'disabled',
     true,
   )
+})
+
+it('선택한 그룹으로 페이지를 조회하고 그룹 변경 시 커서와 선택을 초기화한다', async () => {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockImplementation(async (url: string, config?: ListRequestConfig) => ({
+      data: {
+        data:
+          url === '/bff/me/groups'
+            ? { groups, nextCursor: null, hasNext: false }
+            : listParams(config)?.groupId === 2
+              ? {
+                  items: [
+                    {
+                      ...item,
+                      itemId: 102,
+                      title: '캠핑 랜턴',
+                      groups: [groups[1]],
+                    },
+                  ],
+                  nextCursor: null,
+                  hasNext: false,
+                }
+              : {
+                  items: [item],
+                  nextCursor: listParams(config)?.cursor ? null : 'next-page',
+                  hasNext: !listParams(config)?.cursor,
+                },
+        error: null,
+      },
+    }))
+
+  renderPage()
+  await selectGroup(1)
+  fireEvent.click(
+    await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
+  )
+  expect(get).toHaveBeenCalledWith(
+    '/bff/my-items',
+    expect.objectContaining({ params: { groupId: 1 } }),
+  )
+
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith(
+      '/bff/my-items',
+      expect.objectContaining({ params: { groupId: 1, cursor: 'next-page' } }),
+    ),
+  )
+
+  await selectGroup(2)
+  expect(
+    await screen.findByRole('checkbox', { name: /캠핑 랜턴/ }),
+  ).toBeTruthy()
+  expect(get).toHaveBeenLastCalledWith(
+    '/bff/my-items',
+    expect.objectContaining({ params: { groupId: 2 } }),
+  )
+  expect(screen.queryByRole('checkbox', { name: /아이폰 충전기/ })).toBeNull()
+  expect(screen.queryByRole('list', { name: '선택한 물품' })).toBeNull()
+  expect(screen.getByRole('button', { name: '검색하기' })).toHaveProperty(
+    'disabled',
+    true,
+  )
+})
+
+it('5개씩 표시하고 마지막으로 받은 페이지에서 다음 묶음을 미리 조회하며 선택을 유지한다', async () => {
+  const allItems = Array.from({ length: 23 }, (_, index) => ({
+    ...item,
+    itemId: 1000 + index,
+    title: `교환 물품 ${index + 1}`,
+  }))
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockImplementation(async (url: string, config?: ListRequestConfig) => {
+      const offset = Number(listParams(config)?.cursor ?? 0)
+      return {
+        data: {
+          data:
+            url === '/bff/me/groups'
+              ? { groups, nextCursor: null, hasNext: false }
+              : {
+                  items: allItems.slice(offset, offset + 10),
+                  nextCursor: offset + 10 < 23 ? String(offset + 10) : null,
+                  hasNext: offset + 10 < 23,
+                },
+          error: null,
+        },
+      }
+    })
+  renderPage()
+  await selectGroup()
+  const first = await screen.findByRole('checkbox', {
+    name: /교환 물품 1(?!\d)/,
+  })
+  expect(screen.getAllByRole('checkbox')).toHaveLength(5)
+  expect(
+    get.mock.calls.filter(([url]) => url === '/bff/my-items'),
+  ).toHaveLength(1)
+  fireEvent.click(first)
+  fireEvent.click(
+    within(
+      screen.getByRole('group', { name: '교환 물품 1 요청 수량' }),
+    ).getByRole('button', { name: '+' }),
+  )
+  expect(
+    within(screen.getByRole('list', { name: '선택한 물품' })).getByText(
+      '교환 물품 1 · 2개',
+    ),
+  ).toBeTruthy()
+
+  fireEvent.click(screen.getByRole('button', { name: '다음' }))
+  expect(
+    await screen.findByRole('checkbox', { name: /교환 물품 6(?!\d)/ }),
+  ).toBeTruthy()
+  await waitFor(() =>
+    expect(get).toHaveBeenCalledWith(
+      '/bff/my-items',
+      expect.objectContaining({ params: { groupId: 1, cursor: '10' } }),
+    ),
+  )
+  expect(screen.getAllByRole('checkbox')).toHaveLength(5)
+  expect(
+    screen.getByRole('list', { name: '선택한 물품' }).textContent,
+  ).toContain('교환 물품 1 · 2개')
+
+  fireEvent.click(screen.getByRole('button', { name: '이전' }))
+  expect(
+    await screen.findByRole('checkbox', { name: /교환 물품 1(?!\d)/ }),
+  ).toHaveProperty('checked', true)
+  expect(
+    get.mock.calls.filter(([url]) => url === '/bff/my-items'),
+  ).toHaveLength(2)
+  fireEvent.click(screen.getByRole('checkbox', { name: /교환 물품 1(?!\d)/ }))
+  expect(screen.queryByRole('list', { name: '선택한 물품' })).toBeNull()
+
+  for (let page = 2; page <= 5; page++) {
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    await screen.findByText(`${page}페이지`)
+    if (page === 4)
+      await waitFor(() =>
+        expect(get).toHaveBeenCalledWith(
+          '/bff/my-items',
+          expect.objectContaining({ params: { groupId: 1, cursor: '20' } }),
+        ),
+      )
+  }
+  expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+  expect(screen.getByRole('button', { name: '다음' })).toHaveProperty(
+    'disabled',
+    true,
+  )
+})
+
+it('교환 불가 물품을 건너뛰고 표시할 5개를 채운다', async () => {
+  vi.spyOn(axios, 'get').mockImplementation(
+    async (url: string, config?: ListRequestConfig) => ({
+      data: {
+        data:
+          url === '/bff/me/groups'
+            ? { groups, nextCursor: null, hasNext: false }
+            : listParams(config)?.cursor
+              ? {
+                  items: Array.from({ length: 5 }, (_, index) => ({
+                    ...item,
+                    itemId: 200 + index,
+                    title: `물품 ${index}`,
+                  })),
+                  nextCursor: null,
+                  hasNext: false,
+                }
+              : {
+                  items: [{ ...item, itemState: 'UNAVAILABLE' }],
+                  nextCursor: 'next-page',
+                  hasNext: true,
+                },
+        error: null,
+      },
+    }),
+  )
+  renderPage()
+  await selectGroup()
+  await screen.findByRole('checkbox', { name: /물품 0/ })
+  expect(screen.getAllByRole('checkbox')).toHaveLength(5)
+  expect(screen.queryByRole('checkbox', { name: /아이폰 충전기/ })).toBeNull()
+  expect(screen.getByRole('button', { name: '다음' })).toHaveProperty(
+    'disabled',
+    true,
+  )
+})
+
+it.each([{ items: [] }, { items: [{ ...item, itemState: 'UNAVAILABLE' }] }])(
+  '선택할 물품이 없으면 페이지 버튼 대신 안내한다',
+  async ({ items }) => {
+    mockLists(items)
+    renderPage()
+    await selectGroup()
+    expect(
+      await screen.findByText('교환 대상으로 선택할 물품이 없습니다'),
+    ).toBeTruthy()
+    expect(
+      screen.queryByRole('navigation', { name: '내 물품 페이지' }),
+    ).toBeNull()
+  },
+)
+
+it('다음 묶음 조회 실패 후 현재 페이지를 유지하며 다시 시도한다', async () => {
+  let failed = false
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockImplementation(async (url: string, config?: ListRequestConfig) => {
+      if (listParams(config)?.cursor && !failed) {
+        failed = true
+        throw new Error('일시적인 조회 오류')
+      }
+      return {
+        data: {
+          data:
+            url === '/bff/me/groups'
+              ? { groups, nextCursor: null, hasNext: false }
+              : listParams(config)?.cursor
+                ? {
+                    items: [{ ...item, itemId: 200 }],
+                    nextCursor: null,
+                    hasNext: false,
+                  }
+                : {
+                    items: Array.from({ length: 10 }, (_, index) => ({
+                      ...item,
+                      itemId: 100 + index,
+                    })),
+                    nextCursor: 'next-page',
+                    hasNext: true,
+                  },
+          error: null,
+        },
+      }
+    })
+  renderPage()
+  await selectGroup()
+  await waitFor(() => expect(screen.getAllByRole('checkbox')).toHaveLength(5))
+  fireEvent.click(screen.getByRole('button', { name: '다음' }))
+  expect(await screen.findByText('일시적인 조회 오류')).toBeTruthy()
+  expect(screen.getByText('2페이지')).toBeTruthy()
+  expect(screen.getAllByRole('checkbox')).toHaveLength(5)
+  fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
+  await waitFor(() =>
+    expect(screen.queryByText('일시적인 조회 오류')).toBeNull(),
+  )
+  expect(
+    get.mock.calls.filter(
+      ([, config]) => listParams(config)?.cursor === 'next-page',
+    ),
+  ).toHaveLength(2)
+  fireEvent.click(screen.getByRole('button', { name: '다음' }))
+  expect(screen.getByText('3페이지')).toBeTruthy()
+  expect(screen.getAllByRole('checkbox')).toHaveLength(1)
 })
 
 it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다', async () => {
@@ -326,9 +588,10 @@ it('페이지를 떠났다 돌아와도 선택한 그룹과 물품, 조건이 �
   expect(
     await screen.findByRole('checkbox', { name: /아이폰 충전기/ }),
   ).toHaveProperty('checked', true)
-  expect(
-    screen.getByRole('combobox', { name: '검색할 그룹' }),
-  ).toHaveProperty('value', '1')
+  expect(screen.getByRole('combobox', { name: '검색할 그룹' })).toHaveProperty(
+    'value',
+    '1',
+  )
   expect(
     screen.getByPlaceholderText('예) 과자 물 칫솔 등과 바꾸고 싶어'),
   ).toHaveProperty('value', '야식으로 먹을 거 찾아요')

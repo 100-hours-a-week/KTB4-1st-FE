@@ -5,7 +5,10 @@ import { withAuth } from '@/utils/with-auth'
 async function getMyItems(request: Request, authorization: string) {
   const backendRequestUrl = new URL(`${BACKEND_URL}/users/me/items`)
   backendRequestUrl.searchParams.set('size', '10')
-  const cursor = new URL(request.url).searchParams.get('cursor')
+  const searchParams = new URL(request.url).searchParams
+  const groupId = searchParams.get('groupId')
+  if (groupId !== null) backendRequestUrl.searchParams.set('groupId', groupId)
+  const cursor = searchParams.get('cursor')
   if (cursor !== null) backendRequestUrl.searchParams.set('cursor', cursor)
 
   try {

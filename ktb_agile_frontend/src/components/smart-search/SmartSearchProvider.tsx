@@ -7,6 +7,8 @@ import {
   useMemo,
   useState,
   type ReactNode,
+  type Dispatch,
+  type SetStateAction,
 } from 'react'
 import type { ItemListItem } from '@/types/item'
 import type { SmartSearchRequest } from '@/types/smartSearch'
@@ -16,6 +18,8 @@ type SmartSearchItems = SmartSearchRequest['items']
 type SmartSearchContextValue = {
   groupId: number | null
   items: SmartSearchItems
+  itemTitles: Record<number, string>
+  setItemTitles: Dispatch<SetStateAction<Record<number, string>>>
   preferenceText: string
   // null은 아직 검색하지 않은 상태, []는 검색했지만 결과가 없는 상태
   results: ItemListItem[] | null
@@ -36,12 +40,14 @@ export default function SmartSearchProvider({
 }) {
   const [groupId, setGroupId] = useState<number | null>(null)
   const [items, setItems] = useState<SmartSearchItems>([])
+  const [itemTitles, setItemTitles] = useState<Record<number, string>>({})
   const [preferenceText, setPreferenceText] = useState('')
   const [results, setResults] = useState<ItemListItem[] | null>(null)
 
   const reset = useCallback(() => {
     setGroupId(null)
     setItems([])
+    setItemTitles({})
     setPreferenceText('')
     setResults(null)
   }, [])
@@ -50,6 +56,8 @@ export default function SmartSearchProvider({
     () => ({
       groupId,
       items,
+      itemTitles,
+      setItemTitles,
       preferenceText,
       results,
       setGroupId,
@@ -58,7 +66,7 @@ export default function SmartSearchProvider({
       setResults,
       reset,
     }),
-    [groupId, items, preferenceText, results, reset],
+    [groupId, items, itemTitles, preferenceText, results, reset],
   )
 
   return (
@@ -72,7 +80,9 @@ export function useSmartSearch() {
   const context = useContext(SmartSearchContext)
 
   if (!context) {
-    throw new Error('useSmartSearch는 SmartSearchProvider 안에서만 사용할 수 있습니다.')
+    throw new Error(
+      'useSmartSearch는 SmartSearchProvider 안에서만 사용할 수 있습니다.',
+    )
   }
 
   return context

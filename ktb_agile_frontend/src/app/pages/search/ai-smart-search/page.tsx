@@ -19,8 +19,14 @@ const SEARCH_FAILED_MESSAGE = '스마트 검색 결과를 불러오지 못했습
 
 export default function Page() {
   const router = useRouter()
-  const { groupId, items, preferenceText, setPreferenceText, setResults } =
-    useSmartSearch()
+  const {
+    groupId,
+    items,
+    itemTitles,
+    preferenceText,
+    setPreferenceText,
+    setResults,
+  } = useSmartSearch()
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
 
@@ -113,6 +119,18 @@ export default function Page() {
             value={preferenceText}
             onChange={(event) => setPreferenceText(event.target.value)}
           />
+          {items.length > 0 && (
+            <div className={styles.selectedItems}>
+              <p>선택한 물품 {items.length}개</p>
+              <ul aria-label="선택한 물품">
+                {items.map(({ itemId, quantity }) => (
+                  <li key={itemId}>
+                    {itemTitles[itemId] ?? '선택한 물품'} · {quantity}개
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </section>
 
         <div className={styles.actionArea}>
