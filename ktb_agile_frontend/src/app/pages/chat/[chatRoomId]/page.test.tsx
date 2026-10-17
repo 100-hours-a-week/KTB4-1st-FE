@@ -61,7 +61,7 @@ function detail(): ChatRoomDetail {
 }
 function mockResponses(value: ChatRoomDetail) {
   return vi.spyOn(axios, 'get').mockImplementation(async (url) => {
-    if (url === '/api/chat-rooms/22')
+    if (url === '/bff/chat-rooms/22')
       return { data: { data: value, error: null } }
     return {
       data: {
@@ -114,7 +114,7 @@ it('상세 API의 물품·수량과 목록의 그룹·상대방을 표시하고 
   expect(screen.getByText('랜턴 · 1개 / 재고: 1개')).toBeDefined()
   expect(screen.getByText('텐트 · 2개 / 재고: 3개')).toBeDefined()
   expect(get).toHaveBeenCalledWith(
-    '/api/chat-rooms/22',
+    '/bff/chat-rooms/22',
     expect.objectContaining({
       headers: {
         Authorization: 'Bearer access-token',
@@ -205,7 +205,7 @@ it('상세 조회 실패 시 동작을 노출하지 않고 재시도로 복구�
 
 it('메시지 이력을 BFF로 조회하고 SYSTEM 본문을 일반 말풍선과 구분한다', async () => {
   const get = vi.spyOn(axios, 'get').mockImplementation(async (url) => {
-    if (url === '/api/chat-rooms/22')
+    if (url === '/bff/chat-rooms/22')
       return { data: { data: detail(), error: null } }
     return {
       data: {
@@ -272,7 +272,7 @@ it('이전 메시지도 BFF로 같은 커서를 전달하고 중복 없이 앞�
     payload: null,
   })
   const get = vi.spyOn(axios, 'get').mockImplementation(async (url, config) => {
-    if (url === '/api/chat-rooms/22')
+    if (url === '/bff/chat-rooms/22')
       return { data: { data: detail(), error: null } }
     const older = Boolean(
       (config?.params as { cursor?: string } | undefined)?.cursor,

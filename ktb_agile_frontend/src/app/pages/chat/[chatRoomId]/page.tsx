@@ -126,7 +126,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
         }
         const response = await axios.get<ChatRoomDetailResponse>(
-          `${API_BASE_URL}/chat-rooms/${chatRoomId}`,
+          `/bff/chat-rooms/${chatRoomId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
