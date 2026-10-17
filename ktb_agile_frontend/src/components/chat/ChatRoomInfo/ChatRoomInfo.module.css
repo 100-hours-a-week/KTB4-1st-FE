@@ -65,6 +65,31 @@
   gap: 8px;
 }
 
+.offeredItems {
+  margin-top: 8px;
+}
+
+.offeredItems ul {
+  display: grid;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offeredItems li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.offeredItems img {
+  flex-shrink: 0;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
 .exchangeActions button {
   padding: 8px 10px;
   border: 0;

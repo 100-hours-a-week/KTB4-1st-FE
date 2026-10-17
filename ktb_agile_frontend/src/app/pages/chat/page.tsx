@@ -1,10 +1,10 @@
 'use client'
 
+import { CHAT_ROOM_STATUS } from '@/constants/chat'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatRoomCard from '@/components/chat/ChatRoomCard'
 import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
@@ -30,7 +30,6 @@ export default function Chat() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const [isNoticeOpen, setIsNoticeOpen] = useState(false)
   const listEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -132,6 +131,25 @@ export default function Chat() {
     setErrorMessage(null)
   }
 
+  function openChatRoom(room: ChatRoom) {
+    const params = new URLSearchParams({
+      title: room.targetItem.title,
+      group: room.group?.groupName ?? '',
+      user: room.otherUser.nickname,
+      direction: room.direction,
+      status:
+        room.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+          ? CHAT_ROOM_STATUS.CLOSED
+          : room.exchangeStatus,
+      itemId: String(room.targetItem.itemId),
+      exchangeRequestId: String(room.exchangeRequestId),
+    })
+    if (room.targetItem.thumbnailImageUrl) {
+      params.set('image', room.targetItem.thumbnailImageUrl)
+    }
+    router.push(`/pages/chat/${room.chatRoomId}?${params.toString()}`)
+  }
+
   return (
     <>
       <section className={styles.page}>
@@ -155,7 +173,7 @@ export default function Chat() {
                 <ChatRoomCard
                   key={room.chatRoomId}
                   room={room}
-                  onClick={() => setIsNoticeOpen(true)}
+                  onClick={() => openChatRoom(room)}
                 />
               ))}
             </ul>
@@ -187,12 +205,6 @@ export default function Chat() {
           )}
         </div>
       </section>
-      {isNoticeOpen && (
-        <ModalDefault
-          message="잠시 채팅방 오류 수정 중이기에 사용하실 수 없습니다"
-          onConfirm={() => setIsNoticeOpen(false)}
-        />
-      )}
       <FloatingInquiryButton />
       <ChatbotButton />
       <Navbar />

@@ -1,17 +1,19 @@
+import type { ChatMessageDto } from '@/types/chatMessage'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import axios from 'axios'
 
-type ChatRoomSocketMessage = {
-  messageId: number
-  chatRoomId: number
-  userId: number
-  content: string
-  messageType: string
-  createdAt: string
-}
+type ChatRoomSocketMessage = Pick<
+  ChatMessageDto,
+  | 'messageId'
+  | 'chatRoomId'
+  | 'userId'
+  | 'content'
+  | 'messageType'
+  | 'createdAt'
+>
 
 type UseChatRoomSocketOptions = {
   chatRoomId: string
