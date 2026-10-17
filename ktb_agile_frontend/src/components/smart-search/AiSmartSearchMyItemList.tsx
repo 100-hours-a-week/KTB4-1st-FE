@@ -39,7 +39,7 @@ export default function AiSmartSearchMyItemList({
 
       try {
         const response = await axios.get<MyItemListResponse>('/bff/my-items', {
-          params: cursor ? { cursor } : undefined,
+          params: { groupId, ...(cursor ? { cursor } : {}) },
           headers: {
             Accept: 'application/json',
           },
@@ -84,7 +84,7 @@ export default function AiSmartSearchMyItemList({
 
     void loadMyItems()
     return () => controller.abort()
-  }, [cursor, retryCount])
+  }, [groupId, cursor, retryCount])
 
   function getQuantity(item: MyItemListItem) {
     const selected = selectedItems.find(({ itemId }) => itemId === item.itemId)
