@@ -38,15 +38,27 @@
   list-style: none;
 }
 
-.moreButton {
-  display: block;
-  width: 100%;
-  margin-top: 12px;
-  padding: 12px;
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+  color: #56675d;
+  font-size: 12px;
+}
+
+.pagination button {
+  padding: 8px 14px;
   border: 1px solid #dfe9e2;
-  border-radius: 12px;
+  border-radius: 10px;
   color: #3d5146;
   background: #f8fbf9;
   font: inherit;
   cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

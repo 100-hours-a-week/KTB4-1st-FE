@@ -1,7 +1,7 @@
 'use client'
 
 import axios from 'axios'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import '@/config/api'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
 import AiSmartSearchMyItem from './AiSmartSearchMyItem'
@@ -13,13 +13,23 @@ export default function AiSmartSearchMyItemList({
 }: {
   groupId: number
 }) {
-  const { items: selectedItems, setItems: setSelectedItems } = useSmartSearch()
+  const {
+    items: selectedItems,
+    setItems: setSelectedItems,
+    setItemTitles,
+  } = useSmartSearch()
   const [items, setItems] = useState<MyItemListItem[]>([])
   const [draftQuantities, setDraftQuantities] = useState<
     Record<number, number>
   >({})
-  const [cursor, setCursor] = useState<string | null>(null)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [pageIndex, setPageIndex] = useState(0)
+  const cache = useRef({
+    items: [] as MyItemListItem[],
+    nextCursor: null as string | null,
+    hasNext: true,
+    initialized: false,
+    seenCursors: new Set<string>(),
+  })
   const [hasNext, setHasNext] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -38,10 +48,20 @@ export default function AiSmartSearchMyItemList({
       setErrorMessage(null)
 
       try {
-        let pageCursor = cursor
-        const seenCursors = new Set<string>()
-        if (pageCursor) seenCursors.add(pageCursor)
-        while (true) {
+        const requiredCount = (pageIndex + 1) * 5
+        const selectableCount = () =>
+          cache.current.items.filter(
+            (item) =>
+              item.itemState === 'AVAILABLE' &&
+              item.groups.some((group) => group.groupId === groupId),
+          ).length
+
+        // 마지막으로 확보한 5개를 보는 동안 다음 묶음을 미리 확보합니다.
+        while (
+          !cache.current.initialized ||
+          (cache.current.hasNext && selectableCount() <= requiredCount)
+        ) {
+          const pageCursor = cache.current.nextCursor
           const response = await axios.get<MyItemListResponse>(
             '/bff/my-items',
             {
@@ -49,46 +69,46 @@ export default function AiSmartSearchMyItemList({
                 groupId,
                 ...(pageCursor ? { cursor: pageCursor } : {}),
               },
-              headers: {
-                Accept: 'application/json',
-              },
+              headers: { Accept: 'application/json' },
               signal: controller.signal,
             },
           )
           if (controller.signal.aborted) return
-
           const page = response.data.data
           if (!page || response.data.error) {
             throw new Error(
               response.data.error?.message || '내 물품을 불러오지 못했습니다.',
             )
           }
-
-          const isNextPage = pageCursor !== null
-          setItems((current) =>
-            isNextPage
-              ? [
-                  ...current,
-                  ...page.items.filter(
-                    (item) =>
-                      !current.some((loaded) => loaded.itemId === item.itemId),
-                  ),
-                ]
-              : page.items,
-          )
-          setNextCursor(page.nextCursor)
-          setHasNext(page.hasNext)
-          const hasSelectableItems = page.items.some(
-            (item) =>
-              item.itemState === 'AVAILABLE' &&
-              item.groups.some((group) => group.groupId === groupId),
-          )
-          if (hasSelectableItems || !page.hasNext || !page.nextCursor) break
-          if (seenCursors.has(page.nextCursor)) {
+          if (
+            page.hasNext &&
+            (!page.nextCursor || cache.current.seenCursors.has(page.nextCursor))
+          ) {
             throw new Error('내 물품을 불러오지 못했습니다.')
           }
-          seenCursors.add(page.nextCursor)
-          pageCursor = page.nextCursor
+          if (page.nextCursor) cache.current.seenCursors.add(page.nextCursor)
+          const loaded = cache.current.items
+          cache.current = {
+            ...cache.current,
+            items: [
+              ...loaded,
+              ...page.items.filter(
+                (item) =>
+                  !loaded.some((existing) => existing.itemId === item.itemId),
+              ),
+            ],
+            nextCursor: page.nextCursor,
+            hasNext: page.hasNext,
+            initialized: true,
+          }
+          setItems(cache.current.items)
+          setHasNext(page.hasNext)
+          setItemTitles((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              page.items.map((item) => [item.itemId, item.title]),
+            ),
+          }))
         }
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
@@ -107,7 +127,7 @@ export default function AiSmartSearchMyItemList({
 
     void loadMyItems()
     return () => controller.abort()
-  }, [groupId, cursor, retryCount])
+  }, [groupId, pageIndex, retryCount, setItemTitles])
 
   function getQuantity(item: MyItemListItem) {
     const selected = selectedItems.find(({ itemId }) => itemId === item.itemId)
@@ -148,7 +168,7 @@ export default function AiSmartSearchMyItemList({
       <h2>내 물건 목록</h2>
       {groupItems.length > 0 && (
         <ul className={styles.itemList}>
-          {groupItems.map((item) => (
+          {groupItems.slice(pageIndex * 5, (pageIndex + 1) * 5).map((item) => (
             <li key={item.itemId}>
               <AiSmartSearchMyItem
                 item={item}
@@ -181,19 +201,25 @@ export default function AiSmartSearchMyItemList({
       {!isLoading && !errorMessage && groupItems.length === 0 && !hasNext && (
         <p className={styles.message}>교환 대상으로 선택할 물품이 없습니다</p>
       )}
-      {!isLoading &&
-        !errorMessage &&
-        groupItems.length > 0 &&
-        hasNext &&
-        nextCursor && (
+      {groupItems.length > 0 && (
+        <nav className={styles.pagination} aria-label="내 물품 페이지">
           <button
             type="button"
-            className={styles.moreButton}
-            onClick={() => setCursor(nextCursor)}
+            disabled={pageIndex === 0}
+            onClick={() => setPageIndex((current) => current - 1)}
           >
-            더 보기
+            이전
           </button>
-        )}
+          <span aria-live="polite">{pageIndex + 1}페이지</span>
+          <button
+            type="button"
+            disabled={groupItems.length <= (pageIndex + 1) * 5}
+            onClick={() => setPageIndex((current) => current + 1)}
+          >
+            다음
+          </button>
+        </nav>
+      )}
     </section>
   )
 }

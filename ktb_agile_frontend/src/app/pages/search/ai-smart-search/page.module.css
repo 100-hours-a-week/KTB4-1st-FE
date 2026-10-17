@@ -187,3 +187,20 @@
     padding-inline: 14px;
   }
 }
+
+.selectedItems {
+  margin-top: 12px;
+  color: #748278;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.selectedItems p {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.selectedItems ul {
+  margin: 0;
+  padding-left: 18px;
+}
