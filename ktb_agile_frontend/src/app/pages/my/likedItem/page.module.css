@@ -52,8 +52,13 @@
 
 .binder {
   display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 8px 2px 0;
   border-bottom: 2px solid #d9f3e8;
   scrollbar-width: none;
@@ -64,7 +69,6 @@
 }
 
 .folder {
-  position: relative;
   flex: 0 0 auto;
   min-height: 43px;
   padding: 10px 18px 8px;
@@ -75,18 +79,14 @@
   font: inherit;
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.folder::before {
-  position: absolute;
-  top: -6px;
-  left: 0;
-  width: 44%;
-  height: 9px;
-  border-radius: 8px 8px 0 0;
-  background: inherit;
-  content: '';
+.binder:focus-visible,
+.folder:focus-visible {
+  outline: 2px solid #aeebcb;
+  outline-offset: -2px;
 }
 
 .selected {
