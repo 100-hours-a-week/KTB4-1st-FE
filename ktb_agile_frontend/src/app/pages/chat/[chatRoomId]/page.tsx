@@ -1,6 +1,10 @@
 'use client'
 
-import { CHAT_ROOM_STATUS, CHAT_EXCHANGE_STATUS } from '@/constants/chat'
+import {
+  CHAT_ROOM_STATUS,
+  CHAT_EXCHANGE_STATUS,
+  CHAT_MESSAGE_TYPE,
+} from '@/constants/chat'
 import { EXCHANGE_STATUS } from '@/constants/exchange'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
@@ -81,6 +85,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [retryCount, setRetryCount] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isClosedByEvent, setIsClosedByEvent] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
   const [roomDetail, setRoomDetail] = useState<ChatRoomDetail | null>(null)
   const [detailFailure, setDetailFailure] = useState<{
@@ -93,6 +98,11 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const detailError =
     detailFailure?.chatRoomId === chatRoomId ? detailFailure.message : null
   const exchangeRequest = detail?.exchangeRequest
+  const isChatClosed =
+    isClosedByEvent ||
+    detail?.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED ||
+    exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.REJECTED ||
+    exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.CANCELED
   const exchangeRequestId = exchangeRequest?.exchangeRequestId ?? 0
   const itemAvailable = exchangeRequest
     ? exchangeRequest.requestedQuantity > 0 &&
@@ -105,7 +115,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       )
     : null
   const exchangeStatus =
-    detail?.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+    isClosedByEvent || detail?.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
       ? CHAT_EXCHANGE_STATUS.CLOSED
       : exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.COMPLETED
         ? CHAT_EXCHANGE_STATUS.COMPLETED
@@ -186,6 +196,15 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const { isConnected, sendMessage } = useChatRoomSocket({
     chatRoomId,
     onMessage: (incoming) => {
+      if (
+        incoming.messageType === CHAT_MESSAGE_TYPE.SYSTEM &&
+        (incoming.systemEventType === 'CHAT_ROOM_MEMBER_LEFT' ||
+          incoming.systemEventType === 'EXCHANGE_REQUEST_REJECTED' ||
+          incoming.systemEventType === 'EXCHANGE_REQUEST_CANCELED')
+      ) {
+        setIsClosedByEvent(true)
+        setMessageInput('')
+      }
       const token = window.sessionStorage.getItem('accessToken')
       const incomingMessage = toMessage(
         incoming,
@@ -198,7 +217,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     onError: setSocketError,
   })
 
-  const canSendMessage = isConnected && !isLoading && isHistoryLoaded
+  const canSendMessage =
+    !isChatClosed && !isLeaving && isConnected && !isLoading && isHistoryLoaded
 
   function handleSendMessage(value: string) {
     if (!canSendMessage) return
@@ -321,8 +341,26 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     }
   }
 
+  async function cancelExchangeRequest(token: string) {
+    await axios.delete(
+      `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      },
+    )
+  }
+
   async function leaveChatRoom() {
-    if (!window.confirm('채팅방을 나가시겠습니까?')) return
+    if (isLeaving) return
+    if (
+      !window.confirm(
+        '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 취소됩니다.',
+      )
+    )
+      return
     const token = window.sessionStorage.getItem('accessToken')
     if (!token) {
       router.replace('/auth/login')
@@ -331,6 +369,22 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setIsLeaving(true)
     setActionError(null)
     try {
+      if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
+      if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
+        await cancelExchangeRequest(token)
+        setRoomDetail((current) =>
+          current?.chatRoomId === Number(chatRoomId)
+            ? {
+                ...current,
+                chatRoomStatus: CHAT_ROOM_STATUS.CLOSED,
+                exchangeRequest: {
+                  ...current.exchangeRequest,
+                  exchangeStatus: EXCHANGE_STATUS.CANCELED,
+                },
+              }
+            : current,
+        )
+      }
       await axios.delete(
         `${API_BASE_URL}/chat-rooms/${chatRoomId}/members/me`,
         {
@@ -340,13 +394,10 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           },
         },
       )
+      setIsClosedByEvent(true)
       router.replace('/pages/chat')
-    } catch (cause) {
-      setActionError(
-        axios.isAxiosError<ChatMessageResponse>(cause)
-          ? cause.response?.data?.error?.message || CHAT_ERRORS.LEAVE_FAILED
-          : CHAT_ERRORS.LEAVE_FAILED,
-      )
+    } catch {
+      setActionError(CHAT_ERRORS.LEAVE_FAILED)
       setIsLeaving(false)
       setMenuOpen(false)
     }
@@ -378,15 +429,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setActionError(null)
     try {
       if (status === EXCHANGE_STATUS.CANCELED) {
-        await axios.delete(
-          `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-          },
-        )
+        await cancelExchangeRequest(token)
       } else {
         await axios.patch(
           `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
@@ -471,7 +514,11 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
               group={group}
               otherUser={otherUser}
               direction={direction}
-              chatRoomStatus={detail.chatRoomStatus}
+              chatRoomStatus={
+                isClosedByEvent
+                  ? CHAT_ROOM_STATUS.CLOSED
+                  : detail.chatRoomStatus
+              }
               itemAvailable={itemAvailable}
               isUpdatingExchange={isUpdatingExchange}
               returnTo={returnTo}
@@ -541,47 +588,49 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           </div>
         </div>
 
-        <div className={styles.composer}>
-          <label className={styles.visuallyHidden} htmlFor="chat-message">
-            메시지
-          </label>
-          <input
-            id="chat-message"
-            placeholder={
-              isLoading
-                ? '메시지를 불러오는 중입니다.'
-                : !isHistoryLoaded
-                  ? '메시지 이력을 불러오지 못했습니다.'
-                  : isConnected
-                    ? '메시지를 입력하세요'
-                    : '채팅 서버 연결 중...'
-            }
-            value={messageInput}
-            maxLength={2000}
-            disabled={!canSendMessage}
-            onChange={(event) => setMessageInput(event.target.value)}
-            onCompositionStart={() => {
-              isComposingRef.current = true
-            }}
-            onCompositionEnd={() => {
-              isComposingRef.current = false
-            }}
-            onKeyUp={(event) => {
-              if (event.key !== 'Enter' || event.shiftKey) return
-              if (isComposingRef.current || event.nativeEvent.isComposing)
-                return
-              handleSendMessage(event.currentTarget.value)
-            }}
-          />
-          <button
-            type="button"
-            aria-label="메시지 보내기"
-            disabled={!canSendMessage || !messageInput.trim()}
-            onClick={() => handleSendMessage(messageInput)}
-          >
-            <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
-          </button>
-        </div>
+        {!isChatClosed && (
+          <div className={styles.composer}>
+            <label className={styles.visuallyHidden} htmlFor="chat-message">
+              메시지
+            </label>
+            <input
+              id="chat-message"
+              placeholder={
+                isLoading
+                  ? '메시지를 불러오는 중입니다.'
+                  : !isHistoryLoaded
+                    ? '메시지 이력을 불러오지 못했습니다.'
+                    : isConnected
+                      ? '메시지를 입력하세요'
+                      : '채팅 서버 연결 중...'
+              }
+              value={messageInput}
+              maxLength={2000}
+              disabled={!canSendMessage}
+              onChange={(event) => setMessageInput(event.target.value)}
+              onCompositionStart={() => {
+                isComposingRef.current = true
+              }}
+              onCompositionEnd={() => {
+                isComposingRef.current = false
+              }}
+              onKeyUp={(event) => {
+                if (event.key !== 'Enter' || event.shiftKey) return
+                if (isComposingRef.current || event.nativeEvent.isComposing)
+                  return
+                handleSendMessage(event.currentTarget.value)
+              }}
+            />
+            <button
+              type="button"
+              aria-label="메시지 보내기"
+              disabled={!canSendMessage || !messageInput.trim()}
+              onClick={() => handleSendMessage(messageInput)}
+            >
+              <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
+            </button>
+          </div>
+        )}
       </section>
       <Navbar />
     </>

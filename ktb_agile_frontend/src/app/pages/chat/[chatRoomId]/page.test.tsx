@@ -477,3 +477,206 @@ it('다른 방으로 이동하면 이전 방의 메시지를 새 이력에 합�
   await screen.findByText('방 23 메시지')
   expect(screen.queryByText('방 22 메시지')).toBeNull()
 })
+
+it.each(['CLOSED', 'REJECTED', 'CANCELED', 'COMPLETED'] as const)(
+  '%s 상태로 입장하면 종료된 대화의 입력창과 전송 버튼을 숨긴다',
+  async (status) => {
+    const value = detail()
+    if (status === 'CLOSED') value.chatRoomStatus = status
+    else value.exchangeRequest.exchangeStatus = status
+    mockResponses(value)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    const remainsOpen = status === 'COMPLETED'
+    expect(screen.queryByLabelText('메시지') !== null).toBe(remainsOpen)
+    expect(
+      screen.queryByRole('button', { name: '메시지 보내기' }) !== null,
+    ).toBe(remainsOpen)
+  },
+)
+
+it.each([
+  'CHAT_ROOM_MEMBER_LEFT',
+  'EXCHANGE_REQUEST_REJECTED',
+  'EXCHANGE_REQUEST_CANCELED',
+] as const)(
+  '%s 알림을 받으면 입력창을 즉시 숨기고 대화는 보존한다',
+  async (event) => {
+    mockResponses(detail())
+    useChatRoomSocketMock.mockReturnValue({
+      isConnected: true,
+      sendMessage: vi.fn(() => true),
+    })
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    fireEvent.change(screen.getByLabelText('메시지'), {
+      target: { value: '작성 중인 메시지' },
+    })
+    receive(historyMessage(100, '기존 대화'))
+    receive({
+      ...historyMessage(101, '대화 종료 안내'),
+      userId: null,
+      messageType: 'SYSTEM',
+      systemEventType: event,
+    })
+    expect(screen.queryByLabelText('메시지')).toBeNull()
+    expect(screen.queryByRole('button', { name: '메시지 보내기' })).toBeNull()
+    expect(screen.getByText('기존 대화')).toBeDefined()
+    expect(screen.getByText('대화 종료 안내')).toBeDefined()
+    expect(screen.getByText('채팅 종료')).toBeDefined()
+  },
+)
+
+it.each(['REJECTED', 'CANCELED'] as const)(
+  '직접 %s 처리하면 소켓 알림 없이도 입력창을 숨긴다',
+  async (status) => {
+    if (status === 'CANCELED') params.set('direction', 'SENT')
+    mockResponses(detail())
+    vi.spyOn(axios, 'patch').mockResolvedValue({})
+    vi.spyOn(axios, 'delete').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    expect(screen.getByLabelText('메시지')).toBeDefined()
+    if (status === 'CANCELED')
+      fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: status === 'REJECTED' ? '교환 거절' : '제안 취소',
+      }),
+    )
+    await waitFor(() => expect(screen.queryByLabelText('메시지')).toBeNull())
+    expect(screen.queryByRole('button', { name: '메시지 보내기' })).toBeNull()
+  },
+)
+
+it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', async () => {
+  params.set('direction', 'SENT')
+  mockResponses(detail())
+  vi.spyOn(axios, 'delete').mockResolvedValue({})
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+  )
+  expect(screen.queryByLabelText('메시지')).toBeNull()
+  expect(screen.queryByRole('button', { name: '메시지 보내기' })).toBeNull()
+})
+
+function clickLeaveRoom() {
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
+}
+
+it('교환 취소 응답을 받은 뒤에만 채팅방 나가기를 요청한다', async () => {
+  params.set('direction', 'SENT')
+  mockResponses(detail())
+  let resolveCancel!: (value: object) => void
+  const remove = vi.spyOn(axios, 'delete').mockImplementation(async (url) => {
+    if (url === '/api/exchange-requests/50')
+      return new Promise((resolve) => {
+        resolveCancel = resolve
+      })
+    return {}
+  })
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+  expect(remove).toHaveBeenCalledTimes(1)
+  expect(remove).toHaveBeenNthCalledWith(
+    1,
+    '/api/exchange-requests/50',
+    expect.anything(),
+  )
+  expect(router.replace).not.toHaveBeenCalled()
+  await act(async () => resolveCancel({}))
+  expect(remove).toHaveBeenNthCalledWith(
+    2,
+    '/api/chat-rooms/22/members/me',
+    expect.anything(),
+  )
+  expect(router.replace).toHaveBeenCalledWith('/pages/chat')
+})
+
+it.each(['SENT', 'RECEIVED'])(
+  '%s 방향에서 교환 취소 실패 시 나가기를 요청하지 않고 재시도를 안내한다',
+  async (direction) => {
+    params.set('direction', direction)
+    mockResponses(detail())
+    const remove = vi.spyOn(axios, 'delete').mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: { message: '취소 권한 없음' } } },
+    })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    clickLeaveRoom()
+    await screen.findByText(
+      '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    )
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith(
+      '/api/exchange-requests/50',
+      expect.anything(),
+    )
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('메시지')).toBeDefined()
+    clickLeaveRoom()
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(2))
+  },
+)
+
+it.each(['COMPLETED', 'REJECTED', 'CANCELED'] as const)(
+  '%s 교환은 취소를 요청하지 않고 방만 나간다',
+  async (status) => {
+    const value = detail()
+    value.exchangeRequest.exchangeStatus = status
+    mockResponses(value)
+    const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    clickLeaveRoom()
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+    )
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith(
+      '/api/chat-rooms/22/members/me',
+      expect.anything(),
+    )
+  },
+)
+
+it('취소 후 나가기만 실패하면 안내하고 재시도 시 나가기만 요청한다', async () => {
+  params.set('direction', 'SENT')
+  mockResponses(detail())
+  const remove = vi
+    .spyOn(axios, 'delete')
+    .mockResolvedValueOnce({})
+    .mockRejectedValueOnce(new Error('나가기 실패'))
+    .mockResolvedValueOnce({})
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+  await screen.findByText(
+    '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  )
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(screen.queryByLabelText('메시지')).toBeNull()
+  clickLeaveRoom()
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+  )
+  expect(remove).toHaveBeenCalledTimes(3)
+  expect(remove).toHaveBeenNthCalledWith(
+    3,
+    '/api/chat-rooms/22/members/me',
+    expect.anything(),
+  )
+})
