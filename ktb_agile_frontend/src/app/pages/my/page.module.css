@@ -156,16 +156,6 @@
   line-height: 1;
 }
 
-.footer {
-  margin-top: auto;
-  padding-top: 28px;
-  text-align: center;
-}
-
-.footer button {
-  color: #d9f3e8;
-}
-
 @media (hover: hover) and (pointer: fine) {
   .link:hover {
     background-color: rgb(255 255 255 / 8%);

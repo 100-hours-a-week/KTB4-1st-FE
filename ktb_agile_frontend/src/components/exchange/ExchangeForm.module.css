@@ -116,38 +116,20 @@
 }
 
 .requestPage .offerCard,
-.requestPage .list .badge,
-.requestPage .list .quantity button,
-.requestPage .list .quantity span {
+.requestPage .list .badge {
   border-color: #aeebcb;
   color: #3d5146;
   background: #fff;
 }
 
-.requestPage .targetCard .badge,
-.requestPage .targetCard .quantity button,
-.requestPage .targetCard .quantity span {
+.requestPage .targetCard .badge {
   border-color: #ffad94;
   color: #3d5146;
   background: #fff;
 }
 
-.requestPage .quantity button {
-  border: 0;
-  transition: background-color 160ms ease;
-}
-
-.requestPage .quantity span,
 .requestPage .badge {
   border: 0;
-}
-
-.requestPage .targetCard .quantity button:not(:disabled):active {
-  background-color: #ffdbd1;
-}
-
-.requestPage .list .quantity button:not(:disabled):active {
-  background-color: #d9f3e8;
 }
 
 .requestPage .targetCard .image {
@@ -203,10 +185,6 @@
   .body,
   .body::before {
     animation: none;
-  }
-
-  .requestPage .quantity button {
-    transition: none;
   }
 }
 
@@ -303,32 +281,6 @@
   background: #fff;
   font-size: 11px;
 }
-.quantity {
-  display: flex;
-  gap: 2px;
-  align-items: center;
-  color: #111827;
-}
-.quantity button,
-.quantity span {
-  display: grid;
-  width: 29px;
-  height: 29px;
-  place-items: center;
-  border: 1px solid #d1d5df;
-  border-radius: 50%;
-  background: #fff;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
-}
-.quantity button {
-  cursor: pointer;
-}
-.quantity button:disabled {
-  color: #c0c5ce;
-  cursor: not-allowed;
-}
 .list {
   display: flex;
   flex-direction: column;
@@ -407,4 +359,58 @@
     padding-right: 12px;
     padding-left: 12px;
   }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.pagination button,
+.pageError button,
+.removeButton {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #d9f3e8;
+  border-radius: 8px;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pagination button:disabled,
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageError {
+  text-align: center;
+}
+
+.selectedItems {
+  margin-top: 20px;
+}
+
+.selectedItems > h3 {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.selectedList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  font-size: 12px;
 }

@@ -24,6 +24,7 @@ it('인증 헤더와 커서를 백엔드로 전달하고 응답을 반환한다'
   const [url, options] = fetchMock.mock.calls[0]
   expect(new URL(url).pathname).toBe('/users/me/items')
   expect(new URL(url).searchParams.get('size')).toBe('10')
+  expect(new URL(url).searchParams.has('groupId')).toBe(false)
   expect(new URL(url).searchParams.get('cursor')).toBe('next-page')
   expect(options.headers).toEqual({
     Authorization: 'Bearer access-token',
@@ -33,6 +34,28 @@ it('인증 헤더와 커서를 백엔드로 전달하고 응답을 반환한다'
   expect(await response.json()).toEqual(backendResponse)
 })
 
+it('선택한 그룹과 커서를 백엔드로 함께 전달한다', async () => {
+  const fetchMock = vi.fn().mockResolvedValue(
+    Response.json({
+      data: { items: [], nextCursor: null, hasNext: false },
+      error: null,
+    }),
+  )
+  vi.stubGlobal('fetch', fetchMock)
+
+  await GET(
+    new Request('http://localhost/bff/my-items?groupId=2&cursor=next-page', {
+      headers: { Authorization: 'Bearer access-token' },
+    }),
+  )
+
+  const url = new URL(fetchMock.mock.calls[0][0])
+  expect(url.pathname).toBe('/users/me/items')
+  expect(url.searchParams.get('groupId')).toBe('2')
+  expect(url.searchParams.get('size')).toBe('10')
+  expect(url.searchParams.get('cursor')).toBe('next-page')
+})
+
 it('인증 헤더가 없으면 백엔드를 호출하지 않는다', async () => {
   const fetchMock = vi.fn()
   vi.stubGlobal('fetch', fetchMock)
@@ -40,6 +63,7 @@ it('인증 헤더가 없으면 백엔드를 호출하지 않는다', async () =>
   const response = await GET(new Request('http://localhost/bff/my-items'))
 
   expect(response.status).toBe(401)
+  expect(response.headers.get('X-Auth-Required')).toBe('true')
   expect(fetchMock).not.toHaveBeenCalled()
 })
 

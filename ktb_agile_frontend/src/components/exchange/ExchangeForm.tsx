@@ -4,15 +4,18 @@ import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useRef, useState, type FormEvent } from 'react'
 import { API_BASE_URL } from '@/config/api'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
 import type { ItemDetail, ItemDetailResponse, ItemListItem } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import OfferingItemCard from './OfferingItemCard'
-import QuantityControl from './QuantityControl'
+import QuantityControl from '../common/exchange/QuantityControl'
 import ItemImage from './ItemImage'
 import styles from './ExchangeForm.module.css'
+
+const FETCH_SIZE = 10
 
 type MyItemsResponse = {
   data: {
@@ -22,6 +25,8 @@ type MyItemsResponse = {
   }
   error: null
 }
+
+const getItemKey = (item: Omit<ItemListItem, 'owner'>) => item.itemId
 
 function getErrorMessage(cause: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: { message?: string } }>(cause)) {
@@ -59,7 +64,12 @@ function ExchangeFormContent({
 }: ExchangeFormProps) {
   const router = useRouter()
   const [item, setItem] = useState<ItemDetail | null>(null)
-  const [myItems, setMyItems] = useState<Omit<ItemListItem, 'owner'>[]>([])
+  const [initialSelectedItems, setInitialSelectedItems] = useState<
+    Omit<ItemListItem, 'owner'>[]
+  >([])
+  const initialOfferedIds = useRef(
+    initialValues?.offeredItems.map((offered) => offered.itemId) ?? [],
+  )
   const [requestedQuantity, setRequestedQuantity] = useState(
     initialValues?.requestedQuantity ?? 1,
   )
@@ -77,85 +87,131 @@ function ExchangeFormContent({
   const [selectedIds, setSelectedIds] = useState<number[]>(
     () => initialValues?.offeredItems.map((offered) => offered.itemId) ?? [],
   )
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitting = useRef(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let active = true
-    const controller = new AbortController()
-
-    async function loadItems() {
+  const fetchMyItems = useCallback(
+    async (cursor: string | null, signal: AbortSignal) => {
       const accessToken = sessionStorage.getItem('accessToken')
       const userId = accessToken ? getUserIdFromAccessToken(accessToken) : null
       if (!userId) {
         router.replace('/auth/login')
-        return
+        throw new Error('로그인이 필요합니다.')
       }
-
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      }
       try {
-        const targetId = itemId
-        if (!Number.isSafeInteger(targetId) || targetId <= 0) {
-          throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
-        }
-
-        const headers = {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
-        }
-        const response = await axios.get<ItemDetailResponse>(
-          `${API_BASE_URL}/items/${targetId}`,
-          { headers, signal: controller.signal },
-        )
-        const target = response.data.data
-        if (target.owner.userId === userId) {
-          throw new Error(EXCHANGE_ERRORS.OWN_ITEM_NOT_ALLOWED)
-        }
-        const ownedItems: Omit<ItemListItem, 'owner'>[] = []
-        let cursor: string | null = null
-        const seenCursors = new Set<string>()
-        while (true) {
-          const myResponse: { data: MyItemsResponse } =
-            await axios.get<MyItemsResponse>(`${API_BASE_URL}/users/me/items`, {
-              params: { size: 10, ...(cursor ? { cursor } : {}) },
-              headers,
-              signal: controller.signal,
-            })
-          const page = myResponse.data.data
-          ownedItems.push(...page.items)
-          if (!page.hasNext) break
-          if (!page.nextCursor || seenCursors.has(page.nextCursor)) {
-            throw new Error(EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED)
+        let target: ItemDetail | null = null
+        if (cursor === null) {
+          if (!Number.isSafeInteger(itemId) || itemId <= 0) {
+            throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
           }
-          cursor = page.nextCursor
-          seenCursors.add(cursor)
+          const response = await axios.get<ItemDetailResponse>(
+            `${API_BASE_URL}/items/${itemId}`,
+            { headers, signal },
+          )
+          target = response.data.data
+          if (target.owner.userId === userId) {
+            throw new Error(EXCHANGE_ERRORS.OWN_ITEM_NOT_ALLOWED)
+          }
         }
-        if (!active) return
-        setItem(target)
-        setGroupId(target.groups.length === 1 ? target.groups[0].groupId : null)
-        setMyItems(ownedItems)
+        const response = await axios.get<MyItemsResponse>(
+          `${API_BASE_URL}/users/me/items`,
+          {
+            params: { size: FETCH_SIZE, ...(cursor ? { cursor } : {}) },
+            headers,
+            signal,
+          },
+        )
+        const page = response.data.data
+        if (target) {
+          // 수정할 기존 제안은 첫 조회에 포함되지 않은 물품도 복원합니다.
+          const missingSelected = await Promise.all(
+            initialOfferedIds.current
+              .filter((id) => !page.items.some((owned) => owned.itemId === id))
+              .map(async (id) => {
+                const response = await axios.get<ItemDetailResponse>(
+                  `${API_BASE_URL}/items/${id}`,
+                  { headers, signal },
+                )
+                const detail = response.data.data
+                return {
+                  ...detail,
+                  contentPreview: detail.content,
+                  thumbnailImageUrl:
+                    detail.images.toSorted(
+                      (a, b) => a.displayOrder - b.displayOrder,
+                    )[0]?.imageUrl ?? null,
+                }
+              }),
+          )
+          if (!signal.aborted) {
+            setItem(target)
+            setGroupId(
+              target.groups.length === 1 ? target.groups[0].groupId : null,
+            )
+            setInitialSelectedItems(missingSelected)
+          }
+        }
+        return page
       } catch (cause) {
-        if (!active || axios.isCancel(cause)) return
-        setError(getErrorMessage(cause, EXCHANGE_ERRORS.ITEM_LOOKUP_FAILED))
-      } finally {
-        if (active) setIsLoading(false)
+        throw new Error(
+          getErrorMessage(
+            cause,
+            cursor
+              ? EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED
+              : EXCHANGE_ERRORS.ITEM_LOOKUP_FAILED,
+          ),
+        )
       }
-    }
+    },
+    [itemId, router],
+  )
 
-    void loadItems()
-    return () => {
-      active = false
-      controller.abort()
-    }
-  }, [itemId, router])
+  const {
+    items: myItems,
+    visibleItems,
+    pageIndex,
+    pageCount,
+    isInitialLoading: isLoading,
+    isLoading: isFetchingItems,
+    error: paginationError,
+    canGoPrevious,
+    canGoNext,
+    goToPreviousPage,
+    goToNextPage,
+    retry,
+  } = useCursorPagination({
+    fetchPage: fetchMyItems,
+    getKey: getItemKey,
+    cursorErrorMessage: EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED,
+  })
+  const currentPage = pageIndex + 1
+  const isFetchingMore = isFetchingItems && !isLoading
+  const pageError = paginationError
+    ? getErrorMessage(
+        paginationError,
+        EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED,
+      )
+    : null
 
-  const offeredItems = myItems
-    .filter((entry) => selectedIds.includes(entry.itemId))
-    .map((entry) => ({
-      itemId: entry.itemId,
-      quantity: offeredQuantities[entry.itemId] ?? 1,
-    }))
+  const ownedItems = [
+    ...myItems,
+    ...initialSelectedItems.filter(
+      (entry) => !myItems.some((loaded) => loaded.itemId === entry.itemId),
+    ),
+  ]
+  const selectedItems = selectedIds.flatMap((id) => {
+    const owned = ownedItems.find((entry) => entry.itemId === id)
+    return owned ? [owned] : []
+  })
+  const offeredItems = selectedItems.map((entry) => ({
+    itemId: entry.itemId,
+    quantity: offeredQuantities[entry.itemId] ?? 1,
+  }))
   const canRequest =
     !!item &&
     item.itemState === 'AVAILABLE' &&
@@ -176,7 +232,9 @@ function ExchangeFormContent({
     if (
       !validQuantity(requestedQuantity, item.quantity) ||
       offeredItems.some((offered) => {
-        const owned = myItems.find((entry) => entry.itemId === offered.itemId)
+        const owned = ownedItems.find(
+          (entry) => entry.itemId === offered.itemId,
+        )
         return (
           !owned ||
           owned.itemState !== 'AVAILABLE' ||
@@ -237,7 +295,9 @@ function ExchangeFormContent({
           <p className={styles.message}>물품 정보를 불러오는 중입니다.</p>
         ) : (
           <form onSubmit={handleRequest}>
-            {error && <p className={styles.error}>{error}</p>}
+            {(error || (myItems.length === 0 && pageError)) && (
+              <p className={styles.error}>{error || pageError}</p>
+            )}
             {item && (
               <>
                 <section className={styles.section}>
@@ -285,6 +345,7 @@ function ExchangeFormContent({
                         <QuantityControl
                           value={requestedQuantity}
                           maximum={item.quantity}
+                          variant={closeHref ? undefined : 'requestTarget'}
                           disabled={
                             isSubmitting ||
                             item.itemState !== 'AVAILABLE' ||
@@ -313,13 +374,14 @@ function ExchangeFormContent({
                         내가 등록한 물품이 없습니다.
                       </p>
                     ) : (
-                      myItems.map((owned) => (
+                      visibleItems.map((owned) => (
                         <OfferingItemCard
                           key={owned.itemId}
                           item={owned}
                           selected={selectedIds.includes(owned.itemId)}
                           quantity={offeredQuantities[owned.itemId] ?? 1}
                           disabled={isSubmitting}
+                          requestPage={!closeHref}
                           onSelectionChange={(selected) =>
                             setSelectedIds((ids) =>
                               selected
@@ -337,6 +399,51 @@ function ExchangeFormContent({
                       ))
                     )}
                   </div>
+                  {myItems.length > 0 && (
+                    <nav
+                      className={styles.pagination}
+                      aria-label="내 물품 페이지"
+                    >
+                      <button
+                        type="button"
+                        disabled={
+                          !canGoPrevious || isSubmitting || isFetchingMore
+                        }
+                        onClick={goToPreviousPage}
+                      >
+                        이전
+                      </button>
+                      <span aria-live="polite">
+                        {currentPage} / {pageCount}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!canGoNext || isSubmitting || isFetchingMore}
+                        onClick={goToNextPage}
+                      >
+                        다음
+                      </button>
+                    </nav>
+                  )}
+                  {isFetchingMore && (
+                    <p className={styles.message} role="status">
+                      다음 물품을 불러오는 중입니다.
+                    </p>
+                  )}
+                  {pageError && (
+                    <div className={styles.pageError}>
+                      <p className={styles.error} role="alert">
+                        {pageError}
+                      </p>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={retry}
+                      >
+                        다시 불러오기
+                      </button>
+                    </div>
+                  )}
                 </section>
                 <section className={styles.section}>
                   <h2>3) {submitLabel}</h2>
@@ -347,9 +454,42 @@ function ExchangeFormContent({
                   >
                     {isSubmitting ? '처리 중...' : submitLabel}
                   </button>
-                  <p className={styles.hint}>
-                    교환할 내 물품을 1개 이상 선택해주세요.
-                  </p>
+                  <div className={styles.selectedItems}>
+                    <h3>선택한 물품 ({selectedItems.length})</h3>
+                    {selectedItems.length === 0 ? (
+                      <p className={styles.hint}>
+                        교환할 내 물품을 1개 이상 선택해주세요.
+                      </p>
+                    ) : (
+                      <ul className={styles.selectedList}>
+                        {selectedItems.map((owned) => (
+                          <li key={owned.itemId} className={styles.offerCard}>
+                            <ItemImage url={owned.thumbnailImageUrl} />
+                            <div className={styles.info}>
+                              <h3>{owned.title}</h3>
+                              <p className={styles.meta}>
+                                제안 수량:{' '}
+                                {offeredQuantities[owned.itemId] ?? 1}개
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.removeButton}
+                              aria-label={`${owned.title} 선택 해제`}
+                              disabled={isSubmitting}
+                              onClick={() =>
+                                setSelectedIds((ids) =>
+                                  ids.filter((id) => id !== owned.itemId),
+                                )
+                              }
+                            >
+                              해제
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </section>
               </>
             )}

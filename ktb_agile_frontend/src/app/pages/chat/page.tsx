@@ -1,21 +1,18 @@
 'use client'
 
+import { CHAT_ROOM_STATUS } from '@/constants/chat'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
-import ChatRoomCard, { type ChatRoom } from '@/components/chat/ChatRoomCard'
+import ChatRoomCard from '@/components/chat/ChatRoomCard'
+import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
 import '@/config/api'
 import styles from './page.module.css'
-import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
-type ChatRoomResponse = {
-  data: { chatRooms: ChatRoom[]; nextCursor: string | null; hasNext: boolean }
-  error: { code: string; message: string } | null
-}
 const tabs: { value: Tab; label: string }[] = [
   { value: 'ALL', label: '채팅 목록' },
   { value: 'RECEIVED', label: '받은 교환' },
@@ -28,10 +25,10 @@ export default function Chat() {
   const [rooms, setRooms] = useState<ChatRoom[]>([])
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [hasNext, setHasNext] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
+  const listEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -44,26 +41,24 @@ export default function Chat() {
       setIsLoading(true)
       setErrorMessage(null)
       try {
-        const response = await axios.get<ChatRoomResponse>(
-          '/bff/chat-rooms',
-          {
-            params: {
-              size: 20,
-              ...(tab !== 'ALL' ? { direction: tab } : {}),
-              ...(cursor ? { cursor } : {}),
-            },
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+        const response = await axios.get<ChatRoomResponse>('/bff/chat-rooms', {
+          params: {
+            size: 20,
+            ...(tab !== 'ALL' ? { direction: tab } : {}),
+            ...(cursor ? { cursor } : {}),
           },
-        )
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        })
         if (response.data.error || !response.data.data) {
           throw new Error(
             response.data.error?.message || CHAT_ERRORS.ROOM_LIST_LOAD_FAILED,
           )
         }
+        if (controller.signal.aborted) return
         const page = response.data.data
         setRooms((current) =>
           cursor
@@ -79,7 +74,6 @@ export default function Chat() {
             : page.chatRooms,
         )
         setNextCursor(page.nextCursor)
-        setHasNext(page.hasNext)
       } catch (error) {
         if (axios.isCancel(error) || controller.signal.aborted) return
         setErrorMessage(
@@ -95,15 +89,63 @@ export default function Chat() {
     return () => controller.abort()
   }, [tab, cursor, retryCount, router])
 
+  useEffect(() => {
+    const target = listEndRef.current
+    if (
+      !target ||
+      isLoading ||
+      errorMessage ||
+      !nextCursor ||
+      nextCursor === cursor
+    )
+      return
+
+    let active = true
+    let requested = false
+    const observer = new IntersectionObserver((entries) => {
+      if (
+        !active ||
+        requested ||
+        !entries.some((entry) => entry.isIntersecting)
+      )
+        return
+      requested = true
+      setCursor(nextCursor)
+    })
+    observer.observe(target)
+    return () => {
+      active = false
+      observer.disconnect()
+    }
+  }, [isLoading, errorMessage, nextCursor, cursor])
+
   function selectTab(next: Tab) {
     if (next === tab) return
     setTab(next)
     setRooms([])
     setCursor(null)
     setNextCursor(null)
-    setHasNext(false)
     setIsLoading(true)
     setErrorMessage(null)
+  }
+
+  function openChatRoom(room: ChatRoom) {
+    const params = new URLSearchParams({
+      title: room.targetItem.title,
+      group: room.group?.groupName ?? '',
+      user: room.otherUser.nickname,
+      direction: room.direction,
+      status:
+        room.chatRoomStatus === CHAT_ROOM_STATUS.CLOSED
+          ? CHAT_ROOM_STATUS.CLOSED
+          : room.exchangeStatus,
+      itemId: String(room.targetItem.itemId),
+      exchangeRequestId: String(room.exchangeRequestId),
+    })
+    if (room.targetItem.thumbnailImageUrl) {
+      params.set('image', room.targetItem.thumbnailImageUrl)
+    }
+    router.push(`/pages/chat/${room.chatRoomId}?${params.toString()}`)
   }
 
   return (
@@ -126,7 +168,11 @@ export default function Chat() {
           {rooms.length > 0 && (
             <ul className={styles.list}>
               {rooms.map((room) => (
-                <ChatRoomCard key={room.chatRoomId} room={room} />
+                <ChatRoomCard
+                  key={room.chatRoomId}
+                  room={room}
+                  onClick={() => openChatRoom(room)}
+                />
               ))}
             </ul>
           )}
@@ -148,18 +194,15 @@ export default function Chat() {
           {!isLoading && !errorMessage && rooms.length === 0 && (
             <p className={styles.state}>채팅방이 없습니다.</p>
           )}
-          {!isLoading && !errorMessage && hasNext && nextCursor && (
-            <button
-              type="button"
-              className={styles.more}
-              onClick={() => setCursor(nextCursor)}
-            >
-              더 보기
-            </button>
+          {!isLoading && !errorMessage && nextCursor && (
+            <div
+              ref={listEndRef}
+              className={styles.listEnd}
+              aria-hidden="true"
+            />
           )}
         </div>
       </section>
-      <FloatingInquiryButton/>
       <Navbar />
     </>
   )

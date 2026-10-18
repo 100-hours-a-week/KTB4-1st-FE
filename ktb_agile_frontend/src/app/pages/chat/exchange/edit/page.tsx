@@ -1,5 +1,7 @@
 'use client'
 
+import { EXCHANGE_STATUS } from '@/constants/exchange'
+
 import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -71,7 +73,7 @@ function ExchangeEditContent() {
           )
         if (
           request.itemId !== itemId ||
-          request.requestedStatus !== 'PENDING'
+          request.requestedStatus !== EXCHANGE_STATUS.PENDING
         ) {
           throw new Error(EXCHANGE_ERRORS.REQUEST_NOT_EDITABLE)
         }

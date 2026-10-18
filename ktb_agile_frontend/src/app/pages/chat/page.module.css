@@ -56,8 +56,7 @@
   font-size: 14px;
   text-align: center;
 }
-.action,
-.more {
+.action {
   padding: 10px 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
@@ -69,7 +68,6 @@
 .action {
   margin-top: 12px;
 }
-.more {
-  display: block;
-  margin: 20px auto 0;
+.listEnd {
+  height: 1px;
 }

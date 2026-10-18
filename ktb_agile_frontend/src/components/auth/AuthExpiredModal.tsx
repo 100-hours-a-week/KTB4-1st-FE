@@ -12,7 +12,8 @@ export default function AuthExpiredModal({ children }: { children: React.ReactNo
       setIsOpen(true)
     }
 
-    window.addEventListener('auth-expired', showModal)
+    
+    window.addEventListener('auth-expired', showModal) 
     return () => window.removeEventListener('auth-expired', showModal)
   }, [])
 

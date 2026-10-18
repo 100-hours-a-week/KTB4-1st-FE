@@ -2,7 +2,7 @@
 
 import type { ItemListItem } from '@/types/item'
 import ItemImage from './ItemImage'
-import QuantityControl from './QuantityControl'
+import QuantityControl from '../common/exchange/QuantityControl'
 import styles from './ExchangeForm.module.css'
 
 type OfferingItemCardProps = {
@@ -10,6 +10,7 @@ type OfferingItemCardProps = {
   selected: boolean
   quantity: number
   disabled?: boolean
+  requestPage?: boolean
   onSelectionChange: (selected: boolean) => void
   onQuantityChange: (quantity: number) => void
 }
@@ -19,6 +20,7 @@ export default function OfferingItemCard({
   selected,
   quantity,
   disabled = false,
+  requestPage = false,
   onSelectionChange,
   onQuantityChange,
 }: OfferingItemCardProps) {
@@ -40,6 +42,7 @@ export default function OfferingItemCard({
             value={quantity}
             maximum={item.quantity}
             disabled={disabled || unavailable}
+            variant={requestPage ? 'requestOffer' : undefined}
             onChange={onQuantityChange}
           />
           <span>보유 수량: {item.quantity}</span>

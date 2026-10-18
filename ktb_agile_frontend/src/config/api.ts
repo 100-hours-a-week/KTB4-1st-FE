@@ -14,21 +14,34 @@ type AuthRequest = InternalAxiosRequestConfig & { retried?: boolean }
 
 let refreshPromise: Promise<string> | null = null
 
-function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
-  const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
+function isBffRequest(request: InternalAxiosRequestConfig) {
   const requestUrl = request.url?.split('?')[0] ?? ''
-  const isBffRequest =
+  return (
     [
       '/bff/group',
       '/bff/chat-rooms',
       '/bff/my-items',
+      '/bff/me/groups',
+      '/bff/preferences',
       '/bff/liked-items',
       '/bff/exchanged-items',
       '/bff/search',
-    ].includes(requestUrl) || requestUrl.startsWith('/bff/like/')
+      '/bff/smart-search',
+      '/bff/chatbot',
+      '/bff/search-histories',
+    ].includes(requestUrl) ||
+    requestUrl.startsWith('/bff/chat-rooms/') ||
+    requestUrl.startsWith('/bff/chat/rooms/') ||
+    requestUrl.startsWith('/bff/like/') ||
+    requestUrl.startsWith('/bff/search-histories/')
+  )
+}
+
+function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
+  const isBackendRequest = request.url?.startsWith(`${API_BASE_URL}/`)
   const hasAccessToken = request.headers.get('Authorization')
 
-  return (isBackendRequest || isBffRequest) && hasAccessToken
+  return (isBackendRequest || isBffRequest(request)) && hasAccessToken
 }
 
 function showLoginExpiredModal() {
@@ -68,17 +81,23 @@ async function refreshAccessToken() {
 
 async function handleRequestError(error: {
   config?: InternalAxiosRequestConfig
-  response?: { status?: number }
+  response?: { status?: number; headers?: { get(name: string): unknown } }
 }) {
   const request = error.config as AuthRequest | undefined
 
-  if (
-    error.response?.status !== 401 ||
-    !request ||
-    !isAuthenticatedRequest(request)
-  ) {
+  if (error.response?.status !== 401 || !request) {
     throw error
   }
+
+  if (error.response.headers?.get('X-Auth-Required') === 'true') {
+    window.sessionStorage.removeItem('accessToken')
+    if (window.location.pathname !== '/auth/login') {
+      window.location.replace('/auth/login')
+    }
+    throw error
+  }
+
+  if (!isAuthenticatedRequest(request)) throw error
 
   if (request.retried) {
     throw error
@@ -111,7 +130,7 @@ async function handleRequestError(error: {
 
 if (typeof window !== 'undefined') {
   axios.interceptors.request.use((request) => {
-    if (isAuthenticatedRequest(request)) {
+    if (isBffRequest(request) || isAuthenticatedRequest(request)) {
       const accessToken = window.sessionStorage.getItem('accessToken')
 
       if (accessToken) {

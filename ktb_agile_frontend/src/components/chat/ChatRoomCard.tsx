@@ -1,89 +1,58 @@
-import Link from 'next/link'
+'use client'
+
+import { useEffect } from 'react'
+import { GROUP_MEMBER_STATUS, USER_STATUS } from '@/constants/user'
+import { formatMessagePreview } from '@/utils/content'
+import { formatLastTime } from '@/utils/date'
+import type { ChatRoom } from '@/types/chatRoom'
 import styles from './ChatRoomCard.module.css'
 
-const PREVIEW_MAX_LENGTH = 25
+export default function ChatRoomCard({
+  room,
+  onClick,
+}: {
+  room: ChatRoom
+  onClick: () => void
+}) {
+  const { userStatus, groupMemberStatus } = room.otherUser
+  const isWithdrawn = userStatus === USER_STATUS.WITHDRAWN
+  const hasLeftGroup = groupMemberStatus === GROUP_MEMBER_STATUS.LEFT
+  const isActive =
+    userStatus === USER_STATUS.ACTIVE &&
+    groupMemberStatus === GROUP_MEMBER_STATUS.ACTIVE
+  const hasUnknownStatus = !isWithdrawn && !hasLeftGroup && !isActive
+  const statusMessage = isWithdrawn
+    ? '탈퇴한 사용자'
+    : hasLeftGroup
+      ? '그룹을 떠난 사용자'
+      : hasUnknownStatus
+        ? '알 수 없는 오류'
+        : null
 
-function formatMessagePreview(content: string) {
-  const characters = Array.from(content)
-  return characters.length > PREVIEW_MAX_LENGTH
-    ? `${characters.slice(0, PREVIEW_MAX_LENGTH).join('')}...`
-    : content
-}
+  useEffect(() => {
+    if (hasUnknownStatus) {
+      console.error('채팅 상대방의 상태 조합을 처리할 수 없습니다.', {
+        chatRoomId: room.chatRoomId,
+        userId: room.otherUser.userId,
+        userStatus,
+        groupMemberStatus,
+      })
+    }
+  }, [
+    hasUnknownStatus,
+    room.chatRoomId,
+    room.otherUser.userId,
+    userStatus,
+    groupMemberStatus,
+  ])
 
-export type ChatRoom = {
-  chatRoomId: number
-  chatRoomStatus: string
-  exchangeRequestId: number
-  direction: 'SENT' | 'RECEIVED'
-  group: { groupId: number; groupName: string }
-  otherUser: {
-    userId: number
-    nickname: string
-    profileImageUrl: string | null
-  }
-  targetItem: {
-    itemId: number
-    title: string
-    thumbnailImageUrl: string | null
-  }
-  lastMessage: {
-    messageId: number
-    content: string
-    senderId: number
-    createdAt: string
-  } | null
-  unreadMessageCount: number
-  lastMessageAt: string | null
-}
-
-function formatTime(value: string | null) {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return ''
-  const elapsed = Date.now() - date.getTime()
-  if (elapsed >= 0 && elapsed < 60_000) return '방금 전'
-  if (elapsed >= 0 && elapsed < 3_600_000)
-    return `${Math.floor(elapsed / 60_000)}분 전`
-  if (elapsed >= 0 && elapsed < 86_400_000)
-    return `${Math.floor(elapsed / 3_600_000)}시간 전`
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  if (date.toDateString() === yesterday.toDateString()) return '어제'
-  return new Intl.DateTimeFormat('ko-KR', {
-    month: 'numeric',
-    day: 'numeric',
-  }).format(date)
-}
-
-export default function ChatRoomCard({ room }: { room: ChatRoom }) {
   return (
     <li>
-      <Link
-        href={{
-          pathname: `/pages/chat/${room.chatRoomId}`,
-          query: {
-            title: room.targetItem.title,
-            group: room.group.groupName,
-            user: room.otherUser.nickname,
-            userId: room.otherUser.userId,
-            direction: room.direction,
-            status: room.chatRoomStatus,
-            itemId: room.targetItem.itemId,
-            exchangeRequestId: room.exchangeRequestId,
-            ...(room.targetItem.thumbnailImageUrl
-              ? { image: room.targetItem.thumbnailImageUrl }
-              : {}),
-            ...(room.lastMessage
-              ? {
-                  lastMessage: room.lastMessage.content,
-                  senderId: room.lastMessage.senderId,
-                  lastMessageAt: room.lastMessage.createdAt,
-                }
-              : {}),
-          },
-        }}
+      <button
+        type="button"
+        onClick={onClick}
         className={styles.room}
-        aria-label={`${room.otherUser.nickname}님과 ${room.targetItem.title} 채팅방 열기`}
+        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} 채팅방 열기`}
       >
         <div className={styles.images}>
           <div
@@ -105,15 +74,18 @@ export default function ChatRoomCard({ room }: { room: ChatRoom }) {
               {room.targetItem.title}
             </strong>
             <span className={styles.time}>
-              {formatTime(room.lastMessageAt)}
+              {formatLastTime(room.lastMessageAt)}
             </span>
           </div>
-          <p className={styles.groupName}>{room.group.groupName}</p>
+          {room.group && (
+            <p className={styles.groupName}>{room.group.groupName}</p>
+          )}
           <div className={styles.bottomRow}>
             <p className={styles.preview}>
-              {room.lastMessage
-                ? `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) ${formatMessagePreview(room.lastMessage.content)}`
-                : `${room.otherUser.nickname}님과의 대화`}
+              {statusMessage ||
+                (room.lastMessage
+                  ? `${room.lastMessage.senderId === null ? '' : `(${room.lastMessage.senderId === room.otherUser.userId ? room.otherUser.nickname : '나'}) `}${formatMessagePreview(room.lastMessage.content)}`
+                  : `${room.otherUser.nickname}님과의 대화`)}
             </p>
             {room.unreadMessageCount > 0 && (
               <span className={styles.unread}>
@@ -122,7 +94,7 @@ export default function ChatRoomCard({ room }: { room: ChatRoom }) {
             )}
           </div>
         </div>
-      </Link>
+      </button>
     </li>
   )
 }

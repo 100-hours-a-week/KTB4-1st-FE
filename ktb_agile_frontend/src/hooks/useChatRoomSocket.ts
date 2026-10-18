@@ -1,17 +1,20 @@
+import type { ChatMessageDto } from '@/types/chatMessage'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import axios from 'axios'
 
-type ChatRoomSocketMessage = {
-  messageId: number
-  chatRoomId: number
-  userId: number
-  content: string
-  messageType: string
-  createdAt: string
-}
+type ChatRoomSocketMessage = Pick<
+  ChatMessageDto,
+  | 'messageId'
+  | 'chatRoomId'
+  | 'userId'
+  | 'content'
+  | 'messageType'
+  | 'systemEventType'
+  | 'createdAt'
+>
 
 type UseChatRoomSocketOptions = {
   chatRoomId: string
@@ -60,11 +63,10 @@ export function useChatRoomSocket({
     const client = new Client({
       brokerURL: `${getWebSocketUrl()}/ws`,
       beforeConnect: async () => {
-        const accessToken = window.sessionStorage.getItem('accessToken')
         try {
           // HTTP 인증 요청에서 401을 처리한 뒤 최신 토큰으로 연결합니다.
-          await axios.get(`${API_BASE_URL}/users/me/groups`, {
-            headers: { Authorization: `Bearer ${accessToken || ''}` },
+          await axios.get('/bff/me/groups', {
+            headers: { Accept: 'application/json' },
           })
           const latestToken = window.sessionStorage.getItem('accessToken')
           if (!latestToken) {

@@ -42,28 +42,6 @@
 .menuAnchor {
   position: relative;
 }
-.menu {
-  position: absolute;
-  z-index: 5;
-  top: 34px;
-  right: 0;
-  min-width: 160px;
-  padding: 4px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 8px 24px #1118271a;
-}
-.menu button {
-  width: 100%;
-  padding: 10px;
-  border: 0;
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-}
 
 .content {
   display: flex;
@@ -111,6 +89,25 @@
   min-height: 0;
   overflow-y: auto;
 }
+.dateSeparator {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 12px;
+}
+.dateSeparator::before,
+.dateSeparator::after {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+  content: '';
+}
+.dateSeparator time {
+  white-space: nowrap;
+}
+
 .systemGroup {
   display: flex;
   flex: 0 0 auto;

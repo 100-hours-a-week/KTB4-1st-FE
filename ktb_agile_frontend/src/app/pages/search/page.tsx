@@ -7,15 +7,17 @@ import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
-import ItemCard from '@/components/item/ItemCard'
+import ItemCard from '@/components/common/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
+import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
 
 type SearchCriteria = {
   keyword: string
   groupId: number
+  itemState: 'AVAILABLE' | null
 }
 
 type SearchResult = SearchCriteria & {
@@ -27,6 +29,11 @@ type SearchResult = SearchCriteria & {
 type SearchRequest = {
   criteria: SearchCriteria
   cursor: string | null
+}
+
+type DisplaySearchHistory = {
+  searchHistoryId: number | null
+  keyword: string
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -67,12 +74,23 @@ function SearchPageContent() {
     )
   })
   const [keyword, setKeyword] = useState('')
+  const [isCheckBoxSelected, setIsCheckBoxSelected] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
-  const [isSmartSearchNoticeOpen, setIsSmartSearchNoticeOpen] = useState(false)
+  const [searchHistories, setSearchHistories] = useState<
+    DisplaySearchHistory[]
+  >([])
+  const [historyError, setHistoryError] = useState(false)
+  const [deletingHistoryKeyword, setDeletingHistoryKeyword] = useState<
+    string | null
+  >(null)
+  const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
+    null,
+  )
 
   useEffect(() => {
     const token = window.sessionStorage.getItem('accessToken')
@@ -80,6 +98,49 @@ function SearchPageContent() {
       router.replace('/auth/login')
     }
   }, [router])
+
+  useEffect(() => {
+    const token = window.sessionStorage.getItem('accessToken')
+    const controller = new AbortController()
+
+    async function loadSearchHistories() {
+      try {
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          },
+        )
+        if (controller.signal.aborted) return
+        const histories = response.data.data.searchHistories
+        setSearchHistories((current) =>
+          [
+            ...current.map(
+              (history) =>
+                histories.find((saved) => saved.keyword === history.keyword) ??
+                history,
+            ),
+            ...histories.filter(
+              (history) =>
+                !current.some((entry) => entry.keyword === history.keyword),
+            ),
+          ].slice(0, 10),
+        )
+        setHistoryError(false)
+      } catch (error) {
+        if (!axios.isCancel(error) && !controller.signal.aborted) {
+          setHistoryError(true)
+        }
+      }
+    }
+
+    void loadSearchHistories()
+    return () => controller.abort()
+  }, [])
 
   useEffect(() => {
     if (!searchRequest) return
@@ -99,6 +160,7 @@ function SearchPageContent() {
           params: {
             groupId: criteria.groupId,
             keyword: criteria.keyword,
+            ...(criteria.itemState ? { itemState: criteria.itemState } : {}),
             ...(cursor ? { cursor } : {}),
           },
           headers: {
@@ -112,7 +174,8 @@ function SearchPageContent() {
         if (cursor) {
           setResult((current) =>
             current?.groupId === criteria.groupId &&
-            current.keyword === criteria.keyword
+            current.keyword === criteria.keyword &&
+            current.itemState === criteria.itemState
               ? {
                   ...criteria,
                   items: [...current.items, ...page.items],
@@ -128,6 +191,44 @@ function SearchPageContent() {
             nextCursor: page.nextCursor,
             hasNext: page.hasNext,
           })
+          setSearchHistories((current) =>
+            [
+              current.find(
+                (history) => history.keyword === criteria.keyword,
+              ) ?? {
+                searchHistoryId: null,
+                keyword: criteria.keyword,
+              },
+              ...current.filter(
+                (history) => history.keyword !== criteria.keyword,
+              ),
+            ].slice(0, 10),
+          )
+          setHistoryError(false)
+
+          // History is saved asynchronously; keep the local entry until its ID is available.
+          void axios
+            .get<SearchHistoryResponse>('/bff/search-histories', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json',
+              },
+              signal: controller.signal,
+            })
+            .then((historyResponse) => {
+              if (controller.signal.aborted) return
+              const saved = historyResponse.data.data.searchHistories
+              setSearchHistories((current) =>
+                current.map(
+                  (history) =>
+                    saved.find((entry) => entry.keyword === history.keyword) ??
+                    history,
+                ),
+              )
+            })
+            .catch(() => {
+              // A failed synchronization must not hide locally recorded searches.
+            })
         }
       } catch (error) {
         if (!axios.isCancel(error) && !controller.signal.aborted) {
@@ -153,7 +254,11 @@ function SearchPageContent() {
       setSearchError('검색할 그룹을 선택해주세요.')
       return
     }
-    const criteria = { groupId: selectedGroupId, keyword: keyword.trim() }
+    const criteria: SearchCriteria = {
+      groupId: selectedGroupId,
+      keyword: keyword.trim(),
+      itemState: isCheckBoxSelected ? 'AVAILABLE' : null,
+    }
     setResult(null)
     setSearchError('')
     setIsLoading(true)
@@ -166,8 +271,29 @@ function SearchPageContent() {
     setMoreLoading(true)
     setSearchError('')
     setSearchRequest({
-      criteria: { groupId: result.groupId, keyword: result.keyword },
+      criteria: {
+        groupId: result.groupId,
+        keyword: result.keyword,
+        itemState: result.itemState,
+      },
       cursor: result.nextCursor,
+    })
+  }
+
+  function changeCheckBoxSelected(checked: boolean) {
+    setIsCheckBoxSelected(checked)
+    if (!searchRequest) return
+
+    setResult(null)
+    setSearchError('')
+    setIsLoading(true)
+    setMoreLoading(false)
+    setSearchRequest({
+      criteria: {
+        ...searchRequest.criteria,
+        itemState: checked ? 'AVAILABLE' : null,
+      },
+      cursor: null,
     })
   }
 
@@ -177,6 +303,85 @@ function SearchPageContent() {
     setSearchError('')
     setIsLoading(false)
     setMoreLoading(false)
+  }
+
+  async function requestAllHistoryDelete(path: string) {
+    const token = window.sessionStorage.getItem('accessToken')
+    if (!token) {
+      router.replace('/auth/login')
+      return false
+    }
+
+    const response = await axios.delete(path, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+      },
+    })
+    if (response.status !== 204) throw new Error('Unexpected delete response')
+    return true
+  }
+
+  async function deleteSingleSearchHistory(history: DisplaySearchHistory) {
+    if (deletingHistoryKeyword !== null || isDeletingAllHistories) return
+
+    setDeletingHistoryKeyword(history.keyword)
+    try {
+      let searchHistoryId = history.searchHistoryId
+      if (searchHistoryId === null) {
+        const token = window.sessionStorage.getItem('accessToken')
+        if (!token) {
+          router.replace('/auth/login')
+          return
+        }
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        searchHistoryId =
+          response.data.data.searchHistories.find(
+            (entry) => entry.keyword === history.keyword,
+          )?.searchHistoryId ?? null
+        if (searchHistoryId === null) {
+          setDeleteErrorMessage(
+            '검색 기록을 저장 중입니다. 잠시 후 다시 삭제해주세요.',
+          )
+          return
+        }
+      }
+      if (
+        !(await requestAllHistoryDelete(
+          `/bff/search-histories/${searchHistoryId}`,
+        ))
+      )
+        return
+      setSearchHistories((current) =>
+        current.filter((entry) => entry.keyword !== history.keyword),
+      )
+    } catch {
+      setDeleteErrorMessage('서버 문제로 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setDeletingHistoryKeyword(null)
+    }
+  }
+
+  async function deleteAllSearchHistories() {
+    if (deletingHistoryKeyword !== null || isDeletingAllHistories) return
+
+    setIsDeletingAllHistories(true)
+    try {
+      if (!(await requestAllHistoryDelete('/bff/search-histories'))) return
+      setSearchHistories([])
+    } catch {
+      setDeleteErrorMessage('서버 문제로 전체 검색 기록을 삭제하지 못했습니다.')
+    } finally {
+      setIsDeletingAllHistories(false)
+    }
   }
 
   return (
@@ -198,6 +403,7 @@ function SearchPageContent() {
         groups={groups}
         selectedGroupId={selectedGroupId}
         keyword={keyword}
+        isCheckBoxSelected={isCheckBoxSelected}
         disabled={isLoading}
         onGroupChange={(groupId) => {
           setSelectedGroupId(groupId)
@@ -208,7 +414,42 @@ function SearchPageContent() {
           changeCriteria()
         }}
         onSearch={handleSearchClick}
+        onCheckBoxSelectedChange={changeCheckBoxSelected}
       />
+
+      {historyError && searchHistories.length === 0 ? (
+        <p className={styles.historyError}>
+          검색 기록을 가져오는데 실패했습니다
+        </p>
+      ) : searchHistories.length > 0 ? (
+        <div className={styles.historyBar}>
+          <button
+            type="button"
+            className={styles.clearHistoriesButton}
+            onClick={() => void deleteAllSearchHistories()}
+            disabled={deletingHistoryKeyword !== null || isDeletingAllHistories}
+          >
+            전체 삭제
+          </button>
+          <div className={styles.searchHistories}>
+            {searchHistories.map((history) => (
+              <span className={styles.historyChip} key={history.keyword}>
+                <span>{history.keyword}</span>
+                <button
+                  type="button"
+                  className={styles.historyRemove}
+                  onClick={() => void deleteSingleSearchHistory(history)}
+                  disabled={
+                    deletingHistoryKeyword !== null || isDeletingAllHistories
+                  }
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {groups.length === 0 && (
         <p className={styles.searchMessage}>
@@ -218,16 +459,14 @@ function SearchPageContent() {
       )}
       {searchError && <p className={styles.searchMessage}>{searchError}</p>}
 
-      <button
-        type="button"
+      <Link
+        href="/pages/search/ai-smart-search"
         className={styles.smartSearchLink}
-        onClick={() => setIsSmartSearchNoticeOpen(true)}
       >
         <span className={styles.sparkle}>✦</span>
         AI 스마트 검색
         <span className={styles.chevron}>›</span>
-        <span className={styles.soonLabel}>soon</span>
-      </button>
+      </Link>
 
       {isLoading ? (
         <p className={styles.resultMessage}>검색 결과를 불러오는 중입니다.</p>
@@ -255,10 +494,10 @@ function SearchPageContent() {
           )}
         </section>
       ) : null}
-      {isSmartSearchNoticeOpen && (
+      {deleteErrorMessage && (
         <ModalDefault
-          message="AI 스마트 검색은 개발 중입니다."
-          onConfirm={() => setIsSmartSearchNoticeOpen(false)}
+          message={deleteErrorMessage}
+          onConfirm={() => setDeleteErrorMessage(null)}
         />
       )}
       <Navbar />

@@ -2,7 +2,6 @@
 
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import Navbar from '@/components/common/navbar/Navbar'
-import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -43,22 +42,14 @@ export default function GroupList() {
     }
 
     const fetchGroupList = useCallback(async (keyword = '') => {
-      const accessToken = window.sessionStorage.getItem('accessToken')
-
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
-
       try {
         const trimmedKeyword = keyword.trim()
 
         if (!trimmedKeyword) {
           const response = await axios.get<GroupListResponse>(
-            `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
+            '/bff/me/groups',
             {
               headers: {
-                Authorization: `Bearer ${accessToken}`,
                 Accept: 'application/json',
               },
             },
@@ -66,6 +57,12 @@ export default function GroupList() {
 
           setIsSearchMode(false)
           setMyGroupList(response.data)
+          return
+        }
+
+        const accessToken = window.sessionStorage.getItem('accessToken')
+        if (!accessToken) {
+          router.replace('/auth/login')
           return
         }
 
@@ -341,7 +338,6 @@ export default function GroupList() {
             onConfirm={confirmLeave}
           />
         )}
-        <FloatingInquiryButton />
         <Navbar />
       </section>
     )

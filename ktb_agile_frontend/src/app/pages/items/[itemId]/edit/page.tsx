@@ -39,8 +39,8 @@ export default function ItemEditPage() {
         const [itemResponse, groupResponse] = await Promise.all([
           axios.get<ItemDetailResponse>(`${API_BASE_URL}/items/${itemId}`, { headers }),
           axios.get<{ data: { groups: JoinedGroupOption[] } }>(
-            `${API_BASE_URL}/users/me/groups?size=10&cursor=`,
-            { headers },
+            '/bff/me/groups',
+            { headers: { Accept: 'application/json' } },
           ),
         ])
         if (!isMounted) return

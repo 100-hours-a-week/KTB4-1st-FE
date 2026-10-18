@@ -40,6 +40,31 @@
   outline-offset: 3px;
 }
 
+.shake {
+  animation: inquiry-shake 450ms ease-in-out 1;
+}
+
+@keyframes inquiry-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  40%,
+  80% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shake {
+    animation-duration: 1ms;
+  }
+}
+
 .dialog {
   width: min(420px, calc(100% - 32px));
   max-height: calc(100dvh - 32px);

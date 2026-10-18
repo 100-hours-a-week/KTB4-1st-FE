@@ -5,7 +5,7 @@ import { NO_GROUP_ACTIVITY_MSG } from '@/constants/group'
 import { useState } from 'react'
 import type { GroupCardData } from '@/types/group'
 import styles from './GroupCard.module.css'
-import { formatCreatedDate } from '@/utils/date'
+import { formatLastTime } from '@/utils/date'
 
 type GroupCardAction = {
   label: string
@@ -84,7 +84,7 @@ export default function GroupCard({
                   {itemCount === 0
                     ? NO_GROUP_ACTIVITY_MSG
                     : lastItemCreatedAt
-                      ? formatCreatedDate(lastItemCreatedAt)
+                      ? formatLastTime(lastItemCreatedAt)
                       : GROUP_ERRORS.DATE_LOAD_FAILED}
                 </span>
             </span>

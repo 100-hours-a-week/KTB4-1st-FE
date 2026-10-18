@@ -8,6 +8,8 @@ type ModalDefaultProps = {
   onCancel?: () => void
   confirmLabel?: string
   cancelLabel?: string
+  confirmDisabled?: boolean
+  cancelDisabled?: boolean
 }
 
 export default function ModalDefault({
@@ -16,6 +18,8 @@ export default function ModalDefault({
   onCancel,
   confirmLabel,
   cancelLabel = '취소',
+  confirmDisabled = false,
+  cancelDisabled = false,
 }: ModalDefaultProps) {
   const resolvedConfirmLabel = confirmLabel ?? (onCancel ? '예' : '확인')
 
@@ -29,6 +33,7 @@ export default function ModalDefault({
               className={styles.cancelButton}
               type="button"
               onClick={onCancel}
+              disabled={cancelDisabled}
             >
               {cancelLabel}
             </button>
@@ -37,6 +42,7 @@ export default function ModalDefault({
             className={styles.confirmButton}
             type="button"
             onClick={onConfirm}
+            disabled={confirmDisabled}
           >
             {resolvedConfirmLabel}
           </button>
