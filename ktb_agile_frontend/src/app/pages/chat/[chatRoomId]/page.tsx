@@ -342,7 +342,12 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   }
 
   async function leaveChatRoom() {
-    if (!window.confirm('채팅방을 나가시겠습니까?')) return
+    if (
+      !window.confirm(
+        '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 취소됩니다.',
+      )
+    )
+      return
     const token = window.sessionStorage.getItem('accessToken')
     if (!token) {
       router.replace('/auth/login')
