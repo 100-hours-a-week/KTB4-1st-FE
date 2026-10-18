@@ -388,7 +388,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     if (isLeaving) return
     if (
       !window.confirm(
-        '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 취소됩니다.',
+        `채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 ${isSeller ? '거절' : '취소'}됩니다.`,
       )
     )
       return
@@ -402,7 +402,24 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     try {
       if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
       if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
-        await cancelExchangeRequest(token)
+        const status = isSeller
+          ? EXCHANGE_STATUS.REJECTED
+          : EXCHANGE_STATUS.CANCELED
+        if (isSeller) {
+          await axios.patch(
+            `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
+            { status },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+              },
+            },
+          )
+        } else {
+          await cancelExchangeRequest(token)
+        }
         setRoomDetail((current) =>
           current?.chatRoomId === Number(chatRoomId)
             ? {
@@ -410,7 +427,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
                 chatRoomStatus: CHAT_ROOM_STATUS.CLOSED,
                 exchangeRequest: {
                   ...current.exchangeRequest,
-                  exchangeStatus: EXCHANGE_STATUS.CANCELED,
+                  exchangeStatus: status,
                 },
               }
             : current,

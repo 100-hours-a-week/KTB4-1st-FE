@@ -603,14 +603,17 @@ it('교환 취소 응답을 받은 뒤에만 채팅방 나가기를 요청한다
 })
 
 it.each(['SENT', 'RECEIVED'])(
-  '%s 방향에서 교환 취소 실패 시 나가기를 요청하지 않고 재시도를 안내한다',
+  '%s 방향에서 교환 종료 실패 시 나가기를 요청하지 않고 재시도를 안내한다',
   async (direction) => {
     params.set('direction', direction)
     mockResponses(detail())
-    const remove = vi.spyOn(axios, 'delete').mockRejectedValue({
-      isAxiosError: true,
-      response: { data: { error: { message: '취소 권한 없음' } } },
-    })
+    const remove = vi
+      .spyOn(axios, 'delete')
+      .mockRejectedValue(new Error('취소 실패'))
+    const patch = vi
+      .spyOn(axios, 'patch')
+      .mockRejectedValue(new Error('거절 실패'))
+    const endExchange = direction === 'RECEIVED' ? patch : remove
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
     await screen.findByText('상품명: 캠핑 의자')
@@ -618,17 +621,98 @@ it.each(['SENT', 'RECEIVED'])(
     await screen.findByText(
       '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
     )
-    expect(remove).toHaveBeenCalledTimes(1)
-    expect(remove).toHaveBeenCalledWith(
-      '/api/exchange-requests/50',
-      expect.anything(),
-    )
+    expect(endExchange).toHaveBeenCalledTimes(1)
+    expect(
+      remove.mock.calls.some(
+        ([url]) => url === '/api/chat-rooms/22/members/me',
+      ),
+    ).toBe(false)
+    if (direction === 'RECEIVED') {
+      expect(remove).not.toHaveBeenCalled()
+      expect(patch).toHaveBeenCalledWith(
+        '/api/exchange-requests/50/status',
+        { status: 'REJECTED' },
+        expect.anything(),
+      )
+    } else {
+      expect(patch).not.toHaveBeenCalled()
+      expect(remove).toHaveBeenCalledWith(
+        '/api/exchange-requests/50',
+        expect.anything(),
+      )
+    }
     expect(router.replace).not.toHaveBeenCalled()
     expect(screen.getByLabelText('메시지')).toBeDefined()
     clickLeaveRoom()
-    await waitFor(() => expect(remove).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(endExchange).toHaveBeenCalledTimes(2))
   },
 )
+
+it('물품 보유자는 교환 거절 응답을 받은 뒤에만 방을 나간다', async () => {
+  params.set('direction', 'RECEIVED')
+  mockResponses(detail())
+  let resolveReject!: (value: object) => void
+  const patch = vi.spyOn(axios, 'patch').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveReject = resolve
+      }),
+  )
+  const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+
+  expect(confirm).toHaveBeenCalledWith(
+    '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 거절됩니다.',
+  )
+  expect(patch).toHaveBeenCalledWith(
+    '/api/exchange-requests/50/status',
+    { status: 'REJECTED' },
+    expect.objectContaining({
+      headers: {
+        Authorization: 'Bearer access-token',
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+    }),
+  )
+  expect(remove).not.toHaveBeenCalled()
+  expect(router.replace).not.toHaveBeenCalled()
+
+  await act(async () => resolveReject({}))
+  expect(remove).toHaveBeenCalledExactlyOnceWith(
+    '/api/chat-rooms/22/members/me',
+    expect.anything(),
+  )
+  expect(router.replace).toHaveBeenCalledWith('/pages/chat')
+})
+
+it('거절 후 나가기만 실패하면 재시도 시 거절 요청을 반복하지 않는다', async () => {
+  params.set('direction', 'RECEIVED')
+  mockResponses(detail())
+  const patch = vi.spyOn(axios, 'patch').mockResolvedValue({})
+  const remove = vi
+    .spyOn(axios, 'delete')
+    .mockRejectedValueOnce(new Error('나가기 실패'))
+    .mockResolvedValueOnce({})
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+  await screen.findByText(
+    '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  )
+  clickLeaveRoom()
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+  )
+  expect(patch).toHaveBeenCalledTimes(1)
+  expect(remove).toHaveBeenCalledTimes(2)
+  for (const [url] of remove.mock.calls)
+    expect(url).toBe('/api/chat-rooms/22/members/me')
+})
 
 it.each(['COMPLETED', 'REJECTED', 'CANCELED'] as const)(
   '%s 교환은 취소를 요청하지 않고 방만 나간다',
