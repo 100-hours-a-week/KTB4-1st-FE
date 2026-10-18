@@ -89,6 +89,25 @@
   min-height: 0;
   overflow-y: auto;
 }
+.dateSeparator {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 12px;
+}
+.dateSeparator::before,
+.dateSeparator::after {
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+  content: '';
+}
+.dateSeparator time {
+  white-space: nowrap;
+}
+
 .systemGroup {
   display: flex;
   flex: 0 0 auto;

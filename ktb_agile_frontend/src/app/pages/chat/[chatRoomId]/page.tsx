@@ -9,7 +9,7 @@ import { EXCHANGE_STATUS } from '@/constants/exchange'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
@@ -28,14 +28,18 @@ import type {
 import type { ChatMessageDto, ChatMessageResponse } from '@/types/chatMessage'
 import styles from './page.module.css'
 
-function timeLabel(date: Date) {
-  if (Number.isNaN(date.getTime())) return ''
-  return new Intl.DateTimeFormat('ko-KR', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(date)
-}
+const timeFormatter = new Intl.DateTimeFormat('ko-KR', {
+  timeZone: 'Asia/Seoul',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false,
+})
+const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Seoul',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
 
 function toMessage(
   message: Pick<
@@ -46,12 +50,24 @@ function toMessage(
   otherUser: string,
 ): ChatMessage {
   const mine = userId !== null && message.userId === userId
+  // 서버의 시간대 없는 LocalDateTime도 한국 시간으로 해석합니다.
+  const timestamp = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(message.createdAt)
+    ? message.createdAt
+    : `${message.createdAt}+09:00`
+  const date = new Date(timestamp)
+  const validDate = !Number.isNaN(date.getTime())
+  const parts = validDate ? dateFormatter.formatToParts(date) : []
+  const year = parts.find((part) => part.type === 'year')?.value
+  const month = parts.find((part) => part.type === 'month')?.value
+  const day = parts.find((part) => part.type === 'day')?.value
   return {
     id: message.messageId,
     messageType: message.messageType,
     side: mine ? 'mine' : 'theirs',
     content: message.content,
-    time: timeLabel(new Date(message.createdAt)),
+    time: validDate ? timeFormatter.format(date) : '',
+    dateKey: validDate ? `${year}-${month}-${day}` : '',
+    dateLabel: validDate ? `${year}년 ${Number(month)}월 ${Number(day)}일` : '',
     senderName: otherUser,
   }
 }
@@ -76,6 +92,21 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const messagesRef = useRef<HTMLDivElement>(null)
   const lastMessageIdRef = useRef<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const messageElements = useMemo(
+    () =>
+      messages.map((message, index) => (
+        <Fragment key={message.id}>
+          {message.dateKey &&
+            message.dateKey !== messages[index - 1]?.dateKey && (
+              <div className={styles.dateSeparator}>
+                <time dateTime={message.dateKey}>{message.dateLabel}</time>
+              </div>
+            )}
+          <ChatMessageBubble message={message} />
+        </Fragment>
+      )),
+    [messages],
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -582,9 +613,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
               <p className={styles.state}>아직 메시지가 없습니다.</p>
             )}
 
-            {messages.map((message) => (
-              <ChatMessageBubble key={message.id} message={message} />
-            ))}
+            {messageElements}
           </div>
         </div>
 

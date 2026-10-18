@@ -8,6 +8,8 @@ export type ChatMessage = {
   side: 'mine' | 'theirs'
   content: string
   time: string
+  dateKey: string
+  dateLabel: string
   senderName: string
 }
 
