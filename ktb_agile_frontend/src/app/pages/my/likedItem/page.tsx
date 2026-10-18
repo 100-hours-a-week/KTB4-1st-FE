@@ -120,12 +120,18 @@ export default function LikedItemPage() {
         </header>
 
         {groups.length > 0 && (
-          <div className={styles.binder}>
+          <div
+            className={styles.binder}
+            role="region"
+            aria-label="관심 물품 그룹 선택"
+            tabIndex={0}
+          >
             {groups.map((group) => (
               <button
                 key={group.groupId}
                 className={`${styles.folder} ${selectedGroupId === group.groupId ? styles.selected : ''}`}
                 type="button"
+                aria-pressed={selectedGroupId === group.groupId}
                 onClick={() => setSelectedGroupId(group.groupId)}
               >
                 {group.groupName}

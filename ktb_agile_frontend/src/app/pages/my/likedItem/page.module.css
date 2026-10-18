@@ -52,8 +52,13 @@
 
 .binder {
   display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: nowrap;
   gap: 6px;
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   padding: 8px 2px 0;
   border-bottom: 2px solid #d9f3e8;
   scrollbar-width: none;
@@ -74,7 +79,14 @@
   font: inherit;
   font-size: 13px;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.binder:focus-visible,
+.folder:focus-visible {
+  outline: 2px solid #aeebcb;
+  outline-offset: -2px;
 }
 
 .selected {
