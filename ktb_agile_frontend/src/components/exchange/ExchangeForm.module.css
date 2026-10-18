@@ -360,3 +360,57 @@
     padding-left: 12px;
   }
 }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.pagination button,
+.pageError button,
+.removeButton {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid #d9f3e8;
+  border-radius: 8px;
+  color: inherit;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.pagination button:disabled,
+.removeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pageError {
+  text-align: center;
+}
+
+.selectedItems {
+  margin-top: 20px;
+}
+
+.selectedItems > h3 {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.selectedList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.removeButton {
+  flex-shrink: 0;
+  font-size: 12px;
+}
