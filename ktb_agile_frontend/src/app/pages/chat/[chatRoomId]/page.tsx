@@ -341,7 +341,20 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     }
   }
 
+  async function cancelExchangeRequest(token: string) {
+    await axios.delete(
+      `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      },
+    )
+  }
+
   async function leaveChatRoom() {
+    if (isLeaving) return
     if (
       !window.confirm(
         '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 취소됩니다.',
@@ -356,6 +369,22 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setIsLeaving(true)
     setActionError(null)
     try {
+      if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
+      if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
+        await cancelExchangeRequest(token)
+        setRoomDetail((current) =>
+          current?.chatRoomId === Number(chatRoomId)
+            ? {
+                ...current,
+                chatRoomStatus: CHAT_ROOM_STATUS.CLOSED,
+                exchangeRequest: {
+                  ...current.exchangeRequest,
+                  exchangeStatus: EXCHANGE_STATUS.CANCELED,
+                },
+              }
+            : current,
+        )
+      }
       await axios.delete(
         `${API_BASE_URL}/chat-rooms/${chatRoomId}/members/me`,
         {
@@ -367,12 +396,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       )
       setIsClosedByEvent(true)
       router.replace('/pages/chat')
-    } catch (cause) {
-      setActionError(
-        axios.isAxiosError<ChatMessageResponse>(cause)
-          ? cause.response?.data?.error?.message || CHAT_ERRORS.LEAVE_FAILED
-          : CHAT_ERRORS.LEAVE_FAILED,
-      )
+    } catch {
+      setActionError(CHAT_ERRORS.LEAVE_FAILED)
       setIsLeaving(false)
       setMenuOpen(false)
     }
@@ -404,15 +429,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setActionError(null)
     try {
       if (status === EXCHANGE_STATUS.CANCELED) {
-        await axios.delete(
-          `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-            },
-          },
-        )
+        await cancelExchangeRequest(token)
       } else {
         await axios.patch(
           `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,

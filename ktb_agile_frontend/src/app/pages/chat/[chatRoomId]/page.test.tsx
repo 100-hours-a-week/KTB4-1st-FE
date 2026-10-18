@@ -551,6 +551,7 @@ it.each(['REJECTED', 'CANCELED'] as const)(
 )
 
 it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', async () => {
+  params.set('direction', 'SENT')
   mockResponses(detail())
   vi.spyOn(axios, 'delete').mockResolvedValue({})
   vi.spyOn(window, 'confirm').mockReturnValue(true)
@@ -563,4 +564,119 @@ it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', a
   )
   expect(screen.queryByLabelText('메시지')).toBeNull()
   expect(screen.queryByRole('button', { name: '메시지 보내기' })).toBeNull()
+})
+
+function clickLeaveRoom() {
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
+}
+
+it('교환 취소 응답을 받은 뒤에만 채팅방 나가기를 요청한다', async () => {
+  params.set('direction', 'SENT')
+  mockResponses(detail())
+  let resolveCancel!: (value: object) => void
+  const remove = vi.spyOn(axios, 'delete').mockImplementation(async (url) => {
+    if (url === '/api/exchange-requests/50')
+      return new Promise((resolve) => {
+        resolveCancel = resolve
+      })
+    return {}
+  })
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+  expect(remove).toHaveBeenCalledTimes(1)
+  expect(remove).toHaveBeenNthCalledWith(
+    1,
+    '/api/exchange-requests/50',
+    expect.anything(),
+  )
+  expect(router.replace).not.toHaveBeenCalled()
+  await act(async () => resolveCancel({}))
+  expect(remove).toHaveBeenNthCalledWith(
+    2,
+    '/api/chat-rooms/22/members/me',
+    expect.anything(),
+  )
+  expect(router.replace).toHaveBeenCalledWith('/pages/chat')
+})
+
+it.each(['SENT', 'RECEIVED'])(
+  '%s 방향에서 교환 취소 실패 시 나가기를 요청하지 않고 재시도를 안내한다',
+  async (direction) => {
+    params.set('direction', direction)
+    mockResponses(detail())
+    const remove = vi.spyOn(axios, 'delete').mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: { message: '취소 권한 없음' } } },
+    })
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    clickLeaveRoom()
+    await screen.findByText(
+      '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    )
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith(
+      '/api/exchange-requests/50',
+      expect.anything(),
+    )
+    expect(router.replace).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('메시지')).toBeDefined()
+    clickLeaveRoom()
+    await waitFor(() => expect(remove).toHaveBeenCalledTimes(2))
+  },
+)
+
+it.each(['COMPLETED', 'REJECTED', 'CANCELED'] as const)(
+  '%s 교환은 취소를 요청하지 않고 방만 나간다',
+  async (status) => {
+    const value = detail()
+    value.exchangeRequest.exchangeStatus = status
+    mockResponses(value)
+    const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('상품명: 캠핑 의자')
+    clickLeaveRoom()
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+    )
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith(
+      '/api/chat-rooms/22/members/me',
+      expect.anything(),
+    )
+  },
+)
+
+it('취소 후 나가기만 실패하면 안내하고 재시도 시 나가기만 요청한다', async () => {
+  params.set('direction', 'SENT')
+  mockResponses(detail())
+  const remove = vi
+    .spyOn(axios, 'delete')
+    .mockResolvedValueOnce({})
+    .mockRejectedValueOnce(new Error('나가기 실패'))
+    .mockResolvedValueOnce({})
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickLeaveRoom()
+  await screen.findByText(
+    '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  )
+  expect(router.replace).not.toHaveBeenCalled()
+  expect(screen.queryByLabelText('메시지')).toBeNull()
+  clickLeaveRoom()
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+  )
+  expect(remove).toHaveBeenCalledTimes(3)
+  expect(remove).toHaveBeenNthCalledWith(
+    3,
+    '/api/chat-rooms/22/members/me',
+    expect.anything(),
+  )
 })
