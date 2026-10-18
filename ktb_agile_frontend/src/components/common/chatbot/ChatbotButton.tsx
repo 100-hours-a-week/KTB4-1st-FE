@@ -1,10 +1,16 @@
 'use client'
 
 import axios from 'axios'
+import { useRouter } from 'next/navigation'
+import { CHATBOT_ROUTE, CHATBOT_SCREEN_LABEL } from '@/constants/chatbot'
 import { useEffect, useRef, useState } from 'react'
 import '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
-import type { ChatbotAskResponse, ChatbotMessage } from '@/types/chatbot'
+import type {
+  ChatbotAction,
+  ChatbotAskResponse,
+  ChatbotMessage,
+} from '@/types/chatbot'
 import SparkleIcon from './SparkleIcon'
 import styles from './ChatbotButton.module.css'
 
@@ -13,10 +19,24 @@ const CLOSE_CONFIRM_MESSAGE =
   '채팅창을 닫으면\n대화 내용이 사라져요.\n닫으시겠어요?'
 const GREETING = '안녕하세요! 바꾸까 AI예요. 궁금한 점을 편하게 물어보세요.'
 
-export default function ChatbotButton() {
+type DisplayMessage = ChatbotMessage & {
+  action?: ChatbotAction | null
+  decision?: 'accepted' | 'declined'
+}
+
+type ChatbotButtonProps = {
+  aboveComposer?: boolean
+  onInquiry?: () => void
+}
+
+export default function ChatbotButton({
+  aboveComposer = false,
+  onInquiry,
+}: ChatbotButtonProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState('')
-  const [history, setHistory] = useState<ChatbotMessage[]>([])
+  const [history, setHistory] = useState<DisplayMessage[]>([])
   const [isSending, setIsSending] = useState(false)
   const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -41,7 +61,9 @@ export default function ChatbotButton() {
     if (!isOpen) return
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsCloseConfirmOpen((open) => !open)
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      if (document.querySelector('dialog[open]')) return
+      setIsCloseConfirmOpen((open) => !open)
     }
 
     document.addEventListener('keydown', closeOnEscape)
@@ -57,7 +79,9 @@ export default function ChatbotButton() {
     if (!message || isSending) return
 
     const session = sessionRef.current
-    const previousHistory = history.slice(-MAX_HISTORY_LENGTH)
+    const previousHistory = history
+      .slice(-MAX_HISTORY_LENGTH)
+      .map(({ role, content }) => ({ role, content }))
 
     setHistory((current) => [...current, { role: 'user', content: message }])
     setDraft('')
@@ -73,9 +97,14 @@ export default function ChatbotButton() {
       if (!answer) throw new Error(response.data.error?.message)
       if (session !== sessionRef.current) return
 
+      const candidate = response.data.data?.action
+      const action =
+        candidate && Object.hasOwn(CHATBOT_ROUTE, candidate.screen)
+          ? candidate
+          : null
       setHistory((current) => [
         ...current,
-        { role: 'assistant', content: answer },
+        { role: 'assistant', content: answer, action },
       ])
     } catch (error) {
       console.error(error)
@@ -89,9 +118,32 @@ export default function ChatbotButton() {
     }
   }
 
+  function handleAction(index: number, accepted: boolean) {
+    const message = history[index]
+    if (!message.action || message.decision) return
+
+    setHistory((current) =>
+      current.map((entry, entryIndex) =>
+        entryIndex === index
+          ? { ...entry, decision: accepted ? 'accepted' : 'declined' }
+          : entry,
+      ),
+    )
+    if (!accepted) return
+
+    if (message.action.screen === 'INQUIRY') {
+      onInquiry?.()
+      return
+    }
+    const path = CHATBOT_ROUTE[message.action.screen]
+    if (path) router.push(path)
+  }
+
   return (
     <>
-      <div className={styles.container}>
+      <div
+        className={`${styles.container} ${aboveComposer ? styles.aboveComposer : ''}`}
+      >
         {isOpen && (
           <section
             className={styles.panel}
@@ -141,15 +193,40 @@ export default function ChatbotButton() {
                       <SparkleIcon className={styles.avatarIcon} />
                     </span>
                   )}
-                  <p
+                  <div
                     className={`${styles.bubble} ${
                       message.role === 'user'
                         ? styles.userBubble
                         : styles.botBubble
                     }`}
                   >
-                    {message.content}
-                  </p>
+                    <p>{message.content}</p>
+                    {message.role === 'assistant' &&
+                      message.action &&
+                      !message.decision && (
+                        <div className={styles.action}>
+                          <p>
+                            {message.action.screen === 'INQUIRY'
+                              ? '문의하기 창을 여시겠습니까?'
+                              : `${CHATBOT_SCREEN_LABEL[message.action.screen]} 화면으로 이동하시겠습니까?`}
+                          </p>
+                          <div className={styles.actionButtons}>
+                            <button
+                              type="button"
+                              onClick={() => handleAction(index, true)}
+                            >
+                              예
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleAction(index, false)}
+                            >
+                              아니요
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                  </div>
                 </div>
               ))}
             </div>
