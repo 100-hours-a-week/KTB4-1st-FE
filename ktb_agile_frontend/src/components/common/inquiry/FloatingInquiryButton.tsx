@@ -1,19 +1,31 @@
 'use client'
 
 import { INQUIRY_ERRORS } from '@/constants/errors/inquiry'
-import { useEffect, useRef, useState } from 'react'
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type Ref,
+} from 'react'
 import { createPortal } from 'react-dom'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './FloatingInquiryButton.module.css'
 
 type FloatingInquiryButtonProps = {
   aboveComposer?: boolean
+  ref?: Ref<InquiryButtonHandle>
+}
+
+export type InquiryButtonHandle = {
+  openFromChatbot: () => void
 }
 
 type InquiryType = 'INQUIRY' | 'BUG_REPORT'
 
 export default function FloatingInquiryButton({
   aboveComposer = false,
+  ref,
 }: FloatingInquiryButtonProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -22,6 +34,17 @@ export default function FloatingInquiryButton({
   const [notice, setNotice] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isShaking, setIsShaking] = useState(false)
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      openFromChatbot() {
+        setIsShaking(true)
+      },
+    }),
+    [],
+  )
 
   useEffect(() => {
     if (!isOpen) return
@@ -78,7 +101,19 @@ export default function FloatingInquiryButton({
       <div
         className={`${styles.container} ${aboveComposer ? styles.aboveComposer : ''}`}
       >
-        <button className={styles.button} type="button" onClick={openModal}>
+        <button
+          className={`${styles.button} ${isShaking ? styles.shake : ''}`}
+          type="button"
+          onClick={() => {
+            setIsShaking(false)
+            openModal()
+          }}
+          onAnimationEnd={(event) => {
+            if (event.target !== event.currentTarget || !isShaking) return
+            setIsShaking(false)
+            openModal()
+          }}
+        >
           문의
         </button>
       </div>
