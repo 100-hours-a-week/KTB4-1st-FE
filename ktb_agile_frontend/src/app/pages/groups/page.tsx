@@ -2,8 +2,6 @@
 
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import Navbar from '@/components/common/navbar/Navbar'
-import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
-import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -340,8 +338,6 @@ export default function GroupList() {
             onConfirm={confirmLeave}
           />
         )}
-        <FloatingInquiryButton />
-        <ChatbotButton />
         <Navbar />
       </section>
     )

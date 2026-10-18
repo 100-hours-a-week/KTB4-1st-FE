@@ -14,6 +14,10 @@
   pointer-events: none;
 }
 
+.aboveComposer {
+  bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 102px);
+}
+
 .button {
   display: grid;
   width: 48px;
@@ -87,6 +91,10 @@
   pointer-events: auto;
   animation: panel-in 180ms ease-out;
   transform-origin: bottom right;
+}
+
+.aboveComposer .panel {
+  height: min(440px, calc(100dvh - var(--app-navbar-height) - 242px));
 }
 
 @keyframes panel-in {
@@ -225,6 +233,39 @@
 .userBubble {
   border-radius: 14px 14px 4px 14px;
   background: #ffcbbe;
+}
+
+.action {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #bddfce;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.actionButtons button {
+  min-width: 64px;
+  min-height: 40px;
+  border: 1px solid #3d5146;
+  border-radius: 10px;
+  color: #3d5146;
+  background: #fffbf6;
+  font: inherit;
+  cursor: pointer;
+}
+
+.actionButtons button:first-child {
+  color: #fffbf6;
+  background: #3d5146;
+}
+
+.actionButtons button:focus-visible {
+  outline: 2px solid #3d5146;
+  outline-offset: 2px;
 }
 
 .composer {
