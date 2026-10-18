@@ -10,6 +10,13 @@ export type ChatMessageDto = {
   userId: number | null
   content: string
   messageType: ChatMessageType
+  systemEventType?:
+    | 'EXCHANGE_REQUEST_CREATED'
+    | 'EXCHANGE_REQUEST_UPDATED'
+    | 'CHAT_ROOM_MEMBER_LEFT'
+    | 'EXCHANGE_REQUEST_REJECTED'
+    | 'EXCHANGE_REQUEST_CANCELED'
+    | null
   createdAt: string
   userStatus: ChatRoom['otherUser']['userStatus'] | null
   groupMemberStatus: ChatRoom['otherUser']['groupMemberStatus']

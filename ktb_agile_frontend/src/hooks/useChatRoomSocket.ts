@@ -12,6 +12,7 @@ type ChatRoomSocketMessage = Pick<
   | 'userId'
   | 'content'
   | 'messageType'
+  | 'systemEventType'
   | 'createdAt'
 >
 
