@@ -4,8 +4,9 @@ import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useRef, useState, type FormEvent } from 'react'
 import { API_BASE_URL } from '@/config/api'
+import { useCursorPagination } from '@/hooks/useCursorPagination'
 import type { ItemDetail, ItemDetailResponse, ItemListItem } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
@@ -14,7 +15,6 @@ import QuantityControl from '../common/exchange/QuantityControl'
 import ItemImage from './ItemImage'
 import styles from './ExchangeForm.module.css'
 
-const ITEMS_PER_PAGE = 5
 const FETCH_SIZE = 10
 
 type MyItemsResponse = {
@@ -25,6 +25,8 @@ type MyItemsResponse = {
   }
   error: null
 }
+
+const getItemKey = (item: Omit<ItemListItem, 'owner'>) => item.itemId
 
 function getErrorMessage(cause: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: { message?: string } }>(cause)) {
@@ -62,13 +64,6 @@ function ExchangeFormContent({
 }: ExchangeFormProps) {
   const router = useRouter()
   const [item, setItem] = useState<ItemDetail | null>(null)
-  const [myItems, setMyItems] = useState<Omit<ItemListItem, 'owner'>[]>([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [hasNext, setHasNext] = useState(false)
-  const [isFetchingMore, setIsFetchingMore] = useState(false)
-  const [pageError, setPageError] = useState<string | null>(null)
-  const seenCursors = useRef(new Set<string>())
   const [initialSelectedItems, setInitialSelectedItems] = useState<
     Omit<ItemListItem, 'owner'>[]
   >([])
@@ -92,164 +87,116 @@ function ExchangeFormContent({
   const [selectedIds, setSelectedIds] = useState<number[]>(
     () => initialValues?.offeredItems.map((offered) => offered.itemId) ?? [],
   )
-  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const submitting = useRef(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let active = true
-    const controller = new AbortController()
-
-    async function loadItems() {
+  const fetchMyItems = useCallback(
+    async (cursor: string | null, signal: AbortSignal) => {
       const accessToken = sessionStorage.getItem('accessToken')
       const userId = accessToken ? getUserIdFromAccessToken(accessToken) : null
       if (!userId) {
         router.replace('/auth/login')
-        return
+        throw new Error('로그인이 필요합니다.')
       }
-
-      try {
-        const targetId = itemId
-        if (!Number.isSafeInteger(targetId) || targetId <= 0) {
-          throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
-        }
-
-        const headers = {
-          Authorization: `Bearer ${accessToken}`,
-          Accept: 'application/json',
-        }
-        const response = await axios.get<ItemDetailResponse>(
-          `${API_BASE_URL}/items/${targetId}`,
-          { headers, signal: controller.signal },
-        )
-        const target = response.data.data
-        if (target.owner.userId === userId) {
-          throw new Error(EXCHANGE_ERRORS.OWN_ITEM_NOT_ALLOWED)
-        }
-        const myResponse = await axios.get<MyItemsResponse>(
-          `${API_BASE_URL}/users/me/items`,
-          { params: { size: FETCH_SIZE }, headers, signal: controller.signal },
-        )
-        const page = myResponse.data.data
-        if (page.hasNext && !page.nextCursor) {
-          throw new Error(EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED)
-        }
-        // Existing offers can refer to items outside the first loaded page.
-        const missingSelected = await Promise.all(
-          initialOfferedIds.current
-            .filter((id) => !page.items.some((owned) => owned.itemId === id))
-            .map(async (id) => {
-              const response = await axios.get<ItemDetailResponse>(
-                `${API_BASE_URL}/items/${id}`,
-                { headers, signal: controller.signal },
-              )
-              const detail = response.data.data
-              return {
-                ...detail,
-                contentPreview: detail.content,
-                thumbnailImageUrl:
-                  detail.images.toSorted(
-                    (a, b) => a.displayOrder - b.displayOrder,
-                  )[0]?.imageUrl ?? null,
-              }
-            }),
-        )
-        if (!active) return
-        setItem(target)
-        setGroupId(target.groups.length === 1 ? target.groups[0].groupId : null)
-        setMyItems(page.items)
-        setInitialSelectedItems(missingSelected)
-        setNextCursor(page.nextCursor)
-        setHasNext(page.hasNext)
-        seenCursors.current = new Set(page.nextCursor ? [page.nextCursor] : [])
-      } catch (cause) {
-        if (!active || axios.isCancel(cause)) return
-        setError(getErrorMessage(cause, EXCHANGE_ERRORS.ITEM_LOOKUP_FAILED))
-      } finally {
-        if (active) setIsLoading(false)
+      const headers = {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
       }
-    }
-
-    void loadItems()
-    return () => {
-      active = false
-      controller.abort()
-    }
-  }, [itemId, router])
-
-  const pageCount = Math.max(1, Math.ceil(myItems.length / ITEMS_PER_PAGE))
-  const visibleItems = myItems.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  )
-
-  useEffect(() => {
-    if (isLoading || currentPage !== pageCount || !hasNext || pageError) return
-    let active = true
-    const controller = new AbortController()
-
-    async function loadNextItems() {
-      setIsFetchingMore(true)
       try {
-        const accessToken = sessionStorage.getItem('accessToken')
-        if (!accessToken || !getUserIdFromAccessToken(accessToken)) {
-          router.replace('/auth/login')
-          return
+        let target: ItemDetail | null = null
+        if (cursor === null) {
+          if (!Number.isSafeInteger(itemId) || itemId <= 0) {
+            throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
+          }
+          const response = await axios.get<ItemDetailResponse>(
+            `${API_BASE_URL}/items/${itemId}`,
+            { headers, signal },
+          )
+          target = response.data.data
+          if (target.owner.userId === userId) {
+            throw new Error(EXCHANGE_ERRORS.OWN_ITEM_NOT_ALLOWED)
+          }
         }
         const response = await axios.get<MyItemsResponse>(
           `${API_BASE_URL}/users/me/items`,
           {
-            params: { size: FETCH_SIZE, cursor: nextCursor },
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+            params: { size: FETCH_SIZE, ...(cursor ? { cursor } : {}) },
+            headers,
+            signal,
           },
         )
         const page = response.data.data
-        if (
-          page.hasNext &&
-          (!page.nextCursor || seenCursors.current.has(page.nextCursor))
-        ) {
-          throw new Error(EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED)
+        if (target) {
+          // 수정할 기존 제안은 첫 조회에 포함되지 않은 물품도 복원합니다.
+          const missingSelected = await Promise.all(
+            initialOfferedIds.current
+              .filter((id) => !page.items.some((owned) => owned.itemId === id))
+              .map(async (id) => {
+                const response = await axios.get<ItemDetailResponse>(
+                  `${API_BASE_URL}/items/${id}`,
+                  { headers, signal },
+                )
+                const detail = response.data.data
+                return {
+                  ...detail,
+                  contentPreview: detail.content,
+                  thumbnailImageUrl:
+                    detail.images.toSorted(
+                      (a, b) => a.displayOrder - b.displayOrder,
+                    )[0]?.imageUrl ?? null,
+                }
+              }),
+          )
+          if (!signal.aborted) {
+            setItem(target)
+            setGroupId(
+              target.groups.length === 1 ? target.groups[0].groupId : null,
+            )
+            setInitialSelectedItems(missingSelected)
+          }
         }
-        if (!active) return
-        if (page.nextCursor) seenCursors.current.add(page.nextCursor)
-        setMyItems((items) => {
-          const loadedIds = new Set(items.map((entry) => entry.itemId))
-          return [
-            ...items,
-            ...page.items.filter((entry) => !loadedIds.has(entry.itemId)),
-          ]
-        })
-        setNextCursor(page.nextCursor)
-        setHasNext(page.hasNext)
+        return page
       } catch (cause) {
-        if (!active || axios.isCancel(cause)) return
-        setPageError(
-          getErrorMessage(cause, EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED),
+        throw new Error(
+          getErrorMessage(
+            cause,
+            cursor
+              ? EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED
+              : EXCHANGE_ERRORS.ITEM_LOOKUP_FAILED,
+          ),
         )
-      } finally {
-        if (active) setIsFetchingMore(false)
       }
-    }
+    },
+    [itemId, router],
+  )
 
-    void loadNextItems()
-    return () => {
-      active = false
-      controller.abort()
-    }
-  }, [
-    currentPage,
+  const {
+    items: myItems,
+    visibleItems,
+    pageIndex,
     pageCount,
-    hasNext,
-    nextCursor,
-    isLoading,
-    pageError,
-    router,
-  ])
+    isInitialLoading: isLoading,
+    isLoading: isFetchingItems,
+    error: paginationError,
+    canGoPrevious,
+    canGoNext,
+    goToPreviousPage,
+    goToNextPage,
+    retry,
+  } = useCursorPagination({
+    fetchPage: fetchMyItems,
+    getKey: getItemKey,
+    cursorErrorMessage: EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED,
+  })
+  const currentPage = pageIndex + 1
+  const isFetchingMore = isFetchingItems && !isLoading
+  const pageError = paginationError
+    ? getErrorMessage(
+        paginationError,
+        EXCHANGE_ERRORS.MY_ITEMS_NEXT_PAGE_FAILED,
+      )
+    : null
 
   const ownedItems = [
     ...myItems,
@@ -348,7 +295,9 @@ function ExchangeFormContent({
           <p className={styles.message}>물품 정보를 불러오는 중입니다.</p>
         ) : (
           <form onSubmit={handleRequest}>
-            {error && <p className={styles.error}>{error}</p>}
+            {(error || (myItems.length === 0 && pageError)) && (
+              <p className={styles.error}>{error || pageError}</p>
+            )}
             {item && (
               <>
                 <section className={styles.section}>
@@ -458,9 +407,9 @@ function ExchangeFormContent({
                       <button
                         type="button"
                         disabled={
-                          currentPage === 1 || isSubmitting || isFetchingMore
+                          !canGoPrevious || isSubmitting || isFetchingMore
                         }
-                        onClick={() => setCurrentPage((page) => page - 1)}
+                        onClick={goToPreviousPage}
                       >
                         이전
                       </button>
@@ -469,12 +418,8 @@ function ExchangeFormContent({
                       </span>
                       <button
                         type="button"
-                        disabled={
-                          currentPage >= pageCount ||
-                          isSubmitting ||
-                          isFetchingMore
-                        }
-                        onClick={() => setCurrentPage((page) => page + 1)}
+                        disabled={!canGoNext || isSubmitting || isFetchingMore}
+                        onClick={goToNextPage}
                       >
                         다음
                       </button>
@@ -493,7 +438,7 @@ function ExchangeFormContent({
                       <button
                         type="button"
                         disabled={isSubmitting}
-                        onClick={() => setPageError(null)}
+                        onClick={retry}
                       >
                         다시 불러오기
                       </button>
