@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import Navbar from '@/components/common/navbar/Navbar'
 import AccountCard from '@/components/my/AccountCard'
-import DeleteAccountAction from '@/components/my/DeleteAccountAction'
 import styles from './page.module.css'
 
 // 마이페이지에 표시할 항목은 제목과 이동 경로만 여기에서 관리합니다.
@@ -33,9 +32,6 @@ export default function MyPage() {
               ))}
             </ul>
           </nav>
-          <footer className={styles.footer}>
-            <DeleteAccountAction />
-          </footer>
         </section>
       </div>
       <Navbar />
