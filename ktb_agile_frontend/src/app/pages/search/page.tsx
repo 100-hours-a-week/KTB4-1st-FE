@@ -11,10 +11,7 @@ import ItemCard from '@/components/common/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
 import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
-import type {
-  SearchHistory,
-  SearchHistoryResponse,
-} from '@/types/searchHistory'
+import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
 
 type SearchCriteria = {
@@ -32,6 +29,11 @@ type SearchResult = SearchCriteria & {
 type SearchRequest = {
   criteria: SearchCriteria
   cursor: string | null
+}
+
+type DisplaySearchHistory = {
+  searchHistoryId: number | null
+  keyword: string
 }
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -78,11 +80,13 @@ function SearchPageContent() {
   const [moreLoading, setMoreLoading] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [searchRequest, setSearchRequest] = useState<SearchRequest | null>(null)
-  const [searchHistories, setSearchHistories] = useState<SearchHistory[]>([])
+  const [searchHistories, setSearchHistories] = useState<
+    DisplaySearchHistory[]
+  >([])
   const [historyError, setHistoryError] = useState(false)
-  const [deletingHistoryId, setDeletingHistoryId] = useState<number | null>(
-    null,
-  )
+  const [deletingHistoryKeyword, setDeletingHistoryKeyword] = useState<
+    string | null
+  >(null)
   const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
     null,
@@ -112,11 +116,23 @@ function SearchPageContent() {
           },
         )
         if (controller.signal.aborted) return
-        setSearchHistories(response.data.data.searchHistories)
+        const histories = response.data.data.searchHistories
+        setSearchHistories((current) =>
+          [
+            ...current.map(
+              (history) =>
+                histories.find((saved) => saved.keyword === history.keyword) ??
+                history,
+            ),
+            ...histories.filter(
+              (history) =>
+                !current.some((entry) => entry.keyword === history.keyword),
+            ),
+          ].slice(0, 10),
+        )
         setHistoryError(false)
       } catch (error) {
         if (!axios.isCancel(error) && !controller.signal.aborted) {
-          setSearchHistories([])
           setHistoryError(true)
         }
       }
@@ -175,6 +191,44 @@ function SearchPageContent() {
             nextCursor: page.nextCursor,
             hasNext: page.hasNext,
           })
+          setSearchHistories((current) =>
+            [
+              current.find(
+                (history) => history.keyword === criteria.keyword,
+              ) ?? {
+                searchHistoryId: null,
+                keyword: criteria.keyword,
+              },
+              ...current.filter(
+                (history) => history.keyword !== criteria.keyword,
+              ),
+            ].slice(0, 10),
+          )
+          setHistoryError(false)
+
+          // History is saved asynchronously; keep the local entry until its ID is available.
+          void axios
+            .get<SearchHistoryResponse>('/bff/search-histories', {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/json',
+              },
+              signal: controller.signal,
+            })
+            .then((historyResponse) => {
+              if (controller.signal.aborted) return
+              const saved = historyResponse.data.data.searchHistories
+              setSearchHistories((current) =>
+                current.map(
+                  (history) =>
+                    saved.find((entry) => entry.keyword === history.keyword) ??
+                    history,
+                ),
+              )
+            })
+            .catch(() => {
+              // A failed synchronization must not hide locally recorded searches.
+            })
         }
       } catch (error) {
         if (!axios.isCancel(error) && !controller.signal.aborted) {
@@ -268,11 +322,38 @@ function SearchPageContent() {
     return true
   }
 
-  async function deleteSingleSearchHistory(searchHistoryId: number) {
-    if (deletingHistoryId !== null || isDeletingAllHistories) return
+  async function deleteSingleSearchHistory(history: DisplaySearchHistory) {
+    if (deletingHistoryKeyword !== null || isDeletingAllHistories) return
 
-    setDeletingHistoryId(searchHistoryId)
+    setDeletingHistoryKeyword(history.keyword)
     try {
+      let searchHistoryId = history.searchHistoryId
+      if (searchHistoryId === null) {
+        const token = window.sessionStorage.getItem('accessToken')
+        if (!token) {
+          router.replace('/auth/login')
+          return
+        }
+        const response = await axios.get<SearchHistoryResponse>(
+          '/bff/search-histories',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+          },
+        )
+        searchHistoryId =
+          response.data.data.searchHistories.find(
+            (entry) => entry.keyword === history.keyword,
+          )?.searchHistoryId ?? null
+        if (searchHistoryId === null) {
+          setDeleteErrorMessage(
+            '검색 기록을 저장 중입니다. 잠시 후 다시 삭제해주세요.',
+          )
+          return
+        }
+      }
       if (
         !(await requestAllHistoryDelete(
           `/bff/search-histories/${searchHistoryId}`,
@@ -280,19 +361,17 @@ function SearchPageContent() {
       )
         return
       setSearchHistories((current) =>
-        current.filter(
-          (history) => history.searchHistoryId !== searchHistoryId,
-        ),
+        current.filter((entry) => entry.keyword !== history.keyword),
       )
     } catch {
       setDeleteErrorMessage('서버 문제로 검색 기록을 삭제하지 못했습니다.')
     } finally {
-      setDeletingHistoryId(null)
+      setDeletingHistoryKeyword(null)
     }
   }
 
   async function deleteAllSearchHistories() {
-    if (deletingHistoryId !== null || isDeletingAllHistories) return
+    if (deletingHistoryKeyword !== null || isDeletingAllHistories) return
 
     setIsDeletingAllHistories(true)
     try {
@@ -338,7 +417,7 @@ function SearchPageContent() {
         onCheckBoxSelectedChange={changeCheckBoxSelected}
       />
 
-      {historyError ? (
+      {historyError && searchHistories.length === 0 ? (
         <p className={styles.historyError}>
           검색 기록을 가져오는데 실패했습니다
         </p>
@@ -348,25 +427,20 @@ function SearchPageContent() {
             type="button"
             className={styles.clearHistoriesButton}
             onClick={() => void deleteAllSearchHistories()}
-            disabled={deletingHistoryId !== null || isDeletingAllHistories}
+            disabled={deletingHistoryKeyword !== null || isDeletingAllHistories}
           >
             전체 삭제
           </button>
           <div className={styles.searchHistories}>
             {searchHistories.map((history) => (
-              <span
-                className={styles.historyChip}
-                key={history.searchHistoryId}
-              >
+              <span className={styles.historyChip} key={history.keyword}>
                 <span>{history.keyword}</span>
                 <button
                   type="button"
                   className={styles.historyRemove}
-                  onClick={() =>
-                    void deleteSingleSearchHistory(history.searchHistoryId)
-                  }
+                  onClick={() => void deleteSingleSearchHistory(history)}
                   disabled={
-                    deletingHistoryId !== null || isDeletingAllHistories
+                    deletingHistoryKeyword !== null || isDeletingAllHistories
                   }
                 >
                   ×
