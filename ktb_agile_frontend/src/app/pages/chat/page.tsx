@@ -10,8 +10,6 @@ import ChatRoomCard from '@/components/chat/ChatRoomCard'
 import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
 import '@/config/api'
 import styles from './page.module.css'
-import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
-import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
@@ -205,8 +203,6 @@ export default function Chat() {
           )}
         </div>
       </section>
-      <FloatingInquiryButton />
-      <ChatbotButton />
       <Navbar />
     </>
   )
