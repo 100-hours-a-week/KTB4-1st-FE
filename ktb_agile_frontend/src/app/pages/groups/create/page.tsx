@@ -121,7 +121,6 @@ export default function CreateGroup() {
               className={styles.textInput}
               type="text"
               value={groupName}
-              maxLength={GROUP_NAME_MAX_LENGTH}
               placeholder="그룹명을 입력하세요"
               aria-invalid={groupNameHelperText !== null}
               aria-describedby="group-name-helper"
