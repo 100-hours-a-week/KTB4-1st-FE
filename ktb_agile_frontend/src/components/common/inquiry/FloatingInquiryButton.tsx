@@ -7,6 +7,7 @@ import ModalDefault from '@/components/common/modal/Default'
 import styles from './FloatingInquiryButton.module.css'
 
 type InquiryType = 'INQUIRY' | 'BUG_REPORT'
+const DRAFT_STORAGE_KEY = 'inquiry-draft'
 
 export default function FloatingInquiryButton() {
   const dialogRef = useRef<HTMLDialogElement>(null)
@@ -32,11 +33,39 @@ export default function FloatingInquiryButton() {
   }, [isOpen])
 
   function openModal() {
-    setType('INQUIRY')
-    setContent('')
+    try {
+      const saved = window.sessionStorage.getItem(DRAFT_STORAGE_KEY)
+      const draft: unknown = saved ? JSON.parse(saved) : null
+      if (
+        draft &&
+        typeof draft === 'object' &&
+        'type' in draft &&
+        (draft.type === 'INQUIRY' || draft.type === 'BUG_REPORT') &&
+        'content' in draft &&
+        typeof draft.content === 'string'
+      ) {
+        setType(draft.type)
+        setContent(draft.content.slice(0, 500))
+      }
+    } catch {
+      // 저장소를 사용할 수 없거나 데이터가 손상돼도 문의창은 열 수 있다.
+    }
     setNotice('')
     setIsSubmitted(false)
     setIsOpen(true)
+  }
+
+  function updateDraft(nextType: InquiryType, nextContent: string) {
+    setType(nextType)
+    setContent(nextContent)
+    try {
+      window.sessionStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({ type: nextType, content: nextContent }),
+      )
+    } catch {
+      // 저장소를 사용할 수 없어도 현재 화면에서 작성과 접수는 계속할 수 있다.
+    }
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -58,6 +87,13 @@ export default function FloatingInquiryButton() {
         setNotice(result.message || INQUIRY_ERRORS.CLIENT_SUBMIT_FAILED)
         return
       }
+      try {
+        window.sessionStorage.removeItem(DRAFT_STORAGE_KEY)
+      } catch {
+        // 임시 저장 삭제 실패가 접수 성공을 실패로 바꾸지 않도록 한다.
+      }
+      setType('INQUIRY')
+      setContent('')
       setIsSubmitted(true)
       setIsOpen(false)
     } catch {
@@ -131,7 +167,7 @@ export default function FloatingInquiryButton() {
                         value="INQUIRY"
                         checked={type === 'INQUIRY'}
                         disabled={isSubmitting || isSubmitted}
-                        onChange={() => setType('INQUIRY')}
+                        onChange={() => updateDraft('INQUIRY', content)}
                       />
                       문의글
                     </label>
@@ -142,7 +178,7 @@ export default function FloatingInquiryButton() {
                         value="BUG_REPORT"
                         checked={type === 'BUG_REPORT'}
                         disabled={isSubmitting || isSubmitted}
-                        onChange={() => setType('BUG_REPORT')}
+                        onChange={() => updateDraft('BUG_REPORT', content)}
                       />
                       오류 리포트
                     </label>
@@ -159,7 +195,7 @@ export default function FloatingInquiryButton() {
                   disabled={isSubmitting || isSubmitted}
                   placeholder="문의하거나 제보할 내용을 작성해주세요."
                   onChange={(event) => {
-                    setContent(event.target.value)
+                    updateDraft(type, event.target.value)
                     setNotice('')
                   }}
                 />
