@@ -14,6 +14,7 @@ export default function ChatRoomCard({
   room: ChatRoom
   onClick: () => void
 }) {
+  const roomTitle = `${room.targetItem.title} <- ${room.offeredItem.title}`
   const { userStatus, groupMemberStatus } = room.otherUser
   const isWithdrawn = userStatus === USER_STATUS.WITHDRAWN
   const hasLeftGroup = groupMemberStatus === GROUP_MEMBER_STATUS.LEFT
@@ -52,7 +53,7 @@ export default function ChatRoomCard({
         type="button"
         onClick={onClick}
         className={styles.room}
-        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} 채팅방 열기`}
+        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${roomTitle} 채팅방 열기`}
       >
         <div className={styles.images}>
           <div
@@ -70,8 +71,8 @@ export default function ChatRoomCard({
         </div>
         <div className={styles.roomContent}>
           <div className={styles.topRow}>
-            <strong className={styles.itemTitle}>
-              {room.targetItem.title}
+            <strong className={styles.itemTitle} title={roomTitle}>
+              {roomTitle}
             </strong>
             <span className={styles.time}>
               {formatLastTime(room.lastMessageAt)}

@@ -38,6 +38,7 @@ export default function ChatRoomInfo({
 }: ChatRoomInfoProps) {
   const { requestedItem, exchangeRequestId } = exchangeRequest
   const { title, itemId, thumbnailImageUrl: image } = requestedItem
+  const roomTitle = `${title} <- ${exchangeRequest.offeredItems.map((item) => item.title).join(', ') || '제공 물품 없음'}`
   const isSeller = direction === 'RECEIVED'
   const isRequester = direction === 'SENT'
   const exchangeStatus =
@@ -69,7 +70,7 @@ export default function ChatRoomInfo({
       </div>
       <div className={styles.productDetails}>
         <div className={styles.productTitleRow}>
-          <strong>상품명: {title}</strong>
+          <strong title={roomTitle}>{roomTitle}</strong>
           <span>
             {exchangeStatus === EXCHANGE_STATUS.PENDING &&
             itemAvailable === false
