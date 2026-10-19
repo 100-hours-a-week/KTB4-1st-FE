@@ -1,27 +1,22 @@
 name: FE Docker Image Publish
-
-# Actions 목록에 커밋 메시지 대신 트리거한 브랜치/태그가 보이도록 지정
 run-name: "Docker Publish: ${{ github.ref_name }} (${{ github.actor }})"
 
-# dev push(merge): Docker Image 빌드 및 GHCR(100-hours-a-week 조직 소속 패키지) Push
-#   - latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용) 태그
-# release tag(v*.*.*) push: 배포용 Docker Image 빌드 및 GHCR Push
-#   - main으로 dev/hotfix가 merge된 뒤, 릴리즈 담당자가 해당 커밋에 Semantic Version 태그(예: v1.0.1)를 push하면 트리거됨
-#   - Semantic Version 태그(v 접두어 제외)만 이미지 태그로 사용
+# main에 포함된 커밋의 릴리즈 태그로 운영 이미지를 빌드하고 ECS에 배포
 on:
   push:
-    branches:
-      - dev
     tags:
       - "v*.*.*"
-    paths:
-      - "ktb_agile_frontend/**"
-      - ".github/workflows/fe-docker-publish.yml"
 
-# 동일 브랜치/태그에 연속 Push 발생 시 진행 중이던 이전 실행 자동 취소
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "배포할 시맨틱 버전 (예: 1.2.3, v 제외)"
+        required: true
+        type: string
+
 concurrency:
-  group: fe-docker-publish-${{ github.ref }} # dev에 push하면 refs/heads/dev, 태그 push하면 refs/tags/v1.0.1
-  cancel-in-progress: true
+  group: fe-prod-publish
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -30,15 +25,31 @@ env:
 
 jobs:
   build-and-push:
+    if: github.event_name == 'push'
     name: Docker Image 빌드 및 GHCR Push
     # ARM64 전용 GitHub Hosted 러너 사용
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate release tag on main
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::운영 배포 태그는 vMAJOR.MINOR.PATCH 형식이어야 합니다"
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::main에 포함된 커밋의 태그만 운영에 배포할 수 있습니다"
+            exit 1
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -55,11 +66,8 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # dev          : latest(로컬 테스트용 포인터), dev-<short SHA>(불변 추적용)
-          # release tag  : push된 태그(v1.0.1)에서 v를 뗀 Semantic Version을 그대로 태그로 사용
+          # 릴리즈 태그의 v 접두어를 제외한 버전을 이미지 태그로 사용
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/dev' }}
-            type=sha,format=short,prefix=dev-,enable=${{ github.ref == 'refs/heads/dev' }}
             type=semver,pattern={{version}}
           labels: |
             org.opencontainers.image.authors=${{ github.actor }}
@@ -67,24 +75,15 @@ jobs:
       - name: Docker Image 빌드 및 Push
         id: build-push
         env:
-          # 빌드 시 주입할 NEXT_PUBLIC_* 값 묶음(.env 형식)
-          # dev 푸시(로컬 docker compose 테스트용 이미지)는 FE_ENV_DEV, 릴리즈 태그(운영 이미지)는 FE_ENV
-          FE_ENV_DEV: ${{ secrets.FE_ENV_DEV }}
-          FE_ENV_PROD: ${{ secrets.FE_ENV }}
+          # 운영용 NEXT_PUBLIC_* 값 묶음(.env 형식)
+          FE_ENV: ${{ secrets.FE_ENV }}
         run: |
           set -e
 
-          # 빌드 대상에 맞는 값 선택. 비어 있으면 다른 환경 값으로 빌드되지 않도록 중단
-          if [ "${GITHUB_REF}" = "refs/heads/dev" ]; then
-            FE_ENV="$FE_ENV_DEV"; SECRET_NAME="FE_ENV_DEV"
-          else
-            FE_ENV="$FE_ENV_PROD"; SECRET_NAME="FE_ENV"
-          fi
           if [ -z "$FE_ENV" ]; then
-            echo "::error::${SECRET_NAME} 시크릿이 없습니다."
+            echo "::error::FE_ENV 시크릿이 없습니다."
             exit 1
           fi
-          export FE_ENV
 
           # 태그 변환
           TAG_ARGS=()
@@ -105,6 +104,7 @@ jobs:
           # --secret: FE_ENV를 이미지 레이어에 남기지 않고 빌드 중에만 전달 (Dockerfile의 RUN --mount=type=secret,id=fe_env)
           docker buildx build \
             --push \
+            --metadata-file "$RUNNER_TEMP/image-metadata.json" \
             --provenance=false \
             --sbom=false \
             --secret id=fe_env,env=FE_ENV \
@@ -112,27 +112,25 @@ jobs:
             "${LABEL_ARGS[@]}" \
             ./ktb_agile_frontend
 
-      - name: dev 이미지 정리 (최신 3개만 유지)
-        if: github.ref == 'refs/heads/dev'
-        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1
-        with:
-          package: ktb4-1st-fe
-          delete-tags: "dev-*"
-          keep-n-tagged: 3
-          delete-untagged: true
+      # 이번 릴리즈 빌드의 digest를 운영 배포에 전달
+      - name: Export image digest
+        id: image
+        run: |
+          digest=$(jq -er '.["containerimage.digest"]' "$RUNNER_TEMP/image-metadata.json")
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}@${digest}" >> "$GITHUB_OUTPUT"
 
       - name: main 배포 이미지 정리 (최신 5개만 유지)
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1
         with:
           package: ktb4-1st-fe
           delete-tags: "*.*.*"
+          exclude-tags: "staging-*"
           keep-n-tagged: 5
           delete-untagged: true
 
       # 운영용 이미지(main에 붙인 시맨틱 버전 태그)를 발행할 때만 알림
       - name: Send Discord Notification
-        if: always() && startsWith(github.ref, 'refs/tags/v')
+        if: always()
         continue-on-error: true
         env:
           JOB_STATUS: ${{ job.status }}
@@ -207,3 +205,203 @@ jobs:
                -X POST \
                -d @payload.json \
                "$WEBHOOK_URL" || echo "::warning::Failed to deliver Discord notification."
+
+  select-image:
+    name: Select Published Release Image
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Validate manual release input
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::수동 버전 배포는 main 브랜치에서 실행해야 합니다"
+            exit 1
+          fi
+          if [[ ! "$RELEASE_VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::버전은 v 없이 MAJOR.MINOR.PATCH 형식으로 입력해야 합니다"
+            exit 1
+          fi
+
+      - name: Checkout release tag
+        uses: actions/checkout@v7
+        with:
+          ref: refs/tags/v${{ inputs.version }}
+          fetch-depth: 0
+
+      - name: Verify release commit on main
+        run: |
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::main에 포함된 릴리즈 태그만 배포할 수 있습니다"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve release image digest
+        id: image
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          image_ref="ghcr.io/${GITHUB_REPOSITORY,,}:${RELEASE_VERSION}"
+          digest=$(docker buildx imagetools inspect "$image_ref" --format '{{json .Manifest}}' | jq -er '.digest')
+          if [[ ! "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::이미지 digest를 확인하지 못했습니다"
+            exit 1
+          fi
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}@${digest}" >> "$GITHUB_OUTPUT"
+
+  # main 릴리즈 이미지를 해당 서비스의 운영 환경에 배포
+  deploy-prod:
+    name: Deploy Prod to ECS
+    needs: [build-and-push, select-image]
+    if: ${{ always() && !cancelled() && (needs.build-and-push.result == 'success' || needs.select-image.result == 'success') }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    environment: prod
+    permissions:
+      id-token: write
+      packages: read
+    env:
+      AWS_REGION: ap-northeast-2
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      ECS_CLUSTER: bakkucca-v2-prod-fe
+      ECS_SERVICE: bakkucca-v2-prod-fe
+      CONTAINER_NAME: frontend
+      CONTAINER_PORT: "3000"
+      IMAGE_URI: ${{ needs.build-and-push.outputs.image || needs.select-image.outputs.image }}
+      DEPLOY_VERSION: ${{ inputs.version || github.ref_name }}
+      FE_STATIC_BUCKET: ${{ vars.FE_STATIC_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+    steps:
+      - name: Check deployment settings
+        run: |
+          : "${AWS_ROLE_ARN:?prod 환경의 AWS_ROLE_ARN Variable이 필요합니다}"
+          : "${FE_STATIC_BUCKET:?prod 환경의 FE_STATIC_BUCKET Variable이 필요합니다}"
+          : "${CLOUDFRONT_DISTRIBUTION_ID:?prod 환경의 CLOUDFRONT_DISTRIBUTION_ID Variable이 필요합니다}"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 기존 태스크 정리와 EC2 용량 복귀 후 다음 배포 시작
+      - name: Wait for previous deployment cleanup
+        id: previous
+        run: |
+          service=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query 'services[0]' --output json)
+          desired=$(jq -r '.desiredCount' <<< "$service")
+          echo "task-definition=$(jq -r '.taskDefinition' <<< "$service")" >> "$GITHUB_OUTPUT"
+          for attempt in {1..160}; do
+            task_sets=$(aws ecs describe-task-sets --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+              --query 'length(taskSets)' --output text)
+            instances=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "$ECS_SERVICE" \
+              --query 'length(AutoScalingGroups[0].Instances)' --output text)
+            if [[ "$task_sets" == "1" && "$instances" == "$desired" ]]; then
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::이전 태스크 정리 또는 ASG의 평시 용량 복귀를 확인하지 못했습니다"
+          exit 1
+
+      # 등록된 실행 설정을 유지하고 이미지 주소만 교체
+      - name: Render task definition
+        id: task
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition-family: ${{ env.ECS_SERVICE }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ env.IMAGE_URI }}
+
+      - name: Create CodeDeploy AppSpec
+        run: |
+          jq -n --arg container "$CONTAINER_NAME" --argjson port "$CONTAINER_PORT" --arg provider "$ECS_SERVICE" '
+            {version: 0.0, Resources: [{TargetService: {
+              Type: "AWS::ECS::Service",
+              Properties: {
+                TaskDefinition: "",
+                LoadBalancerInfo: {ContainerName: $container, ContainerPort: $port},
+                CapacityProviderStrategy: [{CapacityProvider: $provider, Weight: 1}]
+              }
+            }}]}' > "$RUNNER_TEMP/appspec.json"
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 배포 이미지와 같은 빌드의 정적 파일을 업로드
+      - name: Upload frontend static files
+        run: |
+          docker pull "$IMAGE_URI"
+          docker create --name fe-static "$IMAGE_URI"
+          docker cp fe-static:/app/.next/static "$RUNNER_TEMP/next-static"
+          docker cp fe-static:/app/public "$RUNNER_TEMP/public-assets"
+          docker rm fe-static
+          aws s3 sync "$RUNNER_TEMP/next-static/" "s3://${FE_STATIC_BUCKET}/_next/static/" \
+            --cache-control 'public,max-age=31536000,immutable' --no-progress
+          aws s3 sync "$RUNNER_TEMP/public-assets/" "s3://${FE_STATIC_BUCKET}/" \
+            --cache-control 'public,max-age=300' --no-progress
+
+      - name: Deploy with CodeDeploy
+        id: deploy
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          codedeploy-appspec: ${{ runner.temp }}/appspec.json
+          codedeploy-application: ${{ env.ECS_SERVICE }}
+          codedeploy-deployment-group: ${{ env.ECS_SERVICE }}
+          codedeploy-deployment-description: ${{ inputs.version || github.ref_name }} / ${{ github.sha }} / ${{ github.run_id }}
+          wait-for-service-stability: true
+          wait-for-minutes: 20
+
+      # 같은 경로의 public 파일이 교체되면 기존 캐시 갱신
+      - name: Refresh public file cache
+        run: |
+          invalidation=$(aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths '/icons/*' '/figma/*' '/kakao_login_large_wide.png' \
+            --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --id "$invalidation"
+
+      - name: Record deployment
+        if: always()
+        env:
+          DEPLOY_STATUS: ${{ job.status }}
+          TASK_DEFINITION_ARN: ${{ steps.deploy.outputs.task-definition-arn }}
+          PREVIOUS_TASK_DEFINITION_ARN: ${{ steps.previous.outputs.task-definition }}
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.codedeploy-deployment-id }}
+        run: |
+          {
+            printf '### v2 prod 배포\n\n'
+            printf '| 항목 | 값 |\n|---|---|\n'
+            printf '| 결과 | %s |\n' "$DEPLOY_STATUS"
+            printf '| 버전 | `%s` |\n' "$DEPLOY_VERSION"
+            printf '| 워크플로 커밋 | `%s` |\n' "$GITHUB_SHA"
+            printf '| 이미지 | `%s` |\n' "$IMAGE_URI"
+            printf '| 이전 태스크 정의 | `%s` |\n' "$PREVIOUS_TASK_DEFINITION_ARN"
+            printf '| 새 태스크 정의 | `%s` |\n' "$TASK_DEFINITION_ARN"
+            printf '| 배포 ID | `%s` |\n' "$DEPLOYMENT_ID"
+          } >> "$GITHUB_STEP_SUMMARY"
