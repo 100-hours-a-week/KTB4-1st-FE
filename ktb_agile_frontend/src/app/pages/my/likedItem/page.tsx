@@ -4,6 +4,8 @@ import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import GroupTabs from '@/components/common/group/GroupTabs'
+import ActivityPageLayout from '@/components/common/layout/ActivityPageLayout'
 import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { LikedItem, LikedItemsResponse } from '@/types/likedItem'
 import '@/config/api'
@@ -107,88 +109,62 @@ export default function LikedItemPage() {
   )
 
   return (
-    <>
-      <section className={styles.page}>
-        <header className={styles.header}>
-          <Link className={styles.backButton} href="/pages/my">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="m12 5-7 7 7 7M5 12h14" />
-            </svg>
-          </Link>
-          <h1>관심 물품</h1>
-          <span />
-        </header>
+    <ActivityPageLayout title="관심 물품" backHref="/pages/my">
+      <GroupTabs
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        onSelect={setSelectedGroupId}
+        ariaLabel="관심 물품 그룹 선택"
+      />
 
-        {groups.length > 0 && (
-          <div
-            className={styles.binder}
-            role="region"
-            aria-label="관심 물품 그룹 선택"
-            tabIndex={0}
-          >
-            {groups.map((group) => (
-              <button
-                key={group.groupId}
-                className={`${styles.folder} ${selectedGroupId === group.groupId ? styles.selected : ''}`}
-                type="button"
-                aria-pressed={selectedGroupId === group.groupId}
-                onClick={() => setSelectedGroupId(group.groupId)}
-              >
-                {group.groupName}
-              </button>
-            ))}
-          </div>
-        )}
+      {visibleItems.length > 0 && (
+        <ul className={styles.itemList}>
+          {visibleItems.map((item) => (
+            <li key={item.itemId}>
+              <ActivityItemCard
+                item={item}
+                groupId={selectedGroupId ?? undefined}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
 
-        {visibleItems.length > 0 && (
-          <ul className={styles.itemList}>
-            {visibleItems.map((item) => (
-              <li key={item.itemId}>
-                <ActivityItemCard
-                  item={item}
-                  groupId={selectedGroupId ?? undefined}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
+      {isLoading && (
+        <p className={styles.message}>관심 물품을 불러오는 중입니다.</p>
+      )}
 
-        {isLoading && (
-          <p className={styles.message}>관심 물품을 불러오는 중입니다.</p>
-        )}
-
-        {!isLoading && errorMessage && (
-          <div className={styles.message}>
-            <p>{errorMessage}</p>
-            <button
-              type="button"
-              onClick={() => setRetryCount((count) => count + 1)}
-            >
-              다시 시도
-            </button>
-          </div>
-        )}
-
-        {!isLoading && !errorMessage && items.length === 0 && (
-          <div className={styles.emptyState}>
-            <h2>아직 좋아요 누른 물품이 없어요</h2>
-            <p>마음에 드는 물품을 구경해 보시겠어요?</p>
-            <Link className={styles.homeButton} href="/pages/items">
-              물품 구경하러 가기
-            </Link>
-          </div>
-        )}
-
-        {!isLoading && !errorMessage && hasNext && nextCursor && (
+      {!isLoading && errorMessage && (
+        <div className={styles.message}>
+          <p>{errorMessage}</p>
           <button
-            className={styles.moreButton}
             type="button"
-            onClick={() => setCursor(nextCursor)}
+            onClick={() => setRetryCount((count) => count + 1)}
           >
-            더 보기
+            다시 시도
           </button>
-        )}
-      </section>
-    </>
+        </div>
+      )}
+
+      {!isLoading && !errorMessage && items.length === 0 && (
+        <div className={styles.emptyState}>
+          <h2>아직 좋아요 누른 물품이 없어요</h2>
+          <p>마음에 드는 물품을 구경해 보시겠어요?</p>
+          <Link className={styles.homeButton} href="/pages/items">
+            물품 구경하러 가기
+          </Link>
+        </div>
+      )}
+
+      {!isLoading && !errorMessage && hasNext && nextCursor && (
+        <button
+          className={styles.moreButton}
+          type="button"
+          onClick={() => setCursor(nextCursor)}
+        >
+          더 보기
+        </button>
+      )}
+    </ActivityPageLayout>
   )
 }
