@@ -6,6 +6,8 @@ import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import Navbar from '@/components/common/navbar/Navbar'
+import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import styles from './page.module.css'
@@ -221,6 +223,8 @@ export default function ItemList() {
         </div>
       )}
       <Navbar />
+      <FloatingInquiryButton />
+      <ChatbotButton />
     </section>
   )
 }
