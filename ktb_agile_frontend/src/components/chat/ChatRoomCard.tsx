@@ -62,9 +62,9 @@ export default function ChatRoomCard({
             }}
           />
           <div
-            className={`${styles.avatar} ${room.otherUser.profileImageUrl ? '' : styles.placeholder}`}
+            className={`${styles.offeredItemImage} ${room.offeredItem.thumbnailImageUrl ? '' : styles.placeholder}`}
             style={{
-              backgroundImage: `url("${room.otherUser.profileImageUrl || '/icons/chat-image-placeholder.svg'}")`,
+              backgroundImage: `url("${room.offeredItem.thumbnailImageUrl || '/icons/chat-image-placeholder.svg'}")`,
             }}
           />
         </div>

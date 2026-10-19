@@ -36,11 +36,15 @@ const room = (id: number): ChatRoom => ({
   otherUser: {
     userId: 9,
     nickname: '민지',
-    profileImageUrl: null,
     userStatus: 'ACTIVE',
     groupMemberStatus: 'ACTIVE',
   },
   targetItem: { itemId: id, title: `물품 ${id}`, thumbnailImageUrl: null },
+  offeredItem: {
+    itemId: 100 + id,
+    title: `제안 물품 ${id}`,
+    thumbnailImageUrl: null,
+  },
   lastMessage: {
     messageId: id,
     content: '교환 요청이 접수되었습니다.',
