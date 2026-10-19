@@ -89,15 +89,29 @@ export default function CreateGroup() {
       
       router.push('/pages/groups')
     }catch(error:unknown){
-      const serverMessage = axios.isAxiosError<{ error?: { message?: unknown } }>(error)
-        ? error.response?.data?.error?.message
+      const serverError = axios.isAxiosError<{
+        error?: { message?: unknown; details?: unknown }
+      }>(error)
+        ? error.response?.data?.error
         : undefined
+      const serverMessage = serverError?.message
+      const reasons = Array.isArray(serverError?.details)
+        ? serverError.details.flatMap((detail: unknown) => {
+            if (
+              typeof detail === 'object' && detail !== null &&
+              'reason' in detail && typeof detail.reason === 'string' &&
+              detail.reason.trim()
+            ) {
+              return [detail.reason.trim()]
+            }
+            return []
+          })
+        : []
+      const message = typeof serverMessage === 'string' && serverMessage.trim()
+        ? serverMessage.trim()
+        : GROUP_ERRORS.CREATE_FAILED
       setIsGroupCreateModalOpen(false)
-      setErrorMessage(
-        typeof serverMessage === 'string' && serverMessage.trim()
-          ? serverMessage
-          : GROUP_ERRORS.CREATE_FAILED,
-      )
+      setErrorMessage([message, ...reasons].join('\n'))
     }
   }
 
