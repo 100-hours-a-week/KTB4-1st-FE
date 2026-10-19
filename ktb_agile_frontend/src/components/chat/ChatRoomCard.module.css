@@ -92,6 +92,8 @@
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
+  /* Compensate for the font's descender space to center on the visible glyphs. */
+  transform: translateY(-1px);
 }
 .time {
   flex: 0 0 auto;

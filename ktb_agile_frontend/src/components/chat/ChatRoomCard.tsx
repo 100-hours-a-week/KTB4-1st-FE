@@ -84,7 +84,7 @@ export default function ChatRoomCard({
                 aria-hidden="true"
                 focusable="false"
               >
-                <path d="M20 12H4m7-7-7 7 7 7" />
+                <path d="M20 12H4m7-5-7 5 7 5" />
               </svg>
               <span className={styles.itemName}>{room.offeredItem.title}</span>
             </strong>
