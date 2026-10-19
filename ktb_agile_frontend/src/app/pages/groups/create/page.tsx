@@ -15,6 +15,14 @@ import ModalGroupCreate from '@/components/common/modal/GroupCreate'
 
 const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
+
+function getGroupNameHelperText(value: string) {
+  if (!value.trim()) return GROUP_ERRORS.NAME_REQUIRED
+  return value.length > GROUP_NAME_MAX_LENGTH
+    ? GROUP_ERRORS.NAME_TOO_LONG(GROUP_NAME_MAX_LENGTH)
+    : null
+}
+
 export default function CreateGroup() {
   const router = useRouter()
   const [isSheetMounted, setIsSheetMounted] = useState(false)
@@ -26,22 +34,30 @@ export default function CreateGroup() {
   )
   const [groupDescriptionHelperText, setGroupDescriptionHelperText] =
     useState<string | null>(null)
+  const [roadAddressHelperText, setRoadAddressHelperText] =
+    useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isGroupCreateModalOpen, setIsGroupCreateModalOpen] = useState<boolean>(false);
 
+  function validateRequiredFields() {
+    const nameError = getGroupNameHelperText(groupName)
+    const addressError = groupAddressInfo?.roadAddress?.trim()
+      ? null
+      : GROUP_ERRORS.ROAD_ADDRESS_INPUT_REQUIRED
+    setGroupNameHelperText(nameError)
+    setRoadAddressHelperText(addressError)
+    return nameError === null && addressError === null
+  }
+
   function openGroupCreateModal() {
-    if (!groupAddressInfo?.roadAddress?.trim()) {
-      setErrorMessage(GROUP_ERRORS.ROAD_ADDRESS_REQUIRED)
-      return
-    }
+    if (!validateRequiredFields()) return
 
     setIsGroupCreateModalOpen(true)
   }
 
   async function createProcess(){
-    if (!groupAddressInfo?.roadAddress?.trim()) {
+    if (!validateRequiredFields()) {
       setIsGroupCreateModalOpen(false)
-      setErrorMessage(GROUP_ERRORS.ROAD_ADDRESS_REQUIRED)
       return
     }
 
@@ -73,7 +89,29 @@ export default function CreateGroup() {
       
       router.push('/pages/groups')
     }catch(error:unknown){
-      console.error(error)
+      const serverError = axios.isAxiosError<{
+        error?: { message?: unknown; details?: unknown }
+      }>(error)
+        ? error.response?.data?.error
+        : undefined
+      const serverMessage = serverError?.message
+      const reasons = Array.isArray(serverError?.details)
+        ? serverError.details.flatMap((detail: unknown) => {
+            if (
+              typeof detail === 'object' && detail !== null &&
+              'reason' in detail && typeof detail.reason === 'string' &&
+              detail.reason.trim()
+            ) {
+              return [detail.reason.trim()]
+            }
+            return []
+          })
+        : []
+      const message = typeof serverMessage === 'string' && serverMessage.trim()
+        ? serverMessage.trim()
+        : GROUP_ERRORS.CREATE_FAILED
+      setIsGroupCreateModalOpen(false)
+      setErrorMessage([message, ...reasons].join('\n'))
     }
   }
 
@@ -97,20 +135,18 @@ export default function CreateGroup() {
               className={styles.textInput}
               type="text"
               value={groupName}
-              maxLength={GROUP_NAME_MAX_LENGTH}
               placeholder="그룹명을 입력하세요"
+              aria-invalid={groupNameHelperText !== null}
+              aria-describedby="group-name-helper"
+              onBlur={() => setGroupNameHelperText(getGroupNameHelperText(groupName))}
               onChange={(event) => {
                 const value = event.target.value
                 setGroupName(value)
-                setGroupNameHelperText(
-                  value.length > GROUP_NAME_MAX_LENGTH
-                    ? GROUP_ERRORS.NAME_TOO_LONG(GROUP_NAME_MAX_LENGTH)
-                    : null,
-                )
+                setGroupNameHelperText(getGroupNameHelperText(value))
               }}
             />
             {groupNameHelperText !== null && (
-              <p className={styles.helperText}>
+              <p id="group-name-helper" className={styles.helperText} aria-live="polite">
                 {groupNameHelperText}
               </p>
             )}
@@ -121,6 +157,7 @@ export default function CreateGroup() {
             <button
               className={styles.locationButton}
               type="button"
+              aria-describedby="road-address-helper"
               onClick={() => setIsSheetMounted(true)}
             >
               건물 위치 가져오기
@@ -129,6 +166,11 @@ export default function CreateGroup() {
               <strong>그룹 주소 :</strong>
               <span>{groupAddressInfo?.roadAddress ?? '주소를 가져오면 표시됩니다'}</span>
             </div>
+            {roadAddressHelperText !== null && (
+              <p id="road-address-helper" className={styles.helperText} aria-live="polite">
+                {roadAddressHelperText}
+              </p>
+            )}
           </div>
 
           <div className={styles.fieldSection}>
@@ -172,9 +214,14 @@ export default function CreateGroup() {
       {isSheetMounted && (
         <AddressModal
           onClose={() => setIsSheetMounted(false)}
-          onSelect={(address) =>
+          onSelect={(address) => {
             setGroupAddressInfo(address)
-          }
+            setRoadAddressHelperText(
+              address.roadAddress?.trim()
+                ? null
+                : GROUP_ERRORS.ROAD_ADDRESS_INPUT_REQUIRED,
+            )
+          }}
         />
       )}
       {isGroupCreateModalOpen &&(
@@ -191,7 +238,7 @@ export default function CreateGroup() {
             message={errorMessage}
             onConfirm={() => {
               setErrorMessage(null)
-              if(errorMessage.includes('로그인')) router.replace('/auth/login')
+              if(errorMessage === AUTH_ERRORS.LOGIN_REQUIRED) router.replace('/auth/login')
             }}/>
       )}
     </>
