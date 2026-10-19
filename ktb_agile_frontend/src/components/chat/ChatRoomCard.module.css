@@ -74,10 +74,24 @@
   white-space: nowrap;
 }
 .itemTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex: 1 1 0;
   min-width: 0;
   font-size: 16px;
   font-weight: 600;
+}
+.itemName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exchangeArrow {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
 }
 .time {
   flex: 0 0 auto;

@@ -14,7 +14,7 @@ export default function ChatRoomCard({
   room: ChatRoom
   onClick: () => void
 }) {
-  const roomTitle = `${room.targetItem.title} <- ${room.offeredItem.title}`
+  const roomTitle = `${room.targetItem.title} 교환 제안: ${room.offeredItem.title}`
   const { userStatus, groupMemberStatus } = room.otherUser
   const isWithdrawn = userStatus === USER_STATUS.WITHDRAWN
   const hasLeftGroup = groupMemberStatus === GROUP_MEMBER_STATUS.LEFT
@@ -72,7 +72,21 @@ export default function ChatRoomCard({
         <div className={styles.roomContent}>
           <div className={styles.topRow}>
             <strong className={styles.itemTitle} title={roomTitle}>
-              {roomTitle}
+              <span className={styles.itemName}>{room.targetItem.title}</span>
+              <svg
+                className={styles.exchangeArrow}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M20 12H4m7-7-7 7 7 7" />
+              </svg>
+              <span className={styles.itemName}>{room.offeredItem.title}</span>
             </strong>
             <span className={styles.time}>
               {formatLastTime(room.lastMessageAt)}
