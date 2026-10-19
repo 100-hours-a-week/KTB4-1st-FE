@@ -24,15 +24,7 @@ type DisplayMessage = ChatbotMessage & {
   decision?: 'accepted' | 'declined'
 }
 
-type ChatbotButtonProps = {
-  aboveComposer?: boolean
-  onInquiry?: () => void
-}
-
-export default function ChatbotButton({
-  aboveComposer = false,
-  onInquiry,
-}: ChatbotButtonProps) {
+export default function ChatbotButton() {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState('')
@@ -99,7 +91,9 @@ export default function ChatbotButton({
 
       const candidate = response.data.data?.action
       const action =
-        candidate && Object.hasOwn(CHATBOT_ROUTE, candidate.screen)
+        candidate &&
+        candidate.screen !== 'INQUIRY' &&
+        Object.hasOwn(CHATBOT_ROUTE, candidate.screen)
           ? candidate
           : null
       setHistory((current) => [
@@ -131,19 +125,13 @@ export default function ChatbotButton({
     )
     if (!accepted) return
 
-    if (message.action.screen === 'INQUIRY') {
-      onInquiry?.()
-      return
-    }
     const path = CHATBOT_ROUTE[message.action.screen]
     if (path) router.push(path)
   }
 
   return (
     <>
-      <div
-        className={`${styles.container} ${aboveComposer ? styles.aboveComposer : ''}`}
-      >
+      <div className={styles.container}>
         {isOpen && (
           <section
             className={styles.panel}
@@ -206,9 +194,7 @@ export default function ChatbotButton({
                       !message.decision && (
                         <div className={styles.action}>
                           <p>
-                            {message.action.screen === 'INQUIRY'
-                              ? '문의하기 창을 여시겠습니까?'
-                              : `${CHATBOT_SCREEN_LABEL[message.action.screen]} 화면으로 이동하시겠습니까?`}
+                            {`${CHATBOT_SCREEN_LABEL[message.action.screen]} 화면으로 이동하시겠습니까?`}
                           </p>
                           <div className={styles.actionButtons}>
                             <button

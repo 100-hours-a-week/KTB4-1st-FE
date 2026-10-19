@@ -1,32 +1,14 @@
 'use client'
 
 import { INQUIRY_ERRORS } from '@/constants/errors/inquiry'
-import {
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-  type Ref,
-} from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './FloatingInquiryButton.module.css'
 
-type FloatingInquiryButtonProps = {
-  aboveComposer?: boolean
-  ref?: Ref<InquiryButtonHandle>
-}
-
-export type InquiryButtonHandle = {
-  openFromChatbot: () => void
-}
-
 type InquiryType = 'INQUIRY' | 'BUG_REPORT'
 
-export default function FloatingInquiryButton({
-  aboveComposer = false,
-  ref,
-}: FloatingInquiryButtonProps) {
+export default function FloatingInquiryButton() {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [type, setType] = useState<InquiryType>('INQUIRY')
@@ -34,17 +16,6 @@ export default function FloatingInquiryButton({
   const [notice, setNotice] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [isShaking, setIsShaking] = useState(false)
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      openFromChatbot() {
-        setIsShaking(true)
-      },
-    }),
-    [],
-  )
 
   useEffect(() => {
     if (!isOpen) return
@@ -98,21 +69,11 @@ export default function FloatingInquiryButton({
 
   return (
     <>
-      <div
-        className={`${styles.container} ${aboveComposer ? styles.aboveComposer : ''}`}
-      >
+      <div className={styles.container}>
         <button
-          className={`${styles.button} ${isShaking ? styles.shake : ''}`}
+          className={styles.button}
           type="button"
-          onClick={() => {
-            setIsShaking(false)
-            openModal()
-          }}
-          onAnimationEnd={(event) => {
-            if (event.target !== event.currentTarget || !isShaking) return
-            setIsShaking(false)
-            openModal()
-          }}
+          onClick={openModal}
         >
           문의
         </button>
