@@ -205,8 +205,8 @@ jobs:
           desired=$(jq -r '.desiredCount' <<< "$service")
           echo "task-definition=$(jq -r '.taskDefinition' <<< "$service")" >> "$GITHUB_OUTPUT"
           for attempt in {1..160}; do
-            task_sets=$(aws ecs describe-task-sets --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
-              --query 'length(taskSets)' --output text)
+            task_sets=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+              --query 'length(services[0].taskSets)' --output text)
             instances=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names "$ECS_SERVICE" \
               --query 'length(AutoScalingGroups[0].Instances)' --output text)
             if [[ "$task_sets" == "1" && "$instances" == "$desired" ]]; then
