@@ -4,6 +4,8 @@ import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import GroupTabs from '@/components/common/group/GroupTabs'
+import ActivityPageLayout from '@/components/common/layout/ActivityPageLayout'
 import Navbar from '@/components/common/navbar/Navbar'
 import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
@@ -13,6 +15,7 @@ import styles from './page.module.css'
 export default function MyItemPage() {
   const router = useRouter()
   const [items, setItems] = useState<MyItemListItem[]>([])
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasNext, setHasNext] = useState(false)
@@ -62,6 +65,12 @@ export default function MyItemPage() {
               ]
             : page.items,
         )
+        setSelectedGroupId(
+          (current) =>
+            current ??
+            page.items.flatMap((item) => item.groups)[0]?.groupId ??
+            null,
+        )
         setNextCursor(page.nextCursor)
         setHasNext(page.hasNext)
       } catch (error) {
@@ -85,24 +94,37 @@ export default function MyItemPage() {
     return () => controller.abort()
   }, [cursor, retryCount, router])
 
+  const groups = Array.from(
+    new Map(
+      items.flatMap((item) =>
+        item.groups.map((group) => [group.groupId, group] as const),
+      ),
+    ).values(),
+  )
+  const visibleItems = items.filter(
+    (item) =>
+      selectedGroupId === null ||
+      item.groups.some((group) => group.groupId === selectedGroupId),
+  )
+
   return (
     <>
-      <section className={styles.page}>
-        <header className={styles.header}>
-          <Link className={styles.backButton} href="/pages/my">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="m12 5-7 7 7 7M5 12h14" />
-            </svg>
-          </Link>
-          <h1>내가 올린 상품</h1>
-          <span />
-        </header>
+      <ActivityPageLayout title="내가 올린 물품" backHref="/pages/my">
+        <GroupTabs
+          groups={groups}
+          selectedGroupId={selectedGroupId}
+          onSelect={setSelectedGroupId}
+          ariaLabel="내가 올린 물품 그룹 선택"
+        />
 
-        {items.length > 0 && (
+        {visibleItems.length > 0 && (
           <ul className={styles.itemList}>
-            {items.map((item) => (
+            {visibleItems.map((item) => (
               <li key={item.itemId}>
-                <ActivityItemCard item={item} />
+                <ActivityItemCard
+                  item={item}
+                  groupId={selectedGroupId ?? undefined}
+                />
               </li>
             ))}
           </ul>
@@ -132,7 +154,7 @@ export default function MyItemPage() {
                 <path d="m4 7.5 8 4.5 8-4.5M12 12v9" />
               </svg>
             </span>
-            <h2>아직 올린 상품이 없어요</h2>
+            <h2>아직 올린 물품이 없어요</h2>
             <p>첫 물품을 등록하고 이웃과 교환해 보세요.</p>
             <Link
               className={styles.registerButton}
@@ -152,7 +174,7 @@ export default function MyItemPage() {
             더 보기
           </button>
         )}
-      </section>
+      </ActivityPageLayout>
       <Navbar />
     </>
   )
