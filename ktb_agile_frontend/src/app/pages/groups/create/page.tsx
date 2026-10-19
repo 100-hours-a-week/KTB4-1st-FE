@@ -89,7 +89,15 @@ export default function CreateGroup() {
       
       router.push('/pages/groups')
     }catch(error:unknown){
-      console.error(error)
+      const serverMessage = axios.isAxiosError<{ error?: { message?: unknown } }>(error)
+        ? error.response?.data?.error?.message
+        : undefined
+      setIsGroupCreateModalOpen(false)
+      setErrorMessage(
+        typeof serverMessage === 'string' && serverMessage.trim()
+          ? serverMessage
+          : GROUP_ERRORS.CREATE_FAILED,
+      )
     }
   }
 
@@ -217,7 +225,7 @@ export default function CreateGroup() {
             message={errorMessage}
             onConfirm={() => {
               setErrorMessage(null)
-              if(errorMessage.includes('로그인')) router.replace('/auth/login')
+              if(errorMessage === AUTH_ERRORS.LOGIN_REQUIRED) router.replace('/auth/login')
             }}/>
       )}
     </>
