@@ -667,7 +667,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           </div>
         )}
       </section>
-      <Navbar />
     </>
   )
 }
