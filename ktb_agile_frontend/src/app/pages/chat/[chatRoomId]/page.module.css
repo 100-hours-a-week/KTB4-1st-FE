@@ -39,8 +39,21 @@
   cursor: pointer;
 }
 
-.menuAnchor {
-  position: relative;
+.leaveButton {
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  font: inherit;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.leaveButton:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .content {

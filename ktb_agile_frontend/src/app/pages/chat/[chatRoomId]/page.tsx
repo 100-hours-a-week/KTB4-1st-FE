@@ -14,7 +14,6 @@ import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
-import ChatRoomMenu from '@/components/chat/ChatRoomMenu/ChatRoomMenu'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
 import { getUserIdFromAccessToken } from '@/utils/auth'
@@ -114,7 +113,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [hasNext, setHasNext] = useState(false)
   const [messageError, setMessageError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isClosedByEvent, setIsClosedByEvent] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
@@ -447,7 +445,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     } catch {
       setActionError(CHAT_ERRORS.LEAVE_FAILED)
       setIsLeaving(false)
-      setMenuOpen(false)
     }
   }
 
@@ -502,7 +499,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             }
           : current,
       )
-      setMenuOpen(false)
     } catch (cause) {
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
@@ -528,23 +524,14 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             <img src="/figma/chat/back.svg" alt="" width="24" height="24" />
           </button>
           <h1>채팅</h1>
-          <div className={styles.menuAnchor}>
-            <button
-              className={styles.iconButton}
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="채팅방 메뉴"
-              aria-expanded={menuOpen}
-            >
-              <img src="/figma/chat/more.svg" alt="" width="24" height="24" />
-            </button>
-            {menuOpen && (
-              <ChatRoomMenu
-                isLeaving={isLeaving}
-                onLeave={() => void leaveChatRoom()}
-              />
-            )}
-          </div>
+          <button
+            className={styles.leaveButton}
+            type="button"
+            onClick={() => void leaveChatRoom()}
+            disabled={isLeaving}
+          >
+            {isLeaving ? '나가는 중...' : '채팅방 나가기'}
+          </button>
         </header>
 
         <div className={styles.content}>
