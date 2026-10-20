@@ -583,9 +583,19 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             <p className={styles.state}>교환 요청 정보를 불러오는 중입니다.</p>
           )}
 
-          {exchangeStatus === CHAT_EXCHANGE_STATUS.COMPLETED && (
-            <EventApplyButton />
-          )}
+          {exchangeStatus === CHAT_EXCHANGE_STATUS.COMPLETED &&
+            exchangeRequest && (
+              <EventApplyButton
+                isSeller={isSeller}
+                otherUser={otherUser}
+                requestedItemTitle={exchangeRequest.requestedItem.title}
+                offeredItemTitles={
+                  exchangeRequest.offeredItems
+                    .map((item) => item.title)
+                    .join(', ') || '제공 물품 없음'
+                }
+              />
+            )}
 
           {actionError && <p className={styles.error}>{actionError}</p>}
           {socketError && <p className={styles.error}>{socketError}</p>}
