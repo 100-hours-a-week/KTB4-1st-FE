@@ -10,6 +10,7 @@ import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
+import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import styles from './page.module.css'
 
 type JoinedGroup = {
@@ -46,6 +47,7 @@ export default function ItemList() {
   })}`
 
   useEffect(() => {
+    const currentGroupId = getCurrentGroupId()
     const requestedGroupId = Number(
       new URLSearchParams(window.location.search).get('groupId'),
     )
@@ -69,12 +71,15 @@ export default function ItemList() {
           }),
         )
 
+        if (controller.signal.aborted) return
         setJoinedGroups(groups)
         setSelectedGroupId(
           groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+            groups.find((group) => group.groupId === currentGroupId)?.groupId ??
             groups[0]?.groupId ??
             null,
         )
+        if (groups.length === 0) setCurrentGroupId(0)
       } catch (error) {
         if (!axios.isCancel(error)) {
           console.error(error)
@@ -101,6 +106,13 @@ export default function ItemList() {
     if (!accessToken) {
       router.replace('/auth/login')
       return
+    }
+
+    setCurrentGroupId(groupId)
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('groupId') !== String(groupId)) {
+      url.searchParams.set('groupId', String(groupId))
+      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
     }
 
     async function fetchItems() {

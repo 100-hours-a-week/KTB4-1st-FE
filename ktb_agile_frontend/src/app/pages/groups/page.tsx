@@ -12,6 +12,7 @@ import LeaveConfirmModal from '@/components/groups/modal/LeaveConfirmModal'
 import LeaveFinalConfirmModal from '@/components/groups/modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
+import { setCurrentGroupId } from '@/utils/currentGroup'
 import ModalDefault from '@/components/common/modal/Default'
 import {
   JOIN_CONFIRM_MSG,
@@ -285,6 +286,10 @@ export default function GroupList() {
                 <div className={styles.recommendationList}>
                   {recommendGroupsList?.data.groups.map((group) => (
                     <GroupCard key={group.groupId} group={group} 
+                    onSelect={() => {
+                      setCurrentGroupId(group.groupId)
+                      router.push(`/pages/items?groupId=${group.groupId}`)
+                    }}
                     onLeave={() => handleLeave(group)} 
                     onJoin={()=>handleJoin(group)}/>
                   ))}
@@ -295,6 +300,10 @@ export default function GroupList() {
           ) : (
             displayedGroupList.data.groups.map((group) => (
               <GroupCard key={group.groupId} group={group}
+               onSelect={() => {
+                 setCurrentGroupId(group.groupId)
+                 router.push(`/pages/items?groupId=${group.groupId}`)
+               }}
                onLeave={() => handleLeave(group)} 
                onJoin={()=>handleJoin(group)}/>
             ))
