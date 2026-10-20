@@ -1,0 +1,135 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 20px;
+  overflow: hidden;
+  border: 2px solid #fffbf6;
+  border-radius: 14px;
+  color: #3d5146;
+  background: linear-gradient(120deg, #aeebcb, #ffcbbe, #aeebcb);
+  background-size: 200% 100%;
+  box-shadow: 0 0 12px rgba(174, 235, 203, 0.7);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation:
+    gradient-flow 3s linear infinite,
+    glow-pulse 1.8s ease-in-out infinite;
+  transition: transform 160ms ease;
+}
+
+/* 버튼 위를 가로지르며 반짝이는 빛줄기 */
+.button::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 40%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 251, 246, 0.85),
+    transparent
+  );
+  content: '';
+  transform: skewX(-20deg);
+  animation: shine-sweep 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.button:active {
+  transform: scale(0.98);
+}
+
+.button:focus-visible {
+  outline: 2px solid #3d5146;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    transform: translateY(-2px);
+  }
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+}
+
+.sparkle {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  color: #ff8f70;
+  animation: twinkle 1.2s ease-in-out infinite;
+}
+
+.sparkleRight {
+  animation-delay: 0.6s;
+}
+
+@keyframes gradient-flow {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(174, 235, 203, 0.6);
+  }
+
+  50% {
+    box-shadow:
+      0 0 18px rgba(148, 227, 192, 0.95),
+      0 0 28px rgba(255, 143, 112, 0.4);
+  }
+}
+
+@keyframes shine-sweep {
+  0% {
+    left: -60%;
+  }
+
+  60%,
+  100% {
+    left: 130%;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(0.7) rotate(0deg);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(20deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button,
+  .button::after,
+  .sparkle {
+    animation: none;
+  }
+
+  .button::after {
+    display: none;
+  }
+}
