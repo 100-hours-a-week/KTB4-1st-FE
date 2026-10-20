@@ -540,15 +540,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             </button>
             {menuOpen && (
               <ChatRoomMenu
-                isRequester={isRequester}
-                exchangeStatus={exchangeStatus}
-                itemAvailable={itemAvailable}
-                exchangeRequestId={exchangeRequestId}
-                isUpdatingExchange={isUpdatingExchange}
                 isLeaving={isLeaving}
-                onCancelExchange={() =>
-                  void changeExchangeStatus(EXCHANGE_STATUS.CANCELED)
-                }
                 onLeave={() => void leaveChatRoom()}
               />
             )}
@@ -569,6 +561,16 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
               }
               itemAvailable={itemAvailable}
               isUpdatingExchange={isUpdatingExchange}
+              canCancelExchange={
+                isRequester &&
+                exchangeStatus === CHAT_EXCHANGE_STATUS.AVAILABLE &&
+                itemAvailable === true &&
+                Number.isSafeInteger(exchangeRequestId) &&
+                exchangeRequestId > 0
+              }
+              onCancelExchange={() =>
+                void changeExchangeStatus(EXCHANGE_STATUS.CANCELED)
+              }
               returnTo={returnTo}
               onUpdateExchange={(status) => void changeExchangeStatus(status)}
               onEditExchange={(editItemId, editRequestId, editReturnTo) =>
