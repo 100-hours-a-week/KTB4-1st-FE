@@ -20,7 +20,6 @@ import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   clearItemListSession,
-  readItemListSession,
   readLastItemListSession,
   saveItemListSession,
   type ItemListSnapshot,
@@ -207,8 +206,8 @@ export default function ItemList() {
 
     async function fetchItems() {
       try {
-        const snapshot = readItemListSession(groupId)
-        if (snapshot) {
+        const snapshot = readLastItemListSession()
+        if (snapshot?.groupId === groupId) {
           if (isActive) {
             setItemResult({
               ...snapshot,
@@ -219,7 +218,7 @@ export default function ItemList() {
           }
           return
         }
-        if (readLastItemListSession()) {
+        if (snapshot) {
           clearItemListSession()
           snapshotRef.current = null
           window.scrollTo({ top: 0, behavior: 'instant' })
