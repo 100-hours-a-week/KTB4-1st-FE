@@ -11,10 +11,7 @@ type ItemCardListProps = {
   className?: string
   onLoadMore?: () => void
   onReady?: () => void | (() => void)
-  skipEnterAnimation?: boolean
 }
-
-const ENTER_STAGGER_MS = 80
 
 function preloadImage(url: string) {
   return new Promise<void>((resolve) => {
@@ -31,7 +28,6 @@ export default function ItemCardList({
   className,
   onLoadMore,
   onReady,
-  skipEnterAnimation = false,
 }: ItemCardListProps) {
   const triggerRef = useRef<HTMLDivElement>(null)
   const [preloadedItems, setPreloadedItems] = useState<ItemListItem[] | null>(
@@ -87,9 +83,7 @@ export default function ItemCardList({
       {preloadedItems.map((item, index) => (
         <div
           ref={index === Math.max(0, items.length - 3) ? triggerRef : undefined}
-          className={skipEnterAnimation ? undefined : styles.enter}
           key={item.itemId}
-          style={{ animationDelay: `${index * ENTER_STAGGER_MS}ms` }}
         >
           <ItemCard item={item} />
         </div>

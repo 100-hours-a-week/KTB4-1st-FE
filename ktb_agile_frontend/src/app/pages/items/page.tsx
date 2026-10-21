@@ -47,7 +47,6 @@ export default function ItemList() {
     nextCursor: string | null
     hasNext: boolean
     restoreScrollY?: number
-    restored?: boolean
   } | null>(null)
   const snapshotRef = useRef<ItemListSnapshot | null>(null)
   const leavingRef = useRef(false)
@@ -213,7 +212,6 @@ export default function ItemList() {
             setItemResult({
               ...snapshot,
               restoreScrollY: snapshot.scrollY,
-              restored: true,
             })
             setIsLoadingMore(false)
             setLoadMoreError(false)
@@ -294,7 +292,6 @@ export default function ItemList() {
               items: [...current.items, ...page.items],
               nextCursor: page.nextCursor,
               hasNext: page.hasNext,
-              restored: current.restored,
             }
           : current,
       )
@@ -418,7 +415,6 @@ export default function ItemList() {
               : undefined
           }
           onReady={restoreListPosition}
-          skipEnterAnimation={itemResult?.restored}
         />
       ) : (
         <div className={styles.emptyState}>
