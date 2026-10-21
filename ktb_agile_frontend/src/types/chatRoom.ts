@@ -12,16 +12,12 @@ export type ChatRoom = {
   otherUser: {
     userId: number
     nickname: string
+    profileImageUrl: string | null
     userStatus: (typeof USER_STATUS)[keyof typeof USER_STATUS]
     groupMemberStatus:
       (typeof GROUP_MEMBER_STATUS)[keyof typeof GROUP_MEMBER_STATUS] | null
   }
   targetItem: {
-    itemId: number
-    title: string
-    thumbnailImageUrl: string | null
-  }
-  offeredItem: {
     itemId: number
     title: string
     thumbnailImageUrl: string | null

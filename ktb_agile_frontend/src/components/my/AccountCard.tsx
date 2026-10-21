@@ -4,7 +4,6 @@ import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
-import { setCurrentGroupId } from '@/utils/currentGroup'
 import styles from './AccountCard.module.css'
 
 export default function AccountCard() {
@@ -73,7 +72,6 @@ export default function AccountCard() {
 
   function returnToLogin() {
     window.sessionStorage.removeItem('accessToken')
-    setCurrentGroupId(0)
     router.replace('/auth/login')
   }
 

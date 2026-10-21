@@ -9,7 +9,7 @@
       var(--app-content-block-padding)
   );
   padding-bottom: calc(
-    var(--app-navbar-height) + env(safe-area-inset-bottom)
+    var(--app-navbar-height) + env(safe-area-inset-bottom) + 92px
   );
 }
 
@@ -72,10 +72,10 @@
   min-height: 44px;
   align-items: center;
   padding: 10px 38px 10px 14px;
-  border: 1px solid rgb(174 235 203 / 70%);
-  border-radius: 14px;
-  color: #3d5146;
-  background-color: #ffffff;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  color: #171717;
+  background-color: #f7f7f7;
   background-image: url('/icons/chevron-down.svg');
   background-repeat: no-repeat;
   background-position: right 12px center;
@@ -103,11 +103,10 @@
   left: 0;
   width: min(288px, calc(100vw - 48px));
   overflow: hidden;
-  border: 1px solid rgb(174 235 203 / 70%);
-  border-radius: 16px;
-  background: rgb(255 255 255 / 96%);
-  box-shadow: 0 10px 28px rgb(61 81 70 / 14%);
-  backdrop-filter: blur(12px);
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(17, 17, 17, 0.12);
 }
 
 .groupList {
@@ -125,8 +124,8 @@
   align-items: center;
   padding: 10px 12px;
   border: 0;
-  border-radius: 10px;
-  color: #3d5146;
+  border-radius: 8px;
+  color: #171717;
   background: transparent;
   font-family: inherit;
   font-size: 14px;
@@ -135,12 +134,12 @@
 }
 
 .groupOption.selected {
-  background: #d9f3e8;
-  font-weight: 700;
+  background: #f7f7f7;
+  font-weight: 600;
 }
 
 .groupPageLink {
-  border-top: 1px solid rgb(174 235 203 / 70%);
+  border-top: 1px solid #e9e9e9;
   border-radius: 0;
   padding-inline: 18px;
   font-weight: 600;
@@ -150,7 +149,7 @@
 .joinLink:active,
 .groupOption:active,
 .groupPageLink:active {
-  background-color: #e6f7ef;
+  background-color: #eeeeee;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -158,7 +157,7 @@
   .joinLink:hover,
   .groupOption:hover,
   .groupPageLink:hover {
-    background-color: #e6f7ef;
+    background-color: #eeeeee;
   }
 }
 
@@ -181,7 +180,7 @@
   flex-direction: column;
   gap: 14px;
   margin-inline: calc((var(--app-content-inline-padding) * -1) + 8px);
-  padding: 4px 0 0;
+  padding: 4px 0 28px;
 }
 
 .emptyTitle {

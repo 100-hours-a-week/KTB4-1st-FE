@@ -6,8 +6,8 @@
   height: 100dvh;
   overflow: hidden;
   margin: calc(-1 * var(--app-content-block-padding))
-  calc(-1 * var(--app-content-inline-padding));
-  padding-bottom: env(safe-area-inset-bottom);
+    calc(-1 * var(--app-content-inline-padding));
+  padding-bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom));
   color: #111827;
 }
 
@@ -39,21 +39,8 @@
   cursor: pointer;
 }
 
-.leaveButton {
-  padding: 8px 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: #fff;
-  color: #111827;
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.leaveButton:disabled {
-  cursor: default;
-  opacity: 0.5;
+.menuAnchor {
+  position: relative;
 }
 
 .content {
