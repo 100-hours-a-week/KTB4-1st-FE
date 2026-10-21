@@ -5,6 +5,7 @@ import {
   EVENT_PHOTO_MAX_BYTES,
   EVENT_PHOTO_TYPES,
   EventConfigurationError,
+  getEventApplicationStatus,
   saveEventApplication,
 } from '@/server/eventApplications'
 
@@ -103,6 +104,18 @@ export const POST = withAuth(async (request, authorization) => {
       participant2: isReceiver ? room.otherUser.nickname : me.data.nickname,
       photo,
     })
+    if (data.alreadyApplied) {
+      return Response.json(
+        {
+          data: null,
+          error: {
+            code: 'ALREADY_APPLIED',
+            message: '이미 응모한 교환입니다.',
+          },
+        },
+        { status: 409, headers: { 'Cache-Control': 'no-store' } },
+      )
+    }
     return Response.json(
       { data, error: null },
       { headers: { 'Cache-Control': 'no-store' } },
@@ -117,5 +130,38 @@ export const POST = withAuth(async (request, authorization) => {
       '응모를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.',
       502,
     )
+  }
+})
+
+export const GET = withAuth(async (request, authorization) => {
+  const params = new URL(request.url).searchParams
+  const chatRoomId = Number(params.get('chatRoomId'))
+  const exchangeRequestId = Number(params.get('exchangeRequestId'))
+  if (
+    !Number.isSafeInteger(chatRoomId) ||
+    chatRoomId < 1 ||
+    !Number.isSafeInteger(exchangeRequestId) ||
+    exchangeRequestId < 1
+  ) {
+    return failure('교환 정보가 올바르지 않습니다.', 400)
+  }
+  try {
+    const room = await findRoom(chatRoomId, authorization)
+    if (!room || room.exchangeRequestId !== exchangeRequestId)
+      return failure('해당 교환에 응모할 권한이 없습니다.', 403)
+    if (room.exchangeStatus !== 'COMPLETED')
+      return failure('거래 완료 후에 응모할 수 있습니다.', 409)
+    const data = await getEventApplicationStatus(exchangeRequestId)
+    return Response.json(
+      { data, error: null },
+      { headers: { 'Cache-Control': 'no-store' } },
+    )
+  } catch (error) {
+    if (error instanceof EventConfigurationError)
+      return failure(
+        '이벤트 연결 설정이 필요합니다. 운영자에게 문의해주세요.',
+        503,
+      )
+    return failure('응모 여부를 확인하지 못했습니다. 다시 시도해주세요.', 502)
   }
 })

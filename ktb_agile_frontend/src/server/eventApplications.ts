@@ -126,10 +126,9 @@ export function saveEventApplication(application: Application) {
   return task
 }
 
-async function save(application: Application) {
+async function readApplicationSheet() {
   const spreadsheetId = setting('GOOGLE_EVENT_SPREADSHEET_ID')
   const sheetName = setting('GOOGLE_EVENT_SHEET_NAME')
-  const folderId = setting('GOOGLE_EVENT_DRIVE_FOLDER_ID')
   const token = await accessToken()
   const range = `'${sheetName.replace(/'/g, "''")}'!A:G`
   const base = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}`
@@ -149,6 +148,19 @@ async function save(application: Application) {
       '이벤트 시트 첫 행의 열 이름과 순서를 설정 안내에 맞춰주세요.',
     )
   }
+  return { token, base, rows, headers }
+}
+
+export async function getEventApplicationStatus(exchangeRequestId: number) {
+  const { rows } = await readApplicationSheet()
+  return {
+    applied: rows.slice(1).some((row) => row[1] === String(exchangeRequestId)),
+  }
+}
+
+async function save(application: Application) {
+  const folderId = setting('GOOGLE_EVENT_DRIVE_FOLDER_ID')
+  const { token, base, rows, headers } = await readApplicationSheet()
   if (!rows.length) {
     await googleRequest(base + '?valueInputOption=RAW', token, {
       method: 'PUT',
