@@ -20,6 +20,7 @@ import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   readItemListSession,
+  readLastItemListSession,
   saveItemListSession,
   type ItemListSnapshot,
 } from '@/utils/itemListSession'
@@ -92,6 +93,7 @@ export default function ItemList() {
   }, [])
 
   useEffect(() => {
+    leavingRef.current = false
     const trackScroll = () => {
       if (snapshotRef.current && !restoringRef.current && !leavingRef.current) {
         snapshotRef.current.scrollY = window.scrollY
@@ -134,6 +136,7 @@ export default function ItemList() {
 
   useEffect(() => {
     const currentGroupId = getCurrentGroupId()
+    const lastSnapshot = readLastItemListSession()
     const requestedGroupId = Number(
       new URLSearchParams(window.location.search).get('groupId'),
     )
@@ -158,6 +161,8 @@ export default function ItemList() {
         setJoinedGroups(groups)
         setSelectedGroupId(
           groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+            groups.find((group) => group.groupId === lastSnapshot?.groupId)
+              ?.groupId ??
             groups.find((group) => group.groupId === currentGroupId)?.groupId ??
             groups[0]?.groupId ??
             null,

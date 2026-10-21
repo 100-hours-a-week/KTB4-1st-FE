@@ -6,6 +6,7 @@ export type ItemListSnapshot = ItemListResponse['data'] & {
 }
 
 const key = (groupId: number) => `item-list:v1:${groupId}`
+const LAST_GROUP_KEY = 'item-list:last-group'
 
 function isItem(value: unknown): value is ItemListItem {
   if (!value || typeof value !== 'object') return false
@@ -57,7 +58,19 @@ export function saveItemListSession(snapshot: ItemListSnapshot) {
       key(snapshot.groupId),
       JSON.stringify(snapshot),
     )
+    window.sessionStorage.setItem(LAST_GROUP_KEY, String(snapshot.groupId))
   } catch {
     // 저장 공간이 부족해도 페이지 이동은 계속합니다.
+  }
+}
+
+export function readLastItemListSession(): ItemListSnapshot | null {
+  try {
+    const groupId = Number(window.sessionStorage.getItem(LAST_GROUP_KEY))
+    return Number.isSafeInteger(groupId) && groupId > 0
+      ? readItemListSession(groupId)
+      : null
+  } catch {
+    return null
   }
 }
