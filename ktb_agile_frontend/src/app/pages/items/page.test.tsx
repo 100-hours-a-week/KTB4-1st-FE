@@ -12,6 +12,7 @@ import ItemList from './page'
 import type { ItemListItem } from '@/types/item'
 import {
   readItemListSession,
+  readLastItemListSession,
   saveItemListSession,
 } from '@/utils/itemListSession'
 
@@ -226,7 +227,8 @@ it('다른 그룹의 저장 목록은 사용하지 않는다', async () => {
   const get = await showList()
   expect(get).toHaveBeenCalledTimes(2)
   expect(screen.queryByText('물품 100')).toBeNull()
-  expect(window.scrollTo).not.toHaveBeenCalled()
+  expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' })
+  expect(readLastItemListSession()).toBeNull()
 })
 
 it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의 그룹과 위치를 복원한다', async () => {
@@ -260,7 +262,7 @@ it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의
   expect(get).toHaveBeenCalledTimes(1)
 })
 
-it('특정 그룹 링크로 진입하면 마지막 목록보다 해당 그룹의 저장 위치를 우선한다', async () => {
+it('마지막으로 저장한 그룹만 유지하고 다른 그룹 링크는 새 목록을 최상단부터 보여준다', async () => {
   saveItemListSession({
     groupId: 1,
     items: makeItems(1, 20),
@@ -275,31 +277,81 @@ it('특정 그룹 링크로 진입하면 마지막 목록보다 해당 그룹의
     hasNext: false,
     scrollY: 1200,
   })
+  expect(readItemListSession(1)).toBeNull()
+  expect(readItemListSession(2)?.scrollY).toBe(1200)
   window.history.replaceState(null, '', '/pages/items?groupId=1')
-  const get = vi.spyOn(axios, 'get').mockResolvedValueOnce({
-    data: {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValueOnce({
       data: {
-        groups: [
-          { groupId: 1, groupName: '지정한 그룹' },
-          { groupId: 2, groupName: '마지막 목록 그룹' },
-        ],
+        data: {
+          groups: [
+            { groupId: 1, groupName: '지정한 그룹' },
+            { groupId: 2, groupName: '마지막 목록 그룹' },
+          ],
+        },
       },
-    },
-  })
+    })
+    .mockResolvedValueOnce(page(makeItems(1, 20), null))
   render(<ItemList />)
   await screen.findByText('물품 20')
   expect(screen.queryByText('물품 100')).toBeNull()
   await waitFor(() =>
     expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 300,
+      top: 0,
       behavior: 'instant',
     }),
   )
-  expect(get).toHaveBeenCalledTimes(1)
+  expect(get).toHaveBeenCalledTimes(2)
+})
+
+it('그룹을 바꾸거나 이전 그룹을 다시 선택하면 목록을 새로 조회하고 최상단으로 이동한다', async () => {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValueOnce({
+      data: {
+        data: {
+          groups: [
+            { groupId: 1, groupName: '그룹 A' },
+            { groupId: 2, groupName: '그룹 B' },
+          ],
+        },
+      },
+    })
+    .mockResolvedValueOnce(page(makeItems(1, 20), null))
+    .mockResolvedValueOnce(page(makeItems(100, 20), null))
+    .mockResolvedValueOnce(page(makeItems(200, 20), null))
+  render(<ItemList />)
+  await screen.findByText('물품 20')
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 })
+  fireEvent.scroll(window)
+  fireEvent(window, new Event('pagehide'))
+  expect(readItemListSession(1)?.scrollY).toBe(900)
+
+  fireEvent.click(screen.getByRole('button', { name: '그룹 A' }))
+  fireEvent.click(screen.getByRole('button', { name: '그룹 B' }))
+  expect(window.scrollY).toBe(0)
+  expect(readLastItemListSession()).toBeNull()
+  // 새 그룹이 준비되기 전에 떠나도 이전 그룹을 다시 저장하지 않습니다.
+  fireEvent(window, new Event('pagehide'))
+  expect(readLastItemListSession()).toBeNull()
+  await screen.findByText('물품 119')
+
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 600 })
+  fireEvent.scroll(window)
+  fireEvent.click(screen.getByRole('button', { name: '그룹 B' }))
+  fireEvent.click(screen.getByRole('button', { name: '그룹 A' }))
+  await screen.findByText('물품 219')
+  expect(window.scrollY).toBe(0)
+  expect(screen.queryByText('물품 20')).toBeNull()
+  expect(get).toHaveBeenCalledTimes(4)
+  cleanup()
+  expect(readItemListSession(2)).toBeNull()
+  expect(readItemListSession(1)?.scrollY).toBe(0)
 })
 
 it('잘못된 저장 데이터가 있으면 첫 페이지를 새로 조회한다', async () => {
-  window.sessionStorage.setItem('item-list:v1:1', '{broken')
+  window.sessionStorage.setItem('item-list:v2:latest', '{broken')
   const get = await showList()
   expect(get).toHaveBeenCalledTimes(2)
   expect(window.scrollTo).not.toHaveBeenCalled()
