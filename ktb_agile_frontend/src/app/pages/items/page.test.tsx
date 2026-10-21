@@ -67,6 +67,7 @@ const page = (items: ItemListItem[], nextCursor: string | null) => ({
 })
 
 beforeEach(() => {
+  window.history.replaceState(null, '', '/pages/items')
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
   vi.spyOn(window, 'scrollTo').mockImplementation(
     (options?: number | ScrollToOptions) => {
@@ -226,6 +227,75 @@ it('다른 그룹의 저장 목록은 사용하지 않는다', async () => {
   expect(get).toHaveBeenCalledTimes(2)
   expect(screen.queryByText('물품 100')).toBeNull()
   expect(window.scrollTo).not.toHaveBeenCalled()
+})
+
+it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의 그룹과 위치를 복원한다', async () => {
+  saveItemListSession({
+    groupId: 2,
+    items: makeItems(100, 20),
+    nextCursor: 'saved-cursor',
+    hasNext: true,
+    scrollY: 1200,
+  })
+  const get = vi.spyOn(axios, 'get').mockResolvedValueOnce({
+    data: {
+      data: {
+        groups: [
+          { groupId: 1, groupName: '다른 화면에서 선택한 그룹' },
+          { groupId: 2, groupName: '마지막 목록 그룹' },
+        ],
+      },
+    },
+  })
+  // 현재 그룹은 1이지만 마지막 목록은 그룹 2에 저장돼 있습니다.
+  render(<ItemList />)
+  await screen.findByText('물품 119')
+  expect(screen.getByRole('button', { name: '마지막 목록 그룹' })).toBeDefined()
+  await waitFor(() =>
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 1200,
+      behavior: 'instant',
+    }),
+  )
+  expect(get).toHaveBeenCalledTimes(1)
+})
+
+it('특정 그룹 링크로 진입하면 마지막 목록보다 해당 그룹의 저장 위치를 우선한다', async () => {
+  saveItemListSession({
+    groupId: 1,
+    items: makeItems(1, 20),
+    nextCursor: null,
+    hasNext: false,
+    scrollY: 300,
+  })
+  saveItemListSession({
+    groupId: 2,
+    items: makeItems(100, 20),
+    nextCursor: null,
+    hasNext: false,
+    scrollY: 1200,
+  })
+  window.history.replaceState(null, '', '/pages/items?groupId=1')
+  const get = vi.spyOn(axios, 'get').mockResolvedValueOnce({
+    data: {
+      data: {
+        groups: [
+          { groupId: 1, groupName: '지정한 그룹' },
+          { groupId: 2, groupName: '마지막 목록 그룹' },
+        ],
+      },
+    },
+  })
+  render(<ItemList />)
+  await screen.findByText('물품 20')
+  expect(screen.queryByText('물품 100')).toBeNull()
+  await waitFor(() =>
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 300,
+      behavior: 'instant',
+    }),
+  )
+  expect(get).toHaveBeenCalledTimes(1)
 })
 
 it('잘못된 저장 데이터가 있으면 첫 페이지를 새로 조회한다', async () => {
