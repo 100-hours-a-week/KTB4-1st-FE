@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import Navbar from '@/components/common/navbar/Navbar'
@@ -31,7 +31,12 @@ export default function ItemList() {
   const [itemResult, setItemResult] = useState<{
     groupId: number
     items: ItemListItem[]
+    nextCursor: string | null
+    hasNext: boolean
   } | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState(false)
+  const moreRequestRef = useRef<AbortController | null>(null)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -55,15 +60,12 @@ export default function ItemList() {
 
     async function fetchJoinedGroups() {
       try {
-        const response = await axios.get<GroupListResponse>(
-          '/bff/me/groups',
-          {
-            headers: {
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+        const response = await axios.get<GroupListResponse>('/bff/me/groups', {
+          headers: {
+            Accept: 'application/json',
           },
-        )
+          signal: controller.signal,
+        })
         const groups = response.data.data.groups.map(
           ({ groupId, groupName }) => ({
             groupId,
@@ -112,7 +114,9 @@ export default function ItemList() {
     const url = new URL(window.location.href)
     if (url.searchParams.get('groupId') !== String(groupId)) {
       url.searchParams.set('groupId', String(groupId))
-      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+      router.replace(`${url.pathname}${url.search}${url.hash}`, {
+        scroll: false,
+      })
     }
 
     async function fetchItems() {
@@ -128,7 +132,9 @@ export default function ItemList() {
         )
 
         if (isActive) {
-          setItemResult({ groupId, items: response.data.data.items })
+          setItemResult({ groupId, ...response.data.data })
+          setIsLoadingMore(false)
+          setLoadMoreError(false)
         }
       } catch (error) {
         if (isActive) console.error(error)
@@ -139,8 +145,67 @@ export default function ItemList() {
 
     return () => {
       isActive = false
+      moreRequestRef.current?.abort()
+      moreRequestRef.current = null
     }
   }, [selectedGroupId, router])
+
+  const loadMore = useCallback(async () => {
+    if (
+      !itemResult ||
+      itemResult.groupId !== selectedGroupId ||
+      !itemResult.hasNext ||
+      !itemResult.nextCursor ||
+      moreRequestRef.current
+    )
+      return
+
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    const controller = new AbortController()
+    moreRequestRef.current = controller
+    setIsLoadingMore(true)
+    setLoadMoreError(false)
+    try {
+      const response = await axios.get<ItemListResponse>(
+        `${API_BASE_URL}/groups/${itemResult.groupId}/items`,
+        {
+          params: { cursor: itemResult.nextCursor },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        },
+      )
+      if (controller.signal.aborted) return
+      const page = response.data.data
+      setItemResult((current) =>
+        current === itemResult
+          ? {
+              groupId: current.groupId,
+              items: [...current.items, ...page.items],
+              nextCursor: page.nextCursor,
+              hasNext: page.hasNext,
+            }
+          : current,
+      )
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.error(error)
+        setLoadMoreError(true)
+      }
+    } finally {
+      if (moreRequestRef.current === controller) {
+        moreRequestRef.current = null
+        setIsLoadingMore(false)
+      }
+    }
+  }, [itemResult, selectedGroupId, router])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -214,11 +279,14 @@ export default function ItemList() {
           </Link>
         </div>
       </header>
-      {isLoadingGroups || isLoadingItems || (selectedGroup && items.length > 0) ? (
+      {isLoadingGroups ||
+      isLoadingItems ||
+      (selectedGroup && items.length > 0) ? (
         <ItemCardList
           className={styles.itemList}
           isLoading={isLoadingGroups || isLoadingItems}
           items={items}
+          onLoadMore={itemResult?.hasNext ? loadMore : undefined}
         />
       ) : (
         <div className={styles.emptyState}>
@@ -233,6 +301,14 @@ export default function ItemList() {
               : '그룹에 가입해서 물품들을 구경해보아요.'}
           </p>
         </div>
+      )}
+      {!isLoadingItems && isLoadingMore && (
+        <p role="status">물품을 더 불러오는 중...</p>
+      )}
+      {!isLoadingItems && loadMoreError && (
+        <button type="button" onClick={loadMore}>
+          다시 불러오기
+        </button>
       )}
       <Navbar />
       <FloatingInquiryButton />

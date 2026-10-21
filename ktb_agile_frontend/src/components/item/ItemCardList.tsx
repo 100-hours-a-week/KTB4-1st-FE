@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ItemListItem } from '@/types/item'
 import ItemCard from '@/components/common/item/ItemCard'
 import styles from './ItemCardList.module.css'
@@ -9,6 +9,7 @@ type ItemCardListProps = {
   items: ItemListItem[]
   isLoading?: boolean
   className?: string
+  onLoadMore?: () => void
 }
 
 const ENTER_STAGGER_MS = 80
@@ -26,7 +27,9 @@ export default function ItemCardList({
   items,
   isLoading = false,
   className,
+  onLoadMore,
 }: ItemCardListProps) {
+  const triggerRef = useRef<HTMLDivElement>(null)
   const [preloadedItems, setPreloadedItems] = useState<ItemListItem[] | null>(
     null,
   )
@@ -50,18 +53,32 @@ export default function ItemCardList({
 
   const isReady = !isLoading && preloadedItems === items
 
-  if (!isReady) {
-    return (
-      <p className={styles.loading}>
-        로딩 중 ...
-      </p>
+  useEffect(() => {
+    const target = triggerRef.current
+    if (!isReady || !target || !onLoadMore) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.unobserve(target)
+          onLoadMore()
+        }
+      },
+      { threshold: 0 },
     )
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [isReady, items, onLoadMore])
+
+  if (!isReady) {
+    return <p className={styles.loading}>로딩 중 ...</p>
   }
 
   return (
     <div className={className}>
       {items.map((item, index) => (
         <div
+          ref={index === Math.max(0, items.length - 3) ? triggerRef : undefined}
           className={styles.enter}
           key={item.itemId}
           style={{ animationDelay: `${index * ENTER_STAGGER_MS}ms` }}
