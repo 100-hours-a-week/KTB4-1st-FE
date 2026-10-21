@@ -2,7 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import Navbar from '@/components/common/navbar/Navbar'
@@ -11,6 +18,13 @@ import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryBu
 import ItemCardList from '@/components/item/ItemCardList'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
+import {
+  clearItemListSession,
+  readLastItemListSession,
+  removeLegacySnapshots,
+  saveItemListSession,
+  type ItemListSnapshot,
+} from '@/utils/itemListSession'
 import styles from './page.module.css'
 
 type JoinedGroup = {
@@ -31,7 +45,16 @@ export default function ItemList() {
   const [itemResult, setItemResult] = useState<{
     groupId: number
     items: ItemListItem[]
+    nextCursor: string | null
+    hasNext: boolean
+    restoreScrollY?: number
   } | null>(null)
+  const snapshotRef = useRef<ItemListSnapshot | null>(null)
+  const leavingRef = useRef(false)
+  const restoringRef = useRef(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [loadMoreError, setLoadMoreError] = useState(false)
+  const moreRequestRef = useRef<AbortController | null>(null)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -46,8 +69,75 @@ export default function ItemList() {
     ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
   })}`
 
+  useLayoutEffect(() => {
+    if (!itemResult || itemResult.groupId !== selectedGroupId) {
+      restoringRef.current = true
+      return
+    }
+    restoringRef.current = itemResult.restoreScrollY !== undefined
+    snapshotRef.current = {
+      groupId: itemResult.groupId,
+      items: itemResult.items,
+      nextCursor: itemResult.nextCursor,
+      hasNext: itemResult.hasNext,
+      scrollY: itemResult.restoreScrollY ?? window.scrollY,
+    }
+  }, [itemResult, selectedGroupId])
+
+  const saveCurrentList = useCallback(() => {
+    const snapshot = snapshotRef.current
+    if (!snapshot) return
+    if (!restoringRef.current && !leavingRef.current)
+      snapshot.scrollY = window.scrollY
+    saveItemListSession(snapshot)
+  }, [])
+
   useEffect(() => {
+    leavingRef.current = false
+    const trackScroll = () => {
+      if (snapshotRef.current && !restoringRef.current && !leavingRef.current) {
+        snapshotRef.current.scrollY = window.scrollY
+      }
+    }
+    const saveOnLeave = () => {
+      if (snapshotRef.current) saveItemListSession(snapshotRef.current)
+    }
+    const resume = () => {
+      leavingRef.current = false
+    }
+    window.addEventListener('scroll', trackScroll, { passive: true })
+    window.addEventListener('pagehide', saveOnLeave)
+    window.addEventListener('pageshow', resume)
+    return () => {
+      saveOnLeave()
+      window.removeEventListener('scroll', trackScroll)
+      window.removeEventListener('pagehide', saveOnLeave)
+      window.removeEventListener('pageshow', resume)
+    }
+  }, [])
+
+  const handleNavigate = (event: MouseEvent<HTMLElement>) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>('a[href]')
+    if (
+      !link ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      link.target === '_blank' ||
+      link.hasAttribute('download') ||
+      new URL(link.href).pathname === window.location.pathname
+    )
+      return
+    saveCurrentList()
+    leavingRef.current = true
+  }
+
+  useEffect(() => {
+    removeLegacySnapshots()
     const currentGroupId = getCurrentGroupId()
+    const lastSnapshot = readLastItemListSession()
     const requestedGroupId = Number(
       new URLSearchParams(window.location.search).get('groupId'),
     )
@@ -55,15 +145,12 @@ export default function ItemList() {
 
     async function fetchJoinedGroups() {
       try {
-        const response = await axios.get<GroupListResponse>(
-          '/bff/me/groups',
-          {
-            headers: {
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+        const response = await axios.get<GroupListResponse>('/bff/me/groups', {
+          headers: {
+            Accept: 'application/json',
           },
-        )
+          signal: controller.signal,
+        })
         const groups = response.data.data.groups.map(
           ({ groupId, groupName }) => ({
             groupId,
@@ -75,6 +162,8 @@ export default function ItemList() {
         setJoinedGroups(groups)
         setSelectedGroupId(
           groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+            groups.find((group) => group.groupId === lastSnapshot?.groupId)
+              ?.groupId ??
             groups.find((group) => group.groupId === currentGroupId)?.groupId ??
             groups[0]?.groupId ??
             null,
@@ -112,11 +201,30 @@ export default function ItemList() {
     const url = new URL(window.location.href)
     if (url.searchParams.get('groupId') !== String(groupId)) {
       url.searchParams.set('groupId', String(groupId))
-      router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false })
+      router.replace(`${url.pathname}${url.search}${url.hash}`, {
+        scroll: false,
+      })
     }
 
     async function fetchItems() {
       try {
+        const snapshot = readLastItemListSession()
+        if (snapshot?.groupId === groupId) {
+          if (isActive) {
+            setItemResult({
+              ...snapshot,
+              restoreScrollY: snapshot.scrollY,
+            })
+            setIsLoadingMore(false)
+            setLoadMoreError(false)
+          }
+          return
+        }
+        if (snapshot) {
+          clearItemListSession()
+          snapshotRef.current = null
+          window.scrollTo({ top: 0, behavior: 'instant' })
+        }
         const response = await axios.get<ItemListResponse>(
           `${API_BASE_URL}/groups/${groupId}/items?size=10&cursor=`,
           {
@@ -128,19 +236,103 @@ export default function ItemList() {
         )
 
         if (isActive) {
-          setItemResult({ groupId, items: response.data.data.items })
+          setItemResult({ groupId, ...response.data.data })
+          setIsLoadingMore(false)
+          setLoadMoreError(false)
         }
       } catch (error) {
         if (isActive) console.error(error)
       }
     }
 
-    fetchItems()
+    // 저장된 목록도 첫 조회와 같은 비동기 흐름으로 반영합니다.
+    queueMicrotask(() => {
+      if (isActive) void fetchItems()
+    })
 
     return () => {
       isActive = false
+      moreRequestRef.current?.abort()
+      moreRequestRef.current = null
     }
   }, [selectedGroupId, router])
+
+  const loadMore = useCallback(async () => {
+    if (
+      !itemResult ||
+      itemResult.groupId !== selectedGroupId ||
+      !itemResult.hasNext ||
+      !itemResult.nextCursor ||
+      itemResult.restoreScrollY !== undefined ||
+      moreRequestRef.current
+    )
+      return
+
+    const accessToken = window.sessionStorage.getItem('accessToken')
+    if (!accessToken) {
+      router.replace('/auth/login')
+      return
+    }
+
+    const controller = new AbortController()
+    moreRequestRef.current = controller
+    setIsLoadingMore(true)
+    setLoadMoreError(false)
+    try {
+      const response = await axios.get<ItemListResponse>(
+        `${API_BASE_URL}/groups/${itemResult.groupId}/items`,
+        {
+          params: { cursor: itemResult.nextCursor },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        },
+      )
+      if (controller.signal.aborted) return
+      const page = response.data.data
+      setItemResult((current) =>
+        current === itemResult
+          ? {
+              groupId: current.groupId,
+              items: [...current.items, ...page.items],
+              nextCursor: page.nextCursor,
+              hasNext: page.hasNext,
+            }
+          : current,
+      )
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.error(error)
+        setLoadMoreError(true)
+      }
+    } finally {
+      if (moreRequestRef.current === controller) {
+        moreRequestRef.current = null
+        setIsLoadingMore(false)
+      }
+    }
+  }, [itemResult, selectedGroupId, router])
+
+  const restoreListPosition = useCallback(() => {
+    if (
+      !itemResult ||
+      itemResult.groupId !== selectedGroupId ||
+      itemResult.restoreScrollY === undefined
+    )
+      return
+    const scrollY = itemResult.restoreScrollY
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: scrollY, behavior: 'instant' })
+      setItemResult((current) =>
+        current === itemResult
+          ? { ...current, restoreScrollY: undefined }
+          : current,
+      )
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [itemResult, selectedGroupId])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -159,7 +351,7 @@ export default function ItemList() {
   }, [isGroupMenuOpen])
 
   return (
-    <section className={styles.page}>
+    <section className={styles.page} onClickCapture={handleNavigate}>
       <header className={styles.header}>
         <div className={styles.headerInner}>
           {isLoadingGroups ? null : selectedGroup ? (
@@ -186,7 +378,13 @@ export default function ItemList() {
                           }`}
                           type="button"
                           onClick={() => {
-                            setSelectedGroupId(group.groupId)
+                            if (group.groupId !== selectedGroupId) {
+                              clearItemListSession()
+                              snapshotRef.current = null
+                              restoringRef.current = true
+                              window.scrollTo({ top: 0, behavior: 'instant' })
+                              setSelectedGroupId(group.groupId)
+                            }
                             setGroupMenuOpen(false)
                           }}
                         >
@@ -214,11 +412,21 @@ export default function ItemList() {
           </Link>
         </div>
       </header>
-      {isLoadingGroups || isLoadingItems || (selectedGroup && items.length > 0) ? (
+      {isLoadingGroups ||
+      isLoadingItems ||
+      (selectedGroup &&
+        (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
         <ItemCardList
+          key={selectedGroupId}
           className={styles.itemList}
           isLoading={isLoadingGroups || isLoadingItems}
           items={items}
+          onLoadMore={
+            itemResult?.hasNext && itemResult.restoreScrollY === undefined
+              ? loadMore
+              : undefined
+          }
+          onReady={restoreListPosition}
         />
       ) : (
         <div className={styles.emptyState}>
@@ -233,6 +441,14 @@ export default function ItemList() {
               : '그룹에 가입해서 물품들을 구경해보아요.'}
           </p>
         </div>
+      )}
+      {!isLoadingItems && isLoadingMore && (
+        <p role="status">물품을 더 불러오는 중...</p>
+      )}
+      {!isLoadingItems && loadMoreError && (
+        <button type="button" onClick={loadMore}>
+          다시 불러오기
+        </button>
       )}
       <Navbar />
       <FloatingInquiryButton />

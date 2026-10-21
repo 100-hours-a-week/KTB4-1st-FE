@@ -9,7 +9,7 @@
       var(--app-content-block-padding)
   );
   padding-bottom: calc(
-    var(--app-navbar-height) + env(safe-area-inset-bottom) + 92px
+    var(--app-navbar-height) + env(safe-area-inset-bottom)
   );
 }
 
@@ -181,7 +181,7 @@
   flex-direction: column;
   gap: 14px;
   margin-inline: calc((var(--app-content-inline-padding) * -1) + 8px);
-  padding: 4px 0 28px;
+  padding: 4px 0 0;
 }
 
 .emptyTitle {
