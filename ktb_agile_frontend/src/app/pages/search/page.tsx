@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
+import { setCurrentGroupId } from '@/utils/currentGroup'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/common/item/ItemCard'
@@ -171,6 +172,7 @@ function SearchPageContent() {
         })
         if (controller.signal.aborted) return
         const page = response.data.data
+        setCurrentGroupId(criteria.groupId)
         if (cursor) {
           setResult((current) =>
             current?.groupId === criteria.groupId &&
