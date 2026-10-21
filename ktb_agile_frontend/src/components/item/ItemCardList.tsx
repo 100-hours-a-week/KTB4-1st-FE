@@ -10,6 +10,8 @@ type ItemCardListProps = {
   isLoading?: boolean
   className?: string
   onLoadMore?: () => void
+  onReady?: () => void | (() => void)
+  skipEnterAnimation?: boolean
 }
 
 const ENTER_STAGGER_MS = 80
@@ -28,6 +30,8 @@ export default function ItemCardList({
   isLoading = false,
   className,
   onLoadMore,
+  onReady,
+  skipEnterAnimation = false,
 }: ItemCardListProps) {
   const triggerRef = useRef<HTMLDivElement>(null)
   const [preloadedItems, setPreloadedItems] = useState<ItemListItem[] | null>(
@@ -54,6 +58,10 @@ export default function ItemCardList({
   const isReady = !isLoading && preloadedItems === items
 
   useEffect(() => {
+    if (isReady) return onReady?.()
+  }, [isReady, onReady])
+
+  useEffect(() => {
     const target = triggerRef.current
     if (!isReady || !target || !onLoadMore) return
 
@@ -70,16 +78,16 @@ export default function ItemCardList({
     return () => observer.disconnect()
   }, [isReady, items, onLoadMore])
 
-  if (!isReady) {
+  if (isLoading || !preloadedItems) {
     return <p className={styles.loading}>로딩 중 ...</p>
   }
 
   return (
     <div className={className}>
-      {items.map((item, index) => (
+      {preloadedItems.map((item, index) => (
         <div
           ref={index === Math.max(0, items.length - 3) ? triggerRef : undefined}
-          className={styles.enter}
+          className={skipEnterAnimation ? undefined : styles.enter}
           key={item.itemId}
           style={{ animationDelay: `${index * ENTER_STAGGER_MS}ms` }}
         >
