@@ -7,11 +7,15 @@ export type ItemListSnapshot = ItemListResponse['data'] & {
 
 const SNAPSHOT_KEY = 'item-list:v2:latest'
 
-function removeLegacySnapshots() {
-  for (const key of Object.keys(window.sessionStorage)) {
-    if (key.startsWith('item-list:v1:') || key === 'item-list:last-group') {
-      window.sessionStorage.removeItem(key)
+export function removeLegacySnapshots() {
+  try {
+    for (const key of Object.keys(window.sessionStorage)) {
+      if (key.startsWith('item-list:v1:') || key === 'item-list:last-group') {
+        window.sessionStorage.removeItem(key)
+      }
     }
+  } catch {
+    // 이전 데이터 정리에 실패해도 목록 조회는 계속합니다.
   }
 }
 
@@ -44,7 +48,6 @@ export function readItemListSession(groupId: number): ItemListSnapshot | null {
 
 export function readLastItemListSession(): ItemListSnapshot | null {
   try {
-    removeLegacySnapshots()
     const value = JSON.parse(
       window.sessionStorage.getItem(SNAPSHOT_KEY) ?? 'null',
     )
@@ -69,7 +72,6 @@ export function readLastItemListSession(): ItemListSnapshot | null {
 export function saveItemListSession(snapshot: ItemListSnapshot) {
   try {
     window.sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot))
-    removeLegacySnapshots()
   } catch {
     // 저장 공간이 부족해도 페이지 이동은 계속합니다.
   }
@@ -78,7 +80,6 @@ export function saveItemListSession(snapshot: ItemListSnapshot) {
 export function clearItemListSession() {
   try {
     window.sessionStorage.removeItem(SNAPSHOT_KEY)
-    removeLegacySnapshots()
   } catch {
     // 저장소 접근에 실패해도 그룹 변경은 계속합니다.
   }

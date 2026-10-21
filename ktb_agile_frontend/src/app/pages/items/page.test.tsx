@@ -232,6 +232,9 @@ it('다른 그룹의 저장 목록은 사용하지 않는다', async () => {
 })
 
 it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의 그룹과 위치를 복원한다', async () => {
+  window.sessionStorage.setItem('item-list:v1:1', '{old-data}')
+  window.sessionStorage.setItem('item-list:v1:2', '{old-data}')
+  window.sessionStorage.setItem('item-list:last-group', '1')
   saveItemListSession({
     groupId: 2,
     items: makeItems(100, 20),
@@ -260,6 +263,11 @@ it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의
     }),
   )
   expect(get).toHaveBeenCalledTimes(1)
+  expect(window.sessionStorage.getItem('item-list:v1:1')).toBeNull()
+  expect(window.sessionStorage.getItem('item-list:v1:2')).toBeNull()
+  expect(window.sessionStorage.getItem('item-list:last-group')).toBeNull()
+  expect(window.sessionStorage.getItem('accessToken')).toBe('test-token')
+  expect(readLastItemListSession()?.groupId).toBe(2)
 })
 
 it('마지막으로 저장한 그룹만 유지하고 다른 그룹 링크는 새 목록을 최상단부터 보여준다', async () => {

@@ -21,6 +21,7 @@ import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   clearItemListSession,
   readLastItemListSession,
+  removeLegacySnapshots,
   saveItemListSession,
   type ItemListSnapshot,
 } from '@/utils/itemListSession'
@@ -134,6 +135,7 @@ export default function ItemList() {
   }
 
   useEffect(() => {
+    removeLegacySnapshots()
     const currentGroupId = getCurrentGroupId()
     const lastSnapshot = readLastItemListSession()
     const requestedGroupId = Number(
