@@ -5,7 +5,19 @@ import SparkleIcon from '@/components/common/chatbot/SparkleIcon'
 import EventApplyModal from './EventApplyModal'
 import styles from './EventApplyButton.module.css'
 
-export default function EventApplyButton() {
+type EventApplyButtonProps = {
+  isSeller: boolean
+  otherUser: string
+  requestedItemTitle: string
+  offeredItemTitles: string
+}
+
+export default function EventApplyButton({
+  isSeller,
+  otherUser,
+  requestedItemTitle,
+  offeredItemTitles,
+}: EventApplyButtonProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -21,6 +33,10 @@ export default function EventApplyButton() {
       </button>
       {isModalOpen && (
         <EventApplyModal
+          isSeller={isSeller}
+          otherUser={otherUser}
+          requestedItemTitle={requestedItemTitle}
+          offeredItemTitles={offeredItemTitles}
           onApply={() => setIsModalOpen(false)}
           onClose={() => setIsModalOpen(false)}
         />
