@@ -1,7 +1,7 @@
 name: Publish Frontend-staging
 run-name: "Staging Publish: ${{ github.ref_name }} (${{ github.actor }})"
 
-# dev에 포함된 커밋의 staging 태그로 이미지만 빌드하고 발행
+# main에 포함된 커밋의 staging 태그로 이미지만 빌드하고 발행
 on:
   push:
     tags:
@@ -28,14 +28,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Validate staging tag on dev
+      - name: Validate staging tag on main
         run: |
           if [[ ! "$GITHUB_REF_NAME" =~ ^staging-v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
             echo "::error::스테이징 이미지 태그는 staging-vMAJOR.MINOR.PATCH 형식이어야 합니다"
             exit 1
           fi
-          if ! git merge-base --is-ancestor HEAD origin/dev; then
-            echo "::error::dev에 포함된 커밋의 태그만 스테이징 이미지로 발행할 수 있습니다"
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::main에 포함된 커밋의 태그만 스테이징 이미지로 발행할 수 있습니다"
             exit 1
           fi
 
