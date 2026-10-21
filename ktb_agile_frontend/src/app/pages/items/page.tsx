@@ -19,6 +19,7 @@ import ItemCardList from '@/components/item/ItemCardList'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
+  clearItemListSession,
   readItemListSession,
   readLastItemListSession,
   saveItemListSession,
@@ -218,6 +219,11 @@ export default function ItemList() {
           }
           return
         }
+        if (readLastItemListSession()) {
+          clearItemListSession()
+          snapshotRef.current = null
+          window.scrollTo({ top: 0, behavior: 'instant' })
+        }
         const response = await axios.get<ItemListResponse>(
           `${API_BASE_URL}/groups/${groupId}/items?size=10&cursor=`,
           {
@@ -371,8 +377,13 @@ export default function ItemList() {
                           }`}
                           type="button"
                           onClick={() => {
-                            saveCurrentList()
-                            setSelectedGroupId(group.groupId)
+                            if (group.groupId !== selectedGroupId) {
+                              clearItemListSession()
+                              snapshotRef.current = null
+                              restoringRef.current = true
+                              window.scrollTo({ top: 0, behavior: 'instant' })
+                              setSelectedGroupId(group.groupId)
+                            }
                             setGroupMenuOpen(false)
                           }}
                         >

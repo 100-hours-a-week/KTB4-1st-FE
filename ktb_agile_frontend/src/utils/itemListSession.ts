@@ -5,8 +5,15 @@ export type ItemListSnapshot = ItemListResponse['data'] & {
   scrollY: number
 }
 
-const key = (groupId: number) => `item-list:v1:${groupId}`
-const LAST_GROUP_KEY = 'item-list:last-group'
+const SNAPSHOT_KEY = 'item-list:v2:latest'
+
+function removeLegacySnapshots() {
+  for (const key of Object.keys(window.sessionStorage)) {
+    if (key.startsWith('item-list:v1:') || key === 'item-list:last-group') {
+      window.sessionStorage.removeItem(key)
+    }
+  }
+}
 
 function isItem(value: unknown): value is ItemListItem {
   if (!value || typeof value !== 'object') return false
@@ -31,13 +38,20 @@ function isItem(value: unknown): value is ItemListItem {
 }
 
 export function readItemListSession(groupId: number): ItemListSnapshot | null {
+  const snapshot = readLastItemListSession()
+  return snapshot?.groupId === groupId ? snapshot : null
+}
+
+export function readLastItemListSession(): ItemListSnapshot | null {
   try {
+    removeLegacySnapshots()
     const value = JSON.parse(
-      window.sessionStorage.getItem(key(groupId)) ?? 'null',
+      window.sessionStorage.getItem(SNAPSHOT_KEY) ?? 'null',
     )
     if (
       value &&
-      value.groupId === groupId &&
+      Number.isSafeInteger(value.groupId) &&
+      value.groupId > 0 &&
       Array.isArray(value.items) &&
       value.items.every(isItem) &&
       Number.isFinite(value.scrollY) &&
@@ -54,23 +68,18 @@ export function readItemListSession(groupId: number): ItemListSnapshot | null {
 
 export function saveItemListSession(snapshot: ItemListSnapshot) {
   try {
-    window.sessionStorage.setItem(
-      key(snapshot.groupId),
-      JSON.stringify(snapshot),
-    )
-    window.sessionStorage.setItem(LAST_GROUP_KEY, String(snapshot.groupId))
+    window.sessionStorage.setItem(SNAPSHOT_KEY, JSON.stringify(snapshot))
+    removeLegacySnapshots()
   } catch {
     // 저장 공간이 부족해도 페이지 이동은 계속합니다.
   }
 }
 
-export function readLastItemListSession(): ItemListSnapshot | null {
+export function clearItemListSession() {
   try {
-    const groupId = Number(window.sessionStorage.getItem(LAST_GROUP_KEY))
-    return Number.isSafeInteger(groupId) && groupId > 0
-      ? readItemListSession(groupId)
-      : null
+    window.sessionStorage.removeItem(SNAPSHOT_KEY)
+    removeLegacySnapshots()
   } catch {
-    return null
+    // 저장소 접근에 실패해도 그룹 변경은 계속합니다.
   }
 }
