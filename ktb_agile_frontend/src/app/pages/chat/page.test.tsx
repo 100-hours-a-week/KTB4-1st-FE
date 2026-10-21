@@ -36,15 +36,11 @@ const room = (id: number): ChatRoom => ({
   otherUser: {
     userId: 9,
     nickname: '민지',
+    profileImageUrl: null,
     userStatus: 'ACTIVE',
     groupMemberStatus: 'ACTIVE',
   },
   targetItem: { itemId: id, title: `물품 ${id}`, thumbnailImageUrl: null },
-  offeredItem: {
-    itemId: 100 + id,
-    title: `제안 물품 ${id}`,
-    thumbnailImageUrl: null,
-  },
   lastMessage: {
     messageId: id,
     content: '교환 요청이 접수되었습니다.',
@@ -97,7 +93,7 @@ it('새 문서의 null 그룹과 시스템 메시지를 표시하고 하단 도�
     .spyOn(axios, 'get')
     .mockResolvedValue(page([room(1)], 'opaque+/='))
   render(<Chat />)
-  await screen.findByTitle('물품 1 교환 제안: 제안 물품 1')
+  await screen.findByText('물품 1')
   await waitFor(() => expect(observers).toHaveLength(1))
   expect(screen.getByText('교환 요청이 접수되었습니다.')).toBeDefined()
   expect(screen.queryByText(/\(나\)/)).toBeNull()
@@ -118,13 +114,13 @@ it('하단에서 커서를 그대로 전달하고 중복 관찰과 중복 방을
   await waitFor(() => expect(observers).toHaveLength(1))
   intersect()
   intersect()
-  await screen.findByTitle('물품 2 교환 제안: 제안 물품 2')
+  await screen.findByText('물품 2')
   expect(get).toHaveBeenCalledTimes(2)
   expect(get.mock.calls[1][1]?.params).toEqual({
     size: 20,
     cursor: 'opaque+/=',
   })
-  expect(screen.getAllByTitle('물품 1 교환 제안: 제안 물품 1')).toHaveLength(1)
+  expect(screen.getAllByText('물품 1')).toHaveLength(1)
   intersect(0)
   expect(get).toHaveBeenCalledTimes(2)
 })
@@ -134,7 +130,7 @@ it('nextCursor가 없으면 hasNext가 true여도 추가 조회를 관찰하지 
     .spyOn(axios, 'get')
     .mockResolvedValue(page([room(1)], null, true))
   render(<Chat />)
-  await screen.findByTitle('물품 1 교환 제안: 제안 물품 1')
+  await screen.findByText('물품 1')
   expect(observers).toHaveLength(0)
   expect(get).toHaveBeenCalledTimes(1)
 })
@@ -147,20 +143,20 @@ it('필터를 다음 페이지에도 유지하고 탭 변경 시 커서를 초�
     .mockResolvedValueOnce(page([room(3)]))
     .mockResolvedValueOnce(page([room(4)]))
   render(<Chat />)
-  await screen.findByTitle('물품 1 교환 제안: 제안 물품 1')
+  await screen.findByText('물품 1')
   fireEvent.click(screen.getByText('받은 교환'))
   await waitFor(() => expect(observers).toHaveLength(1))
   intersect()
-  await screen.findByTitle('물품 3 교환 제안: 제안 물품 3')
+  await screen.findByText('물품 3')
   expect(get.mock.calls[2][1]?.params).toEqual({
     size: 20,
     direction: 'RECEIVED',
     cursor: 'received-next',
   })
   fireEvent.click(screen.getByText('보낸 교환'))
-  await screen.findByTitle('물품 4 교환 제안: 제안 물품 4')
+  await screen.findByText('물품 4')
   expect(get.mock.calls[3][1]?.params).toEqual({ size: 20, direction: 'SENT' })
-  expect(screen.queryByTitle('물품 2 교환 제안: 제안 물품 2')).toBeNull()
+  expect(screen.queryByText('물품 2')).toBeNull()
 })
 
 it('추가 조회 실패 시 목록을 보존하고 다시 시도하면 같은 커서로 재요청한다', async () => {
@@ -173,10 +169,10 @@ it('추가 조회 실패 시 목록을 보존하고 다시 시도하면 같은 �
   await waitFor(() => expect(observers).toHaveLength(1))
   intersect()
   await screen.findByText('조회 실패')
-  expect(screen.getByTitle('물품 1 교환 제안: 제안 물품 1')).toBeDefined()
+  expect(screen.getByText('물품 1')).toBeDefined()
   expect(get).toHaveBeenCalledTimes(2)
   fireEvent.click(screen.getByText('다시 시도'))
-  await screen.findByTitle('물품 2 교환 제안: 제안 물품 2')
+  await screen.findByText('물품 2')
   expect(get.mock.calls[2][1]?.params).toEqual({ size: 20, cursor: 'next' })
 })
 
@@ -192,8 +188,8 @@ it('탭 변경 전에 시작한 늦은 응답은 새 목록에 섞이지 않는�
     .mockResolvedValueOnce(page([room(2)]))
   render(<Chat />)
   fireEvent.click(screen.getByText('받은 교환'))
-  await screen.findByTitle('물품 2 교환 제안: 제안 물품 2')
+  await screen.findByText('물품 2')
   await act(async () => resolveOld(page([room(1)], 'old-next')))
-  expect(screen.queryByTitle('물품 1 교환 제안: 제안 물품 1')).toBeNull()
+  expect(screen.queryByText('물품 1')).toBeNull()
   expect(observers).toHaveLength(0)
 })

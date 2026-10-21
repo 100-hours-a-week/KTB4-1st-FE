@@ -15,8 +15,6 @@ type ChatRoomInfoProps = Pick<ChatRoom, 'chatRoomStatus'> &
     direction: ChatRoom['direction'] | null
     itemAvailable: boolean | null
     isUpdatingExchange: boolean
-    canCancelExchange: boolean
-    onCancelExchange: () => void
     returnTo: string
     onUpdateExchange: (status: ExchangeActionStatus) => void
     onEditExchange: (
@@ -34,15 +32,12 @@ export default function ChatRoomInfo({
   exchangeRequest,
   itemAvailable,
   isUpdatingExchange,
-  canCancelExchange,
-  onCancelExchange,
   returnTo,
   onUpdateExchange,
   onEditExchange,
 }: ChatRoomInfoProps) {
   const { requestedItem, exchangeRequestId } = exchangeRequest
   const { title, itemId, thumbnailImageUrl: image } = requestedItem
-  const roomTitle = `${title} <- ${exchangeRequest.offeredItems.map((item) => item.title).join(', ') || '제공 물품 없음'}`
   const isSeller = direction === 'RECEIVED'
   const isRequester = direction === 'SENT'
   const exchangeStatus =
@@ -74,7 +69,7 @@ export default function ChatRoomInfo({
       </div>
       <div className={styles.productDetails}>
         <div className={styles.productTitleRow}>
-          <strong title={roomTitle}>{roomTitle}</strong>
+          <strong>상품명: {title}</strong>
           <span>
             {exchangeStatus === EXCHANGE_STATUS.PENDING &&
             itemAvailable === false
@@ -115,28 +110,15 @@ export default function ChatRoomInfo({
           )}
         </div>
       </div>
-      {(canEdit || canCancelExchange) && (
+      {canEdit && (
         <div className={styles.exchangeActions}>
-          {canEdit && (
-            <button
-              type="button"
-              disabled={isUpdatingExchange}
-              onClick={() =>
-                onEditExchange(itemId, exchangeRequestId, returnTo)
-              }
-            >
-              제안 수정
-            </button>
-          )}
-          {canCancelExchange && (
-            <button
-              type="button"
-              disabled={isUpdatingExchange}
-              onClick={onCancelExchange}
-            >
-              제안 취소
-            </button>
-          )}
+          <button
+            type="button"
+            disabled={isUpdatingExchange}
+            onClick={() => onEditExchange(itemId, exchangeRequestId, returnTo)}
+          >
+            제안 수정
+          </button>
         </div>
       )}
       <ChatExchangeActions

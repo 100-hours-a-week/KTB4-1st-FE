@@ -118,7 +118,7 @@ it('상세 API의 물품·수량과 목록의 그룹·상대방을 표시하고 
   const patch = vi.spyOn(axios, 'patch').mockResolvedValue({})
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   expect(screen.queryByText(/오래된 제목/)).toBeNull()
   expect(screen.getByText('그룹: 동네 모임')).toBeDefined()
   expect(screen.getByText('상대: 민지')).toBeDefined()
@@ -166,7 +166,7 @@ it.each(['COMPLETED', 'REJECTED', 'CANCELED'] as const)(
     value.exchangeRequest.exchangeStatus = status
     mockResponses(value)
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     expect(
       screen.getByText(
         {
@@ -198,6 +198,7 @@ it('SENT 방향에서는 제안 수정과 취소만 제공한다', async () => {
     expect.stringContaining('itemId=101&exchangeRequestId=50'),
   )
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   expect(screen.getByRole('button', { name: '제안 취소' })).toBeDefined()
 })
 
@@ -210,7 +211,7 @@ it('상세 조회 실패 시 동작을 노출하지 않고 재시도로 복구�
   await screen.findByText('상세 조회 실패')
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: '다시 시도' }))
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull())
 })
 
@@ -342,7 +343,7 @@ it.each(['SENT', 'RECEIVED'])(
     params.set('direction', direction)
     const get = mockResponses(detail())
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     expect(router.replace).not.toHaveBeenCalled()
     expect(get).toHaveBeenCalled()
     expect(useChatRoomSocketMock).toHaveBeenCalled()
@@ -392,7 +393,7 @@ it('이력이 늦게 도착해도 실시간 메시지를 보존하고 ID 중복 
     })
   })
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   const input = screen.getByLabelText('메시지') as HTMLInputElement
   expect(input.disabled).toBe(true)
   expect(input.placeholder).toBe('메시지를 불러오는 중입니다.')
@@ -442,7 +443,7 @@ it('첫 이력 조회 실패 후 실시간 메시지가 있어도 재시도할 �
     return messageResponse([historyMessage(100, '기존 이력')])
   })
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   receive(historyMessage(101, '실시간 메시지'))
   await act(async () => rejectHistory(new Error('이력 조회 실패')))
   expect((screen.getByLabelText('메시지') as HTMLInputElement).disabled).toBe(
@@ -485,7 +486,7 @@ it.each(['CLOSED', 'REJECTED', 'CANCELED', 'COMPLETED'] as const)(
     else value.exchangeRequest.exchangeStatus = status
     mockResponses(value)
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     const remainsOpen = status === 'COMPLETED'
     expect(screen.queryByLabelText('메시지') !== null).toBe(remainsOpen)
     expect(
@@ -507,7 +508,7 @@ it.each([
       sendMessage: vi.fn(() => true),
     })
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     fireEvent.change(screen.getByLabelText('메시지'), {
       target: { value: '작성 중인 메시지' },
     })
@@ -535,8 +536,10 @@ it.each(['REJECTED', 'CANCELED'] as const)(
     vi.spyOn(axios, 'delete').mockResolvedValue({})
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     expect(screen.getByLabelText('메시지')).toBeDefined()
+    if (status === 'CANCELED')
+      fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
     fireEvent.click(
       screen.getByRole('button', {
         name: status === 'REJECTED' ? '교환 거절' : '제안 취소',
@@ -553,7 +556,8 @@ it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', a
   vi.spyOn(axios, 'delete').mockResolvedValue({})
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
   await waitFor(() =>
     expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
@@ -563,6 +567,7 @@ it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', a
 })
 
 function clickLeaveRoom() {
+  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
 }
 
@@ -579,7 +584,7 @@ it('교환 취소 응답을 받은 뒤에만 채팅방 나가기를 요청한다
   })
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   clickLeaveRoom()
   expect(remove).toHaveBeenCalledTimes(1)
   expect(remove).toHaveBeenNthCalledWith(
@@ -611,7 +616,7 @@ it.each(['SENT', 'RECEIVED'])(
     const endExchange = direction === 'RECEIVED' ? patch : remove
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     clickLeaveRoom()
     await screen.findByText(
       '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -656,7 +661,7 @@ it('물품 보유자는 교환 거절 응답을 받은 뒤에만 방을 나간�
   const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   clickLeaveRoom()
 
   expect(confirm).toHaveBeenCalledWith(
@@ -694,7 +699,7 @@ it('거절 후 나가기만 실패하면 재시도 시 거절 요청을 반복�
     .mockResolvedValueOnce({})
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   clickLeaveRoom()
   await screen.findByText(
     '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
@@ -718,7 +723,7 @@ it.each(['COMPLETED', 'REJECTED', 'CANCELED'] as const)(
     const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
-    await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+    await screen.findByText('상품명: 캠핑 의자')
     clickLeaveRoom()
     await waitFor(() =>
       expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
@@ -741,7 +746,7 @@ it('취소 후 나가기만 실패하면 안내하고 재시도 시 나가기만
     .mockResolvedValueOnce({})
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
-  await screen.findByText('캠핑 의자 <- 랜턴, 텐트')
+  await screen.findByText('상품명: 캠핑 의자')
   clickLeaveRoom()
   await screen.findByText(
     '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
