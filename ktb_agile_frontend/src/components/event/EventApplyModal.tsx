@@ -10,6 +10,8 @@ type EventApplyModalProps = {
   otherUser: string
   requestedItemTitle: string
   offeredItemTitles: string
+  isSubmitting: boolean
+  error: string
   onApply: (photo: File) => void
   onClose: () => void
 }
@@ -30,6 +32,8 @@ export default function EventApplyModal({
   otherUser,
   requestedItemTitle,
   offeredItemTitles,
+  isSubmitting,
+  error,
   onApply,
   onClose,
 }: EventApplyModalProps) {
@@ -37,6 +41,7 @@ export default function EventApplyModal({
   const [photo, setPhoto] = useState<{ file: File; previewUrl: string } | null>(
     null,
   )
+  const [photoError, setPhotoError] = useState('')
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -89,7 +94,16 @@ export default function EventApplyModal({
     const file = event.target.files?.[0]
     // 같은 파일을 다시 선택해도 change 이벤트가 발생하도록 초기화합니다.
     event.target.value = ''
-    if (!file || !file.type.startsWith('image/')) return
+    if (!file) return
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setPhotoError('JPG, PNG, WebP 사진을 등록해주세요.')
+      return
+    }
+    if (file.size === 0 || file.size > 10 * 1024 * 1024) {
+      setPhotoError('사진은 0바이트 초과, 10MB 이하로 등록해주세요.')
+      return
+    }
+    setPhotoError('')
     setPhoto({ file, previewUrl: URL.createObjectURL(file) })
   }
 
@@ -110,6 +124,7 @@ export default function EventApplyModal({
             className={styles.closeButton}
             type="button"
             aria-label="닫기"
+            disabled={isSubmitting}
             onClick={onClose}
           >
             ×
@@ -150,7 +165,8 @@ export default function EventApplyModal({
               <input
                 className={styles.photoInput}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
+                disabled={isSubmitting}
                 onChange={handlePhotoChange}
               />
               <CameraIcon className={styles.cameraIcon} />
@@ -174,6 +190,7 @@ export default function EventApplyModal({
               <button
                 className={styles.removeButton}
                 type="button"
+                disabled={isSubmitting}
                 onClick={() => setPhoto(null)}
               >
                 사진 삭제
@@ -181,13 +198,14 @@ export default function EventApplyModal({
             )}
           </div>
 
+          {(photoError || error) && <p role="alert">{photoError || error}</p>}
           <button
             className={styles.applyButton}
             type="button"
-            disabled={!photo}
+            disabled={!photo || isSubmitting || !!photoError}
             onClick={() => photo && onApply(photo.file)}
           >
-            응모하기
+            {isSubmitting ? '응모 중...' : '응모하기'}
           </button>
         </div>
       </section>

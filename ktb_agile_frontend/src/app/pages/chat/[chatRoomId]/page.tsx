@@ -586,6 +586,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           {exchangeStatus === CHAT_EXCHANGE_STATUS.COMPLETED &&
             exchangeRequest && (
               <EventApplyButton
+                chatRoomId={Number(chatRoomId)}
+                exchangeRequestId={exchangeRequest.exchangeRequestId}
                 isSeller={isSeller}
                 otherUser={otherUser}
                 requestedItemTitle={exchangeRequest.requestedItem.title}
