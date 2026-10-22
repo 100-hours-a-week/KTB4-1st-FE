@@ -9,8 +9,11 @@
 .fullScreen {
   position: fixed;
   z-index: 1000;
-  inset: 0;
-  background: var(--surface-background, #fff);
+  inset-block: 0;
+  left: 50%;
+  max-width: var(--app-shell-max-width, 100%);
+  background: var(--app-background, #fff);
+  transform: translateX(-50%);
 }
 
 .spinner {
