@@ -16,6 +16,7 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import { useElasticPull } from '@/hooks/useElasticPull'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
@@ -64,6 +65,9 @@ export default function ItemList() {
   const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
   const isLoadingItems =
     selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+  const pullContentRef = useElasticPull(
+    !isLoadingGroups && !isLoadingItems && !isGroupMenuOpen,
+  )
   const searchHref = `/pages/search?${new URLSearchParams({
     groups: JSON.stringify(joinedGroups),
     ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
@@ -412,44 +416,46 @@ export default function ItemList() {
           </Link>
         </div>
       </header>
-      {isLoadingGroups ||
-      isLoadingItems ||
-      (selectedGroup &&
-        (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
-        <ItemCardList
-          key={selectedGroupId}
-          className={styles.itemList}
-          isLoading={isLoadingGroups || isLoadingItems}
-          items={items}
-          onLoadMore={
-            itemResult?.hasNext && itemResult.restoreScrollY === undefined
-              ? loadMore
-              : undefined
-          }
-          onReady={restoreListPosition}
-        />
-      ) : (
-        <div className={styles.emptyState}>
-          <h1 className={styles.emptyTitle}>
-            {selectedGroup
-              ? '등록된 물건이 없습니다.'
-              : '그룹에 가입하지 않았습니다.'}
-          </h1>
-          <p className={styles.emptyDescription}>
-            {selectedGroup
-              ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
-              : '그룹에 가입해서 물품들을 구경해보아요.'}
-          </p>
-        </div>
-      )}
-      {!isLoadingItems && isLoadingMore && (
-        <p role="status">물품을 더 불러오는 중...</p>
-      )}
-      {!isLoadingItems && loadMoreError && (
-        <button type="button" onClick={loadMore}>
-          다시 불러오기
-        </button>
-      )}
+      <div ref={pullContentRef} className={styles.pullContent}>
+        {isLoadingGroups ||
+        isLoadingItems ||
+        (selectedGroup &&
+          (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
+          <ItemCardList
+            key={selectedGroupId}
+            className={styles.itemList}
+            isLoading={isLoadingGroups || isLoadingItems}
+            items={items}
+            onLoadMore={
+              itemResult?.hasNext && itemResult.restoreScrollY === undefined
+                ? loadMore
+                : undefined
+            }
+            onReady={restoreListPosition}
+          />
+        ) : (
+          <div className={styles.emptyState}>
+            <h1 className={styles.emptyTitle}>
+              {selectedGroup
+                ? '등록된 물건이 없습니다.'
+                : '그룹에 가입하지 않았습니다.'}
+            </h1>
+            <p className={styles.emptyDescription}>
+              {selectedGroup
+                ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
+                : '그룹에 가입해서 물품들을 구경해보아요.'}
+            </p>
+          </div>
+        )}
+        {!isLoadingItems && isLoadingMore && (
+          <p role="status">물품을 더 불러오는 중...</p>
+        )}
+        {!isLoadingItems && loadMoreError && (
+          <button type="button" onClick={loadMore}>
+            다시 불러오기
+          </button>
+        )}
+      </div>
       <Navbar />
       <FloatingInquiryButton />
       <ChatbotButton />
