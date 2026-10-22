@@ -8,9 +8,32 @@
     var(--app-header-height) + env(safe-area-inset-top) + 24px -
       var(--app-content-block-padding)
   );
-  padding-bottom: calc(
-    var(--app-navbar-height) + env(safe-area-inset-bottom)
-  );
+  padding-bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom));
+}
+
+.pullContent {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.pullIndicator {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  display: grid;
+  height: 64px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.refreshError {
+  padding-block: 8px;
+  color: #b42318;
+  font-size: 14px;
+  text-align: center;
 }
 
 .header {

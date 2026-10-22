@@ -16,6 +16,8 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import Loading from '@/components/common/Loading'
+import { useElasticPull } from '@/hooks/useElasticPull'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
@@ -55,6 +57,8 @@ export default function ItemList() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [loadMoreError, setLoadMoreError] = useState(false)
   const moreRequestRef = useRef<AbortController | null>(null)
+  const refreshSignalRef = useRef<AbortSignal | null>(null)
+  const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -64,6 +68,57 @@ export default function ItemList() {
   const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
   const isLoadingItems =
     selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+  const refreshItems = useCallback(
+    async (signal: AbortSignal) => {
+      if (selectedGroupId === null || signal.aborted) return
+      const accessToken = window.sessionStorage.getItem('accessToken')
+      if (!accessToken) {
+        router.replace('/auth/login')
+        return
+      }
+      refreshSignalRef.current = signal
+      moreRequestRef.current?.abort()
+      moreRequestRef.current = null
+      setIsLoadingMore(false)
+      setLoadMoreError(false)
+      setRefreshError(false)
+      try {
+        const response = await axios.get<ItemListResponse>(
+          `${API_BASE_URL}/groups/${selectedGroupId}/items`,
+          {
+            params: { size: 10, cursor: '' },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              Accept: 'application/json',
+            },
+            signal,
+          },
+        )
+        if (signal.aborted) return
+        // 기존 페이지와 커서를 새 첫 페이지로 교체합니다.
+        setItemResult({ groupId: selectedGroupId, ...response.data.data })
+      } catch (error) {
+        if (!signal.aborted) {
+          console.error(error)
+          setRefreshError(true)
+        }
+      } finally {
+        if (refreshSignalRef.current === signal) refreshSignalRef.current = null
+      }
+    },
+    [selectedGroupId, router],
+  )
+  const {
+    contentRef: pullContentRef,
+    pullProgress,
+    isRefreshing,
+  } = useElasticPull(
+    !isLoadingGroups &&
+      !isLoadingItems &&
+      !isGroupMenuOpen &&
+      selectedGroupId !== null,
+    refreshItems,
+  )
   const searchHref = `/pages/search?${new URLSearchParams({
     groups: JSON.stringify(joinedGroups),
     ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
@@ -264,7 +319,8 @@ export default function ItemList() {
       !itemResult.hasNext ||
       !itemResult.nextCursor ||
       itemResult.restoreScrollY !== undefined ||
-      moreRequestRef.current
+      moreRequestRef.current ||
+      refreshSignalRef.current
     )
       return
 
@@ -412,44 +468,58 @@ export default function ItemList() {
           </Link>
         </div>
       </header>
-      {isLoadingGroups ||
-      isLoadingItems ||
-      (selectedGroup &&
-        (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
-        <ItemCardList
-          key={selectedGroupId}
-          className={styles.itemList}
-          isLoading={isLoadingGroups || isLoadingItems}
-          items={items}
-          onLoadMore={
-            itemResult?.hasNext && itemResult.restoreScrollY === undefined
-              ? loadMore
-              : undefined
-          }
-          onReady={restoreListPosition}
-        />
-      ) : (
-        <div className={styles.emptyState}>
-          <h1 className={styles.emptyTitle}>
-            {selectedGroup
-              ? '등록된 물건이 없습니다.'
-              : '그룹에 가입하지 않았습니다.'}
-          </h1>
-          <p className={styles.emptyDescription}>
-            {selectedGroup
-              ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
-              : '그룹에 가입해서 물품들을 구경해보아요.'}
+      <div ref={pullContentRef} className={styles.pullContent}>
+        {(pullProgress > 0 || isRefreshing) && (
+          <div className={styles.pullIndicator}>
+            <Loading progress={isRefreshing ? undefined : pullProgress} />
+          </div>
+        )}
+        {refreshError && (
+          <p role="alert" className={styles.refreshError}>
+            새로고침하지 못했습니다. 다시 당겨서 시도해주세요.
           </p>
-        </div>
-      )}
-      {!isLoadingItems && isLoadingMore && (
-        <p role="status">물품을 더 불러오는 중...</p>
-      )}
-      {!isLoadingItems && loadMoreError && (
-        <button type="button" onClick={loadMore}>
-          다시 불러오기
-        </button>
-      )}
+        )}
+        {isLoadingGroups ||
+        isLoadingItems ||
+        (selectedGroup &&
+          (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
+          <ItemCardList
+            key={selectedGroupId}
+            className={styles.itemList}
+            isLoading={isLoadingGroups || isLoadingItems}
+            items={items}
+            onLoadMore={
+              !isRefreshing &&
+              itemResult?.hasNext &&
+              itemResult.restoreScrollY === undefined
+                ? loadMore
+                : undefined
+            }
+            onReady={restoreListPosition}
+          />
+        ) : (
+          <div className={styles.emptyState}>
+            <h1 className={styles.emptyTitle}>
+              {selectedGroup
+                ? '등록된 물건이 없습니다.'
+                : '그룹에 가입하지 않았습니다.'}
+            </h1>
+            <p className={styles.emptyDescription}>
+              {selectedGroup
+                ? `${selectedGroup.groupName}에 첫 물건을 등록해보세요.`
+                : '그룹에 가입해서 물품들을 구경해보아요.'}
+            </p>
+          </div>
+        )}
+        {!isLoadingItems && isLoadingMore && (
+          <p role="status">물품을 더 불러오는 중...</p>
+        )}
+        {!isLoadingItems && loadMoreError && (
+          <button type="button" onClick={loadMore}>
+            다시 불러오기
+          </button>
+        )}
+      </div>
       <Navbar />
       <FloatingInquiryButton />
       <ChatbotButton />

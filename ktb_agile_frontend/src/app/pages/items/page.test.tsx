@@ -122,6 +122,34 @@ function intersect(index: number, visible = true) {
   )
 }
 
+it('최상단에서 당겨 놓으면 첫 페이지를 다시 조회해 기존 목록을 새 값으로 교체한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 2), 'fresh-cursor'))
+  const card = screen.getByText('물품 1')
+  fireEvent.mouseDown(card, { button: 0, clientX: 100, clientY: 100 })
+  fireEvent.mouseMove(document, { buttons: 1, clientX: 100, clientY: 300 })
+  await act(async () => fireEvent.mouseUp(document))
+  await screen.findByText('물품 101')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(get.mock.calls[2][1]).toMatchObject({
+    params: { size: 10, cursor: '' },
+    signal: expect.any(AbortSignal),
+  })
+})
+
+it('당겨서 재조회에 실패하면 기존 목록을 유지하고 오류를 표시한다', async () => {
+  const get = await showList(null)
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  get.mockRejectedValueOnce(new Error('network error'))
+  const card = screen.getByText('물품 1')
+  fireEvent.mouseDown(card, { button: 0, clientX: 100, clientY: 100 })
+  fireEvent.mouseMove(document, { buttons: 1, clientX: 100, clientY: 300 })
+  await act(async () => fireEvent.mouseUp(document))
+  expect(await screen.findByRole('alert')).toBeDefined()
+  expect(screen.getByText('물품 1')).toBeDefined()
+  expect(screen.getByText('물품 20')).toBeDefined()
+})
+
 it('뒤에서 세 번째 카드가 보이면 커서로 한 번 요청하고 다음 물품을 추가한다', async () => {
   const get = await showList()
   expect(observers[0].observe.mock.calls[0][0].textContent).toBe('물품 18')
