@@ -1,18 +1,105 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { useElasticPull } from './useElasticPull'
 
-function List({ enabled = true }: { enabled?: boolean }) {
-  const ref = useElasticPull(enabled)
+function List({
+  enabled = true,
+  onRefresh,
+}: {
+  enabled?: boolean
+  onRefresh?: (signal: AbortSignal) => Promise<void>
+}) {
+  const {
+    contentRef: ref,
+    pullProgress,
+    isRefreshing,
+  } = useElasticPull(enabled, onRefresh)
   return (
     <div ref={ref} data-testid="list">
       <a href="/item">물품</a>
+      {onRefresh && (
+        <output data-testid="progress">
+          {isRefreshing ? 'refreshing' : pullProgress}
+        </output>
+      )}
     </div>
   )
 }
 
 const touch = (clientY: number, clientX = 100) => ({
   touches: [{ clientX, clientY }],
+})
+
+it('스피너를 당긴 만큼 채우고 임계값 이후 놓으면 한 번만 조회하며 응답까지 유지한다', async () => {
+  let finish!: () => void
+  const onRefresh = vi.fn(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve
+      }),
+  )
+  render(<List onRefresh={onRefresh} />)
+  const list = screen.getByTestId('list')
+  fireEvent.touchStart(list, touch(100))
+  fireEvent.touchMove(list, touch(170))
+  expect(screen.getByTestId('progress').textContent).toBe('0.5')
+  expect(onRefresh).not.toHaveBeenCalled()
+  fireEvent.touchMove(list, touch(240))
+  expect(screen.getByTestId('progress').textContent).toBe('1')
+  await act(async () => fireEvent.touchEnd(list))
+  expect(onRefresh).toHaveBeenCalledTimes(1)
+  expect(offset(list)).toBe(64)
+  fireEvent.touchStart(list, touch(100))
+  fireEvent.touchMove(list, touch(300))
+  fireEvent.touchEnd(list)
+  await act(async () => vi.advanceTimersByTime(800))
+  expect(screen.getByTestId('progress').textContent).toBe('refreshing')
+  expect(onRefresh).toHaveBeenCalledTimes(1)
+  await act(async () => finish())
+  expect(offset(list)).toBe(0)
+  expect(screen.getByTestId('progress').textContent).toBe('0')
+})
+
+it('짧은 당김과 취소는 조회하지 않고 빠른 응답에도 한 바퀴를 유지한다', async () => {
+  const onRefresh = vi.fn().mockResolvedValue(undefined)
+  render(<List onRefresh={onRefresh} />)
+  const list = screen.getByTestId('list')
+  fireEvent.touchStart(list, touch(100))
+  fireEvent.touchMove(list, touch(170))
+  fireEvent.touchEnd(list)
+  fireEvent.touchStart(list, touch(100))
+  fireEvent.touchMove(list, touch(300))
+  fireEvent.touchCancel(list)
+  expect(onRefresh).not.toHaveBeenCalled()
+  fireEvent.mouseDown(list, { button: 0, clientX: 100, clientY: 100 })
+  fireEvent.mouseMove(document, { buttons: 1, clientX: 100, clientY: 300 })
+  await act(async () => fireEvent.mouseUp(document))
+  await act(async () => vi.advanceTimersByTime(799))
+  expect(screen.getByTestId('progress').textContent).toBe('refreshing')
+  await act(async () => vi.advanceTimersByTime(1))
+  expect(offset(list)).toBe(0)
+})
+
+it('조회 중 비활성화되면 요청을 취소하고 이후 응답으로 화면을 바꾸지 않는다', async () => {
+  let finish!: () => void
+  const onRefresh = vi.fn(
+    (signal: AbortSignal) =>
+      new Promise<void>((resolve) => {
+        expect(signal.aborted).toBe(false)
+        finish = resolve
+      }),
+  )
+  const { rerender } = render(<List onRefresh={onRefresh} />)
+  const list = screen.getByTestId('list')
+  fireEvent.touchStart(list, touch(100))
+  fireEvent.touchMove(list, touch(300))
+  await act(async () => fireEvent.touchEnd(list))
+  const signal = onRefresh.mock.calls[0][0]
+  rerender(<List onRefresh={onRefresh} enabled={false} />)
+  expect(signal.aborted).toBe(true)
+  await act(async () => finish())
+  expect(list.style.transform).toBe('')
+  expect(vi.getTimerCount()).toBe(0)
 })
 const offset = (element: HTMLElement) =>
   Number(element.style.transform.match(/translateY\(([^p]+)px\)/)?.[1] ?? 0)
