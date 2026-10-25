@@ -4,15 +4,80 @@
   width: 100%;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 36px;
+  container-type: inline-size;
 }
 
-.title {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.04em;
+/* 기존 로고 이미지(2000x667)와 같은 영역을 차지하도록 비율 고정 */
+.logoTitle {
+  display: flex;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 2000 / 667;
+  align-items: center;
+  justify-content: center;
+  color: #2f463c;
+  /* 제목 영역 너비(최대 360px)에 맞춰 글자 크기 조정 */
+  font-size: min(20cqi, 72px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  /* 마지막 글자 뒤 자간만큼 왼쪽을 채워 가운데 정렬 유지 */
+  padding-left: 0.08em;
+}
+
+.loginArea {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  /* 하단 여백으로 캐릭터와 로그인 버튼을 중앙보다 살짝 위로 올림 */
+  padding-bottom: 96px;
+}
+
+.characters {
+  display: flex;
+  width: 100%;
+  max-width: 320px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.character {
+  width: 48%;
+  height: auto;
+  /* 일러스트의 흰 배경을 앱 배경 그라데이션에 자연스럽게 섞음 */
+  mix-blend-mode: multiply;
+  animation: characterFloat 3.2s ease-in-out infinite;
+}
+
+.fox {
+  --tilt: -4deg;
+}
+
+/* 두 캐릭터가 번갈아 움직이도록 반 박자 늦춤 */
+.crane {
+  --tilt: 4deg;
+  animation-delay: -1.6s;
+}
+
+@keyframes characterFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+
+  50% {
+    transform: translateY(-6px) rotate(var(--tilt));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .character {
+    animation: none;
+  }
 }
 
 .kakaoLoginButton {

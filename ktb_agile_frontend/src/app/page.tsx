@@ -59,24 +59,47 @@ export default function Login() {
 
   return (
     <>
-      <section className="home-page">
-        <h1 className="service-title">바꾸까</h1>
-        <button
-          className={styles.kakaoLoginButton}
-          type="button"
-          onClick={loginProcess}
-          disabled={isLoggingIn}
-          aria-label="카카오 로그인"
-        >
-          <Image
-            className={styles.kakaoLoginImage}
-            src="/kakao_login_large_wide.png"
-            alt="kakao-login-btn"
-            loading='eager'
-            width={600}
-            height={90}
-          />
-        </button>
+      <section className={styles.loginPage}>
+        <h1 className={styles.logoTitle}>바꾸까</h1>
+        <div className={styles.loginArea}>
+          {/* 여우와 두루미가 마주 보는 장식용 일러스트 */}
+          <div className={styles.characters} aria-hidden="true">
+            <Image
+              className={`${styles.character} ${styles.fox}`}
+              src="/fox.webp"
+              alt=""
+              width={1254}
+              height={1254}
+              sizes="160px"
+              preload
+            />
+            <Image
+              className={`${styles.character} ${styles.crane}`}
+              src="/crane.webp"
+              alt=""
+              width={1254}
+              height={1254}
+              sizes="160px"
+              preload
+            />
+          </div>
+          <button
+            className={styles.kakaoLoginButton}
+            type="button"
+            onClick={loginProcess}
+            disabled={isLoggingIn}
+            aria-label="카카오 로그인"
+          >
+            <Image
+              className={styles.kakaoLoginImage}
+              src="/kakao_login_large_wide.png"
+              alt="kakao-login-btn"
+              loading='eager'
+              width={600}
+              height={90}
+            />
+          </button>
+        </div>
       </section>
 
       {modalMessage !== null && (
