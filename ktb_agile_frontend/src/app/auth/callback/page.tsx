@@ -5,7 +5,7 @@ import Loading from '@/components/common/Loading'
 import axios from 'axios'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import styles from './callback.module.css'
 
 type RefreshResponse = {
@@ -13,6 +13,7 @@ type RefreshResponse = {
     accessToken: string
     tokenType: string
     expiresIn: number
+    needsPreferenceSetup: boolean
   }
   error: null
 }
@@ -20,31 +21,35 @@ type RefreshResponse = {
 export default function LoginCallback() {
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const loginRequestRef = useRef<Promise<RefreshResponse> | null>(null)
 
   useEffect(() => {
     let isActive = true
 
     const completeLogin = async () => {
       try {
-        const response = await axios.post<RefreshResponse>(
-          '/bff/auth/accesstoken',
-          undefined,
-          {
-            withCredentials: true,
-            headers: { Accept: 'application/json' },
-          },
-        )
+        // Effect가 재실행돼도 토큰을 교체하는 요청은 한 번만 보냅니다.
+        if (loginRequestRef.current === null) {
+          loginRequestRef.current = axios
+            .post<RefreshResponse>('/bff/auth/accesstoken', undefined, {
+              withCredentials: true,
+              headers: { Accept: 'application/json' },
+            })
+            .then((response) => response.data)
+        }
+
+        const response = await loginRequestRef.current
 
         if (!isActive) return
 
-        const accessToken = response.data.data.accessToken
+        const { accessToken, needsPreferenceSetup } = response.data
 
-        if (!accessToken) {
+        if (typeof accessToken !== 'string' || !accessToken.trim()) {
           throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
         }
 
         window.sessionStorage.setItem('accessToken', accessToken)
-        router.replace('/pages/items')
+        router.replace(needsPreferenceSetup ? '/pages/favor' : '/pages/items')
       } catch {
         if (isActive) {
           setErrorMessage(AUTH_ERRORS.LOGIN_INFO_LOAD_FAILED)
@@ -73,7 +78,7 @@ export default function LoginCallback() {
         <button
           className={styles.returnButton}
           type="button"
-          onClick={() => router.replace('/auth/login')}
+          onClick={() => router.replace('/')}
         >
           <svg
             width="20"
