@@ -12,7 +12,7 @@
   padding: 4px;
   border: 0;
   border-radius: 50%;
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
   background: transparent;
   cursor: pointer;
   transition:
@@ -50,7 +50,7 @@
 }
 
 .button:not(:disabled):active {
-  background: #ffcbbe;
+  background: var(--ui-peach, #ffcbbe);
 }
 
 .button:active svg {

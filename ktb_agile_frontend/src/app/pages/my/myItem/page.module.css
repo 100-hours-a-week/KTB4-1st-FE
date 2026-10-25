@@ -6,7 +6,7 @@
 }
 
 .itemList h2 {
-  color: #263e2e;
+  color: var(--ui-ink, #263e2e);
 }
 
 .message,
@@ -16,7 +16,7 @@
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 20px;
   background: rgb(255 255 246 / 10%);
-  color: #fffff6;
+  color: var(--ui-surface, #fffff6);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
@@ -28,7 +28,7 @@
 
 .emptyState p {
   margin-top: 8px;
-  color: #d9f3e8;
+  color: var(--ui-soft, #d9f3e8);
 }
 
 .message button,
@@ -41,8 +41,8 @@
   padding: 10px 22px;
   border: 0;
   border-radius: 999px;
-  color: #263e2e;
-  background: #d9f3e8;
+  color: var(--ui-ink, #263e2e);
+  background: var(--ui-soft, #d9f3e8);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -65,8 +65,8 @@
   height: 52px;
   place-items: center;
   border-radius: 50%;
-  color: #3d5146;
-  background: #d9f3e8;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-soft, #d9f3e8);
 }
 
 .emptyState svg {

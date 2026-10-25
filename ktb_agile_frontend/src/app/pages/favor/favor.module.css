@@ -6,12 +6,12 @@
   flex: 1;
   flex-direction: column;
   padding-bottom: env(safe-area-inset-bottom);
-  color: #111827;
+  color: var(--ui-ink, #111827);
 }
 
 .header {
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ui-border, #e5e7eb);
 }
 
 .title {
@@ -26,19 +26,19 @@
   height: 8px;
   margin-top: 36px;
   overflow: hidden;
-  background: #d9d9d9;
+  background: var(--ui-border, #d9d9d9);
 }
 
 .progressValue {
   display: block;
   height: 100%;
-  background: #000000;
+  background: var(--ui-ink, #000000);
   transition: width 180ms ease;
 }
 
 .progressText {
   margin-top: 10px;
-  color: #6b7280;
+  color: var(--ui-muted, #6b7280);
   font-size: 13px;
   line-height: 1.25;
 }
@@ -59,7 +59,7 @@
 .questionTitle {
   margin-bottom: 16px;
   padding: 0;
-  color: #000000;
+  color: var(--ui-ink, #000000);
   font-size: 15px;
   font-weight: 600;
   line-height: 1.2;
@@ -78,8 +78,8 @@
   padding: 10px 6px;
   border: 0;
   border-radius: 20px;
-  color: #111111;
-  background: #d9d9d9;
+  color: var(--ui-ink, #111111);
+  background: var(--ui-border, #d9d9d9);
   font: inherit;
   font-size: 14px;
   font-weight: 400;
@@ -94,8 +94,8 @@
 }
 
 .selected {
-  color: #ffffff;
-  background: #000000;
+  color: var(--ui-surface, #ffffff);
+  background: var(--ui-ink, #000000);
 }
 
 .optionButton:focus-visible,
@@ -111,8 +111,8 @@
 
 .information {
   padding: 20px 0 24px;
-  border-top: 1px solid #e5e7eb;
-  color: #6b7280;
+  border-top: 1px solid var(--ui-border, #e5e7eb);
+  color: var(--ui-muted, #6b7280);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.35;
@@ -130,8 +130,8 @@
   padding: 0 20px;
   border: 0;
   border-radius: 20px;
-  color: #ffffff;
-  background: #000000;
+  color: var(--ui-surface, #ffffff);
+  background: var(--ui-ink, #000000);
   font: inherit;
   font-size: 16px;
   font-weight: 700;
@@ -144,13 +144,13 @@
 
 .completeButton:disabled {
   color: #565656;
-  background: #d9d9d9;
+  background: var(--ui-border, #d9d9d9);
   cursor: not-allowed;
 }
 
 .helperText {
   margin-top: 14px;
-  color: #6b7280;
+  color: var(--ui-muted, #6b7280);
   font-size: 14px;
   line-height: 1.25;
   text-align: center;

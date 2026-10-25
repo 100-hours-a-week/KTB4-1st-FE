@@ -5,7 +5,7 @@
   margin: calc(var(--app-content-block-padding) * -1)
     calc(var(--app-content-inline-padding) * -1);
   padding: 12px;
-  color: #111827;
+  color: var(--ui-ink, #111827);
 }
 
 .imageArea {
@@ -35,8 +35,8 @@
   justify-content: center;
   border: 1px solid #e1e4e8;
   border-radius: 50%;
-  color: #111827;
-  background: #fff;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-surface, #fff);
   box-shadow: 0 2px 5px rgba(17, 24, 39, 0.16);
   font-size: 28px;
   font-weight: 700;
@@ -76,14 +76,14 @@
 
 .viewCount {
   margin-top: 4px;
-  color: #858b95;
+  color: var(--ui-subtle, #858b95);
   font-size: 12px;
   line-height: 1.5;
 }
 
 .meta {
   margin-top: 4px;
-  color: #858b95;
+  color: var(--ui-subtle, #858b95);
   font-size: 12px;
   line-height: 1.6;
   letter-spacing: -0.02em;
@@ -95,7 +95,7 @@
   padding: 15px 16px;
   border: 1px solid #e1e5ea;
   border-radius: 12px;
-  background: #fafbfc;
+  background: var(--ui-surface, #fafbfc);
 }
 
 .informationCard h2 {
@@ -134,7 +134,7 @@
 }
 
 .details dd {
-  color: #111827;
+  color: var(--ui-ink, #111827);
   font-size: 13px;
   font-weight: 700;
 }
@@ -157,13 +157,13 @@
 }
 
 .primaryButton {
-  color: #fff;
-  background: #111827;
+  color: var(--ui-surface, #fff);
+  background: var(--ui-ink, #111827);
 }
 
 .primaryButton:disabled {
-  color: #6b7280;
-  background: #d1d5db;
+  color: var(--ui-muted, #6b7280);
+  background: var(--ui-border, #d1d5db);
   cursor: not-allowed;
 }
 

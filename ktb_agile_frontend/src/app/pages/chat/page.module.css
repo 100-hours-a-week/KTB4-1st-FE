@@ -27,7 +27,7 @@
   cursor: pointer;
 }
 .activeTab {
-  color: #111;
+  color: var(--ui-ink, #111);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -60,8 +60,8 @@
   padding: 10px 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background: #fff;
-  color: #111;
+  background: var(--ui-surface, #fff);
+  color: var(--ui-ink, #111);
   font: inherit;
   cursor: pointer;
 }

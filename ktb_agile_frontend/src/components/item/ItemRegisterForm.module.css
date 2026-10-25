@@ -10,8 +10,8 @@
   width: 100%;
   max-width: var(--app-shell-max-width);
   padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
-  border-top: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid var(--ui-border, #e5e7eb);
+  background: var(--ui-glass, rgba(255, 255, 255, 0.96));
   transform: translateX(-50%);
   backdrop-filter: blur(12px);
 }
@@ -21,8 +21,8 @@
   height: 52px;
   border: 0;
   border-radius: 11px;
-  color: #fff;
-  background: #111827;
+  color: var(--ui-surface, #fff);
+  background: var(--ui-ink, #111827);
   font-family: inherit;
   font-size: 14px;
   font-weight: 750;
@@ -33,8 +33,8 @@
 }
 
 .submitBar button:disabled {
-  color: #9ca3af;
-  background: #e5e7eb;
+  color: var(--ui-subtle, #9ca3af);
+  background: var(--ui-border, #e5e7eb);
   cursor: default;
 }
 

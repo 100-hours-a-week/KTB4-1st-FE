@@ -2,7 +2,7 @@
   display: flex;
   gap: 2px;
   align-items: center;
-  color: #111827;
+  color: var(--ui-ink, #111827);
 }
 
 .quantity button,
@@ -13,7 +13,7 @@
   place-items: center;
   border: 1px solid #d1d5df;
   border-radius: 50%;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -30,16 +30,16 @@
 
 .requestTarget button,
 .requestTarget span {
-  border-color: #ffad94;
-  color: #3d5146;
-  background: #fff;
+  border-color: var(--ui-peach, #ffad94);
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
 }
 
 .requestOffer button,
 .requestOffer span {
-  border-color: #aeebcb;
-  color: #3d5146;
-  background: #fff;
+  border-color: var(--ui-accent, #aeebcb);
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
 }
 
 .requestTarget button,
@@ -54,11 +54,11 @@
 }
 
 .requestTarget button:not(:disabled):active {
-  background-color: #ffdbd1;
+  background-color: var(--ui-peach, #ffdbd1);
 }
 
 .requestOffer button:not(:disabled):active {
-  background-color: #d9f3e8;
+  background-color: var(--ui-soft, #d9f3e8);
 }
 
 @media (prefers-reduced-motion: reduce) {

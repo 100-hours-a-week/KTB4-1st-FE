@@ -1,5 +1,5 @@
 :global(.app-shell):has(.errorPage) {
-  background: #ffffff;
+  background: var(--ui-surface, #ffffff);
 }
 
 .errorPage {
@@ -45,6 +45,6 @@
 }
 
 .returnButton:focus-visible {
-  outline: 3px solid #7c7c7c;
+  outline: 3px solid var(--ui-muted, #7c7c7c);
   outline-offset: 3px;
 }

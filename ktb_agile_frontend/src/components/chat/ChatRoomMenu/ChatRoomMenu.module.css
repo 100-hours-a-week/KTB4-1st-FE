@@ -5,9 +5,9 @@
   right: 0;
   min-width: 160px;
   padding: 4px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ui-border, #e5e7eb);
   border-radius: 8px;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   box-shadow: 0 8px 24px #1118271a;
 }
 .menu button {

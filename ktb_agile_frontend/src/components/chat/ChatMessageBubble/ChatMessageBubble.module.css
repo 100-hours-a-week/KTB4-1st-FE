@@ -19,8 +19,8 @@
   margin: 0;
   padding: 8px 12px;
   border-radius: 8px;
-  background: #e5e7eb;
-  color: #4b5563;
+  background: var(--ui-border, #e5e7eb);
+  color: var(--ui-muted, #4b5563);
   font-size: 13px;
   line-height: 20px;
   text-align: center;
@@ -30,7 +30,7 @@
 
 .messageRow time {
   flex: 0 0 auto;
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   font-size: 11px;
 }
 
@@ -41,8 +41,8 @@
   height: 32px;
   place-items: center;
   border-radius: 16px;
-  background: #e5e7eb;
-  color: #4b5563;
+  background: var(--ui-border, #e5e7eb);
+  color: var(--ui-muted, #4b5563);
   font-size: 12px;
   font-weight: 600;
 }
@@ -51,7 +51,7 @@
   max-width: min(360px, 72%);
   padding: 10px 12px;
   border-radius: 12px 12px 12px 4px;
-  background: #f3f4f6;
+  background: var(--ui-soft, #f3f4f6);
   font-size: 14px;
   line-height: 22px;
   overflow-wrap: anywhere;
@@ -59,8 +59,8 @@
 
 .mine .bubble {
   border-radius: 12px 12px 4px 12px;
-  background: #111827;
-  color: #fff;
+  background: var(--ui-ink, #111827);
+  color: var(--ui-surface, #fff);
 }
 
 @media (max-width: 380px) {

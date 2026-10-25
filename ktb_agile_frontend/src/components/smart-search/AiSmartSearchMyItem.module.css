@@ -3,9 +3,9 @@
   gap: 8px;
   min-width: 0;
   padding: 12px;
-  border: 1px solid #e5eee8;
+  border: 1px solid var(--ui-border, #e5eee8);
   border-radius: 16px;
-  background: #fbfdfb;
+  background: var(--ui-surface, #fbfdfb);
 }
 
 .itemSelection {
@@ -23,7 +23,7 @@
 
 .itemCard input {
   flex: none;
-  accent-color: #3d5146;
+  accent-color: var(--ui-ink, #3d5146);
 }
 
 .thumbnail {
@@ -31,7 +31,11 @@
   height: 62px;
   flex: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #d9f3e8, #aeebcb);
+  background: linear-gradient(
+    135deg,
+    var(--ui-soft, #d9f3e8),
+    var(--ui-accent, #aeebcb)
+  );
   background-position: center;
   background-size: cover;
 }
@@ -41,7 +45,7 @@
   min-width: 0;
   flex: 1;
   gap: 3px;
-  color: #56675d;
+  color: var(--ui-muted, #56675d);
   font-size: 12px;
 }
 
@@ -54,19 +58,19 @@
 }
 
 .itemInfo strong {
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
   font-size: 14px;
 }
 
 .itemInfo small,
 .groupName {
-  color: #748278;
+  color: var(--ui-muted, #748278);
   font-size: 11px;
 }
 
 .itemStatus {
   flex: none;
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
   font-size: 11px;
 }
 
@@ -75,7 +79,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  color: #748278;
+  color: var(--ui-muted, #748278);
   font-size: 11px;
 }
 

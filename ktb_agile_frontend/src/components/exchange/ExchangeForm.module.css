@@ -5,7 +5,7 @@
   margin: calc(var(--app-content-block-padding) * -1)
     calc(var(--app-content-inline-padding) * -1);
   padding: 24px 22px;
-  color: #111827;
+  color: var(--ui-ink, #111827);
 }
 
 .header {
@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: space-between;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--ui-border, #e5e7eb);
 }
 
 .header h1 {
@@ -24,19 +24,23 @@
   width: 34px;
   height: 34px;
   place-items: center;
-  border: 1px solid #e1e5eb;
+  border: 1px solid var(--ui-border, #e1e5eb);
   border-radius: 50%;
   font-size: 24px;
 }
 .closeButton {
   color: inherit;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   cursor: pointer;
 }
 
 .requestPage {
-  color: #3d5146;
-  background: linear-gradient(180deg, #fffff6 0%, #e6f7ef 100%);
+  color: var(--ui-ink, #3d5146);
+  background: linear-gradient(
+    180deg,
+    var(--ui-surface, #fffff6) 0%,
+    var(--ui-soft, #e6f7ef) 100%
+  );
 }
 
 .requestPage .header {
@@ -57,7 +61,7 @@
   height: 42px;
   flex-shrink: 0;
   border: 0;
-  box-shadow: 0 4px 12px rgb(61 81 70 / 8%);
+  box-shadow: 0 4px 12px rgb(var(--ui-ink-rgb, 61 81 70) / 8%);
   font-size: 28px;
   line-height: 1;
 }
@@ -65,10 +69,10 @@
 .body {
   position: relative;
   padding: 4px 18px 24px;
-  border: 1px solid #94e3c0;
+  border: 1px solid var(--ui-accent-hover, #94e3c0);
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 14px 36px rgb(61 81 70 / 10%);
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 14px 36px rgb(var(--ui-ink-rgb, 61 81 70) / 10%);
   animation: body-enter 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -79,7 +83,12 @@
   left: 20px;
   height: 4px;
   border-radius: 0 0 4px 4px;
-  background: linear-gradient(90deg, #94e3c0, #aeebcb, #ffad94);
+  background: linear-gradient(
+    90deg,
+    var(--ui-accent-hover, #94e3c0),
+    var(--ui-accent, #aeebcb),
+    var(--ui-peach, #ffad94)
+  );
   transform-origin: left;
   animation: border-enter 750ms 150ms ease-out both;
   content: '';
@@ -87,7 +96,7 @@
 
 .requestPage .section h2,
 .requestPage .info h3 {
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
 }
 
 .requestPage .groupField,
@@ -95,37 +104,37 @@
 .requestPage .description,
 .requestPage .hint,
 .requestPage .message {
-  color: #64786c;
+  color: var(--ui-muted, #64786c);
 }
 
 .requestPage .groupField select {
-  border-color: #d9f3e8;
-  background: #e6f7ef;
+  border-color: var(--ui-soft, #d9f3e8);
+  background: var(--ui-soft, #e6f7ef);
 }
 
 .requestPage .targetCard {
   border: 1px solid #ffe8e1;
-  background: #fff;
-  box-shadow: 0 8px 20px rgb(61 81 70 / 10%);
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 8px 20px rgb(var(--ui-ink-rgb, 61 81 70) / 10%);
 }
 
 .requestPage .list {
-  border-color: #d9f3e8;
-  background: #fff;
-  box-shadow: 0 8px 20px rgb(61 81 70 / 10%);
+  border-color: var(--ui-soft, #d9f3e8);
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 8px 20px rgb(var(--ui-ink-rgb, 61 81 70) / 10%);
 }
 
 .requestPage .offerCard,
 .requestPage .list .badge {
-  border-color: #aeebcb;
-  color: #3d5146;
-  background: #fff;
+  border-color: var(--ui-accent, #aeebcb);
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
 }
 
 .requestPage .targetCard .badge {
-  border-color: #ffad94;
-  color: #3d5146;
-  background: #fff;
+  border-color: var(--ui-peach, #ffad94);
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
 }
 
 .requestPage .badge {
@@ -133,26 +142,26 @@
 }
 
 .requestPage .targetCard .image {
-  color: #3d5146;
-  background-color: #ffdbd1;
+  color: var(--ui-ink, #3d5146);
+  background-color: var(--ui-peach, #ffdbd1);
 }
 
 .requestPage .offerCard .image {
-  color: #3d5146;
-  background-color: #d9f3e8;
+  color: var(--ui-ink, #3d5146);
+  background-color: var(--ui-soft, #d9f3e8);
 }
 
 .requestPage .offerCard input {
-  accent-color: #3d5146;
+  accent-color: var(--ui-ink, #3d5146);
 }
 
 .requestPage .requestButton {
-  background: #3d5146;
+  background: var(--ui-ink, #3d5146);
 }
 
 .requestPage .requestButton:disabled {
-  color: #6d7b72;
-  background: #d1d8d3;
+  color: var(--ui-muted, #6d7b72);
+  background: var(--ui-border, #d1d8d3);
 }
 
 .requestPage .error {
@@ -200,7 +209,7 @@
   flex-direction: column;
   gap: 8px;
   margin-bottom: 12px;
-  color: #374151;
+  color: var(--ui-muted, #374151);
   font-size: 13px;
 }
 .groupField select {
@@ -208,8 +217,8 @@
   padding: 0 12px;
   border: 1px solid #d1d5df;
   border-radius: 8px;
-  color: #111827;
-  background: #fff;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-surface, #fff);
   font: inherit;
 }
 .targetCard,
@@ -218,7 +227,7 @@
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #e1e5eb;
+  border: 1px solid var(--ui-border, #e1e5eb);
   border-radius: 12px;
 }
 .targetCard {
@@ -231,8 +240,8 @@
   flex-shrink: 0;
   place-items: center;
   border-radius: 9px;
-  color: #6b7280;
-  background-color: #e5e7eb;
+  color: var(--ui-muted, #6b7280);
+  background-color: var(--ui-border, #e5e7eb);
   background-position: center;
   background-size: cover;
 }
@@ -257,7 +266,7 @@
 }
 .description {
   margin-top: 5px;
-  color: #7c8494;
+  color: var(--ui-muted, #7c8494);
   font-size: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -270,15 +279,15 @@
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  color: #7c8494;
+  color: var(--ui-muted, #7c8494);
   font-size: 12px;
 }
 .badge {
   padding: 3px 8px;
-  border: 1px solid #e1e5eb;
+  border: 1px solid var(--ui-border, #e1e5eb);
   border-radius: 999px;
-  color: #374151;
-  background: #fff;
+  color: var(--ui-muted, #374151);
+  background: var(--ui-surface, #fff);
   font-size: 11px;
 }
 .list {
@@ -286,18 +295,18 @@
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--ui-border, #e5e7eb);
   border-radius: 12px;
   background: #f8f9fb;
 }
 .offerCard {
-  background: #fff;
+  background: var(--ui-surface, #fff);
 }
 .offerCard input {
   width: 19px;
   height: 19px;
   flex-shrink: 0;
-  accent-color: #111827;
+  accent-color: var(--ui-ink, #111827);
   cursor: pointer;
 }
 .offerCard:has(input:disabled) {
@@ -308,21 +317,21 @@
   min-height: 50px;
   border: 0;
   border-radius: 12px;
-  color: #fff;
-  background: #111827;
+  color: var(--ui-surface, #fff);
+  background: var(--ui-ink, #111827);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 .requestButton:disabled {
-  color: #6b7280;
-  background: #d1d5db;
+  color: var(--ui-muted, #6b7280);
+  background: var(--ui-border, #d1d5db);
   cursor: not-allowed;
 }
 .hint,
 .message {
   padding: 12px 0;
-  color: #7c8494;
+  color: var(--ui-muted, #7c8494);
   font-size: 12px;
   line-height: 1.6;
   text-align: center;
@@ -336,7 +345,7 @@
 .page button:focus-visible,
 .page a:focus-visible,
 .page input:focus-visible {
-  outline: 2px solid #111827;
+  outline: 2px solid var(--ui-ink, #111827);
   outline-offset: 3px;
 }
 @media (max-width: 359px) {
@@ -375,10 +384,10 @@
 .removeButton {
   min-height: 36px;
   padding: 6px 12px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 8px;
   color: inherit;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   font: inherit;
   cursor: pointer;
 }

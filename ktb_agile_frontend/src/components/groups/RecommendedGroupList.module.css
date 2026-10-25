@@ -1,5 +1,5 @@
 .recommendations {
-  --group-ink: #3d5146;
+  --group-ink: var(--ui-ink, #3d5146);
   display: grid;
   gap: 8px;
 }
@@ -7,10 +7,10 @@
 .emptyMessage {
   margin: 0;
   padding: 22px 18px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 20px;
   color: var(--group-ink);
-  background: rgb(230 247 239 / 72%);
+  background: rgb(var(--ui-soft-rgb, 230 247 239) / 72%);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.55;
@@ -28,7 +28,7 @@
 
 .recommendationsDescription {
   margin: 0 0 4px;
-  color: #647a6c;
+  color: var(--ui-muted, #647a6c);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: -0.035em;
@@ -58,5 +58,5 @@
 }
 
 .topRank {
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
 }

@@ -12,15 +12,15 @@
   inset-block: 0;
   left: 50%;
   max-width: var(--app-shell-max-width, 100%);
-  background: var(--app-background, #fff);
+  background: var(--app-background, var(--ui-surface, #fff));
   transform: translateX(-50%);
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #d9f3e8;
-  border-top-color: #3d8062;
+  border: 3px solid var(--ui-soft, #d9f3e8);
+  border-top-color: var(--ui-orange, #3d8062);
   border-radius: 50%;
   animation: spin 800ms linear infinite;
 }
@@ -38,11 +38,11 @@
 }
 
 .track {
-  stroke: #d9f3e8;
+  stroke: var(--ui-soft, #d9f3e8);
 }
 
 .arc {
-  stroke: #3d8062;
+  stroke: var(--ui-orange, #3d8062);
   stroke-linecap: round;
 }
 
