@@ -13,7 +13,7 @@
   width: min(100%, 480px);
   overflow: hidden;
   border-radius: 24px;
-  background: #ffffff;
+  background: var(--ui-surface, #ffffff);
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.24);
 }
 
@@ -49,7 +49,7 @@
 }
 
 .value {
-  color: #171717;
+  color: var(--ui-ink, #171717);
   font-size: clamp(19px, 3.6vw, 22px);
   font-weight: 700;
   letter-spacing: -0.05em;
@@ -71,7 +71,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   padding: 10px 26px 26px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--ui-border, #e5e7eb);
 }
 
 .button {
@@ -93,18 +93,18 @@
 }
 
 .cancelButton {
-  color: #111827;
+  color: var(--ui-ink, #111827);
   background: #f4f4f5;
 }
 
 .confirmButton {
-  color: #ffffff;
+  color: var(--ui-surface, #ffffff);
   background: #101828;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .cancelButton:hover {
-    background: #e5e7eb;
+    background: var(--ui-border, #e5e7eb);
   }
 
   .confirmButton:hover {

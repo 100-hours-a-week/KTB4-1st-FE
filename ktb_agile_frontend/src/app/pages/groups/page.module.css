@@ -1,5 +1,5 @@
 .page {
-  --group-ink: #3d5146;
+  --group-ink: var(--ui-ink, #3d5146);
   display: flex;
   width: calc(100% + 2 * var(--app-content-inline-padding));
   min-width: 0;
@@ -26,9 +26,9 @@
   height: 46px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 16px;
-  background: #e6f7ef;
+  background: var(--ui-soft, #e6f7ef);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition:
@@ -65,10 +65,10 @@
 .createButton {
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid #94e3c0;
+  border: 1px solid var(--ui-accent-hover, #94e3c0);
   border-radius: 14px;
   color: var(--group-ink);
-  background: #aeebcb;
+  background: var(--ui-accent, #aeebcb);
   box-shadow: 0 5px 14px rgb(148 227 192 / 24%);
   font: inherit;
   font-size: 14px;
@@ -92,10 +92,10 @@
   gap: 10px;
   margin-top: 38px;
   padding: 8px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 20px;
   background: rgb(255 255 255 / 88%);
-  box-shadow: 0 10px 28px rgb(61 81 70 / 7%);
+  box-shadow: 0 10px 28px rgb(var(--ui-ink-rgb, 61 81 70) / 7%);
 }
 
 .searchInput {
@@ -115,13 +115,13 @@
 }
 
 .searchInput::placeholder {
-  color: #718477;
+  color: var(--ui-muted, #718477);
   opacity: 1;
 }
 
 .searchInput:focus {
-  background: #f5fcf8;
-  box-shadow: inset 0 0 0 2px #d9f3e8;
+  background: var(--ui-surface, #f5fcf8);
+  box-shadow: inset 0 0 0 2px var(--ui-soft, #d9f3e8);
 }
 
 .searchInput::-webkit-search-cancel-button {
@@ -134,7 +134,7 @@
   flex: none;
   border: 0;
   border-radius: 13px;
-  color: #fffff6;
+  color: var(--ui-surface, #fffff6);
   background: var(--group-ink);
   font: inherit;
   font-size: 15px;
@@ -160,10 +160,10 @@
 .emptyMessage {
   margin: 0;
   padding: 22px 18px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 20px;
   color: var(--group-ink);
-  background: rgb(230 247 239 / 72%);
+  background: rgb(var(--ui-soft-rgb, 230 247 239) / 72%);
   font-size: 16px;
   font-weight: 600;
   line-height: 1.55;
@@ -182,17 +182,17 @@
 .backButton:focus-visible,
 .createButton:focus-visible,
 .searchButton:focus-visible {
-  outline: 3px solid #94e3c0;
+  outline: 3px solid var(--ui-accent-hover, #94e3c0);
   outline-offset: 3px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .backButton:hover {
-    background: #d9f3e8;
+    background: var(--ui-soft, #d9f3e8);
   }
 
   .createButton:hover {
-    background: #94e3c0;
+    background: var(--ui-accent-hover, #94e3c0);
   }
 
   .recommendButton:hover {
@@ -200,7 +200,7 @@
   }
 
   .searchButton:hover {
-    background: #2e4036;
+    background: var(--ui-ink, #2e4036);
   }
 }
 

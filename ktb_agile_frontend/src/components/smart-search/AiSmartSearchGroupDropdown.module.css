@@ -5,7 +5,7 @@
 .groupField {
   display: grid;
   gap: 6px;
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
   font-size: 13px;
   font-weight: 700;
 }
@@ -13,25 +13,25 @@
 .groupField select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #dfe9e2;
+  border: 1px solid var(--ui-border, #dfe9e2);
   border-radius: 10px;
-  background: #f8fbf9;
+  background: var(--ui-surface, #f8fbf9);
   font: inherit;
 }
 
 .groupNotice {
   margin-top: 8px;
-  color: #748278;
+  color: var(--ui-muted, #748278);
   font-size: 12px;
 }
 
 .groupNotice button {
   margin-top: 6px;
   padding: 6px 12px;
-  border: 1px solid #dfe9e2;
+  border: 1px solid var(--ui-border, #dfe9e2);
   border-radius: 8px;
-  color: #3d5146;
-  background: #fff;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
   font: inherit;
   cursor: pointer;
 }

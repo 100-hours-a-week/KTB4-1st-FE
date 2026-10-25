@@ -27,15 +27,15 @@
   align-items: center;
   padding: 0 7px;
   border-radius: 999px;
-  color: #4b5563;
-  background: #eef0f3;
+  color: var(--ui-muted, #4b5563);
+  background: var(--ui-soft, #eef0f3);
   font-size: 10px;
   font-weight: 700;
 }
 
 .fieldHeading p {
   margin-left: auto;
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   font-size: 11px;
 }
 
@@ -65,11 +65,11 @@
 .textarea,
 .select {
   width: 100%;
-  border: 1px solid #d8dce2;
+  border: 1px solid var(--ui-border, #d8dce2);
   border-radius: 10px;
   outline: 0;
-  color: #111827;
-  background: #fff;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-surface, #fff);
   font-family: inherit;
   font-size: 13px;
   line-height: 1.4;
@@ -125,7 +125,7 @@
 
 .groupList {
   overflow: hidden;
-  border: 1px solid #d8dce2;
+  border: 1px solid var(--ui-border, #d8dce2);
   border-radius: 10px;
 }
 
@@ -137,14 +137,14 @@
   justify-content: space-between;
   padding: 0 12px;
   border: 0;
-  color: #111827;
-  background: #fff;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-surface, #fff);
   font-family: inherit;
   cursor: pointer;
 }
 
 .groupRow + .groupRow {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--ui-border, #e5e7eb);
 }
 
 .groupRow strong {
@@ -157,9 +157,9 @@
   width: 34px;
   height: 20px;
   flex: none;
-  border: 1px solid #d8dce2;
+  border: 1px solid var(--ui-border, #d8dce2);
   border-radius: 999px;
-  background: #f3f4f6;
+  background: var(--ui-soft, #f3f4f6);
   transition: background-color 160ms ease;
 }
 
@@ -170,14 +170,14 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   box-shadow: 0 1px 3px rgba(17, 24, 39, 0.2);
   transition: transform 160ms ease;
 }
 
 .switchOn {
-  border-color: #111827;
-  background: #111827;
+  border-color: var(--ui-ink, #111827);
+  background: var(--ui-ink, #111827);
 }
 
 .switchOn i {
@@ -186,7 +186,7 @@
 
 .hint {
   margin-top: 7px;
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   font-size: 10px;
 }
 
@@ -204,7 +204,7 @@
 
 .preferenceHeading p {
   margin-top: 5px;
-  color: #6b7280;
+  color: var(--ui-muted, #6b7280);
   font-size: 11px;
 }
 
@@ -237,10 +237,10 @@
   border-radius: 999px;
   background: linear-gradient(
     to right,
-    #111827 0,
-    #111827 var(--range-progress),
-    #d7d9dd var(--range-progress),
-    #d7d9dd 100%
+    var(--ui-ink, #111827) 0,
+    var(--ui-ink, #111827) var(--range-progress),
+    var(--ui-border, #d7d9dd) var(--range-progress),
+    var(--ui-border, #d7d9dd) 100%
   );
 }
 
@@ -249,37 +249,37 @@
   height: 19px;
   margin-top: -7.5px;
   appearance: none;
-  border: 1px solid #111827;
+  border: 1px solid var(--ui-ink, #111827);
   border-radius: 50%;
-  background: #fff;
+  background: var(--ui-surface, #fff);
   box-shadow: 0 1px 3px rgba(17, 24, 39, 0.12);
 }
 
 .range::-moz-range-track {
   height: 4px;
   border-radius: 999px;
-  background: #d7d9dd;
+  background: var(--ui-border, #d7d9dd);
 }
 
 .range::-moz-range-progress {
   height: 4px;
   border-radius: 999px;
-  background: #111827;
+  background: var(--ui-ink, #111827);
 }
 
 .range::-moz-range-thumb {
   width: 19px;
   height: 19px;
-  border: 1px solid #111827;
+  border: 1px solid var(--ui-ink, #111827);
   border-radius: 50%;
-  background: #fff;
+  background: var(--ui-surface, #fff);
 }
 
 .rangeEnds {
   display: flex;
   justify-content: space-between;
   margin-top: 2px;
-  color: #374151;
+  color: var(--ui-muted, #374151);
   font-size: 9px;
   font-weight: 650;
 }
@@ -297,7 +297,7 @@
 
 .rangeResult p {
   margin-top: 5px;
-  color: #4b5563;
+  color: var(--ui-muted, #4b5563);
   font-size: 10px;
   line-height: 1.5;
 }

@@ -1,3 +1,4 @@
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import Link from 'next/link'
 import Navbar from '@/components/common/navbar/Navbar'
 import AccountCard from '@/components/my/AccountCard'
@@ -17,6 +18,7 @@ export default function MyPage() {
         <AccountCard />
         <section className={styles.content}>
           <div className={styles.intro}>
+            <HalloweenDecoration kind="pumpkin" className={styles.introPumpkin} />
             <h1 id="my-page-heading">나의 활동</h1>
             <p>내 활동을 한곳에서 둘러보세요.</p>
           </div>

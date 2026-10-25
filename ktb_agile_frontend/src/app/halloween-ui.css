@@ -1,0 +1,51 @@
+/* Remove data-theme="halloween" in layout.tsx to restore the default palette. */
+:root[data-theme='halloween'] {
+  --halloween-decoration-display: inline-flex;
+  --halloween-shelf-display: flex;
+  --halloween-intro-inset: 60px;
+  --like-heart-display: none;
+  --like-pumpkin-display: block;
+  --ui-ink: #302039;
+  --ui-muted: #786780;
+  --ui-subtle: #93839c;
+  --ui-surface: #fffaf2;
+  --ui-soft: #f3e9fa;
+  --ui-accent: #ffba67;
+  --ui-accent-hover: #ffa34a;
+  --ui-border: #dfcce8;
+  --ui-peach: #ffdab0;
+  --ui-orange: #b94b19;
+  --ui-ink-rgb: 48 32 57;
+  --ui-accent-rgb: 255 186 103;
+  --ui-soft-rgb: 243 233 250;
+  --ui-ink-rgb-comma: 48, 32, 57;
+  --ui-accent-rgb-comma: 255, 186, 103;
+  --ui-glass: rgb(255 250 242 / 96%);
+  --outer-background: #17111e;
+  --surface-background: #fffaf2;
+  --foreground: #302039;
+  --app-background: linear-gradient(
+    160deg,
+    #fff9ed 0%,
+    #fff3df 48%,
+    #efe2f8 100%
+  );
+  --landing-background:
+    radial-gradient(ellipse at 80% 50%, #57316b 0%, transparent 58%),
+    linear-gradient(165deg, #24162f, #15101d);
+  --landing-ink: #fff4df;
+  --landing-muted: #d4bfdf;
+  --landing-yellow: #ffe298;
+  --landing-orange: #ffad61;
+}
+
+:root[data-theme='halloween']
+  :where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid #a15cc2;
+  outline-offset: 4px;
+}
+
+:root[data-theme='halloween'] ::selection {
+  color: #24162f;
+  background: #ffe298;
+}

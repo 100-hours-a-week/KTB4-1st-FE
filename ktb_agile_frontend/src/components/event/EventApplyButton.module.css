@@ -9,12 +9,17 @@
   min-height: 48px;
   padding: 0 20px;
   overflow: hidden;
-  border: 2px solid #fffbf6;
+  border: 2px solid var(--ui-surface, #fffbf6);
   border-radius: 14px;
-  color: #3d5146;
-  background: linear-gradient(120deg, #aeebcb, #ffcbbe, #aeebcb);
+  color: var(--ui-ink, #3d5146);
+  background: linear-gradient(
+    120deg,
+    var(--ui-accent, #aeebcb),
+    var(--ui-peach, #ffcbbe),
+    var(--ui-accent, #aeebcb)
+  );
   background-size: 200% 100%;
-  box-shadow: 0 0 12px rgba(174, 235, 203, 0.7);
+  box-shadow: 0 0 12px rgba(var(--ui-accent-rgb-comma, 174, 235, 203), 0.7);
   font: inherit;
   font-size: 16px;
   font-weight: 800;
@@ -61,7 +66,7 @@
 }
 
 .button:focus-visible {
-  outline: 2px solid #3d5146;
+  outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 3px;
 }
 
@@ -81,7 +86,7 @@
   z-index: 1;
   width: 16px;
   height: 16px;
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
   animation: twinkle 1.2s ease-in-out infinite;
 }
 
@@ -98,12 +103,12 @@
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 8px rgba(174, 235, 203, 0.6);
+    box-shadow: 0 0 8px rgba(var(--ui-accent-rgb-comma, 174, 235, 203), 0.6);
   }
 
   50% {
     box-shadow:
-      0 0 18px rgba(148, 227, 192, 0.95),
+      0 0 18px rgba(var(--ui-accent-rgb-comma, 148, 227, 192), 0.95),
       0 0 28px rgba(255, 143, 112, 0.4);
   }
 }

@@ -4,10 +4,10 @@
   gap: 14px;
   min-height: 156px;
   padding: 13px;
-  border: 1px solid rgb(61 81 70 / 10%);
+  border: 1px solid rgb(var(--ui-ink-rgb, 61 81 70) / 10%);
   border-radius: 20px;
   background: rgb(255 255 246 / 90%);
-  box-shadow: 0 8px 24px rgb(61 81 70 / 7%);
+  box-shadow: 0 8px 24px rgb(var(--ui-ink-rgb, 61 81 70) / 7%);
   transition:
     transform 160ms ease,
     box-shadow 160ms ease;
@@ -19,8 +19,12 @@
   min-height: 128px;
   place-items: center;
   border-radius: 14px;
-  color: #3d5146;
-  background: linear-gradient(135deg, #d9f3e8, #aeebcb);
+  color: var(--ui-ink, #3d5146);
+  background: linear-gradient(
+    135deg,
+    var(--ui-soft, #d9f3e8),
+    var(--ui-accent, #aeebcb)
+  );
   background-position: center;
   background-size: cover;
 }
@@ -52,7 +56,7 @@
 .groupName {
   min-width: 0;
   overflow: hidden;
-  color: #64796b;
+  color: var(--ui-muted, #64796b);
   font-size: 11px;
   line-height: 1.4;
   text-overflow: ellipsis;
@@ -69,8 +73,8 @@
 }
 
 .available {
-  color: #315a44;
-  background: #d9f3e8;
+  color: var(--ui-muted, #315a44);
+  background: var(--ui-soft, #d9f3e8);
 }
 
 .unavailable {
@@ -126,7 +130,7 @@
 @media (hover: hover) and (pointer: fine) {
   .card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgb(61 81 70 / 12%);
+    box-shadow: 0 12px 28px rgb(var(--ui-ink-rgb, 61 81 70) / 12%);
   }
 }
 

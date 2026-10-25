@@ -1,5 +1,6 @@
 'use client'
 
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import Image from 'next/image'
 import styles from './login.module.css'
@@ -60,31 +61,51 @@ export default function Login() {
   return (
     <>
       <section className={styles.loginPage}>
+        <div className={styles.web} aria-hidden="true">
+          <svg viewBox="0 0 160 160" fill="none">
+            <path
+              d="M0 0L160 16M0 0L146 72M0 0L112 112M0 0L72 146M0 0L16 160M42 4Q34 29 4 42M82 8Q74 34 68 34Q62 61 34 68Q27 77 8 82M122 12Q114 47 100 50Q94 92 50 100Q43 117 12 122M158 16Q151 63 132 66Q124 121 66 132Q58 153 16 158"
+              stroke="currentColor"
+            />
+          </svg>
+        </div>
+        <span className={styles.seasonLabel}>
+          THE HALLOWEEN EDITION · 10.26 - 10.31
+        </span>
         <h1 className={styles.logoTitle}>바꾸까</h1>
-        <p className={styles.serviceDescription}>
-          동네 사람들과 안 쓰는 물건을 교환하는 물물교환 서비스
-        </p>
+        <span className={styles.titleAccent} aria-hidden="true">
+          TRICK OR TRADE!
+        </span>
         <div className={styles.loginArea}>
-          {/* 여우와 두루미가 마주 보는 장식용 일러스트 */}
           <div className={styles.characters} aria-hidden="true">
+            <HalloweenDecoration kind="candy" className={styles.sceneCandy} />
+            <span className={styles.moon} />
+            <span className={`${styles.star} ${styles.starOne}`}>✦</span>
+            <span className={`${styles.star} ${styles.starTwo}`}>✧</span>
+            <span className={`${styles.star} ${styles.starThree}`}>✦</span>
+            <span className={styles.orbit} />
             <Image
               className={`${styles.character} ${styles.fox}`}
-              src="/fox.webp"
+              src="/images/halloween/halloween-fox.png"
               alt=""
               width={1254}
               height={1254}
-              sizes="160px"
+              sizes="(max-width: 679px) 48vw, 240px"
               preload
             />
             <Image
               className={`${styles.character} ${styles.crane}`}
-              src="/crane.webp"
+              src="/images/halloween/halloween-crane.png"
               alt=""
               width={1254}
               height={1254}
-              sizes="160px"
+              sizes="(max-width: 679px) 48vw, 240px"
               preload
             />
+            <span className={styles.pumpkin}>
+              <i />
+              <b />
+            </span>
           </div>
           <button
             className={styles.kakaoLoginButton}
@@ -97,7 +118,7 @@ export default function Login() {
               className={styles.kakaoLoginImage}
               src="/kakao_login_large_wide.png"
               alt="kakao-login-btn"
-              loading='eager'
+              loading="eager"
               width={600}
               height={90}
             />

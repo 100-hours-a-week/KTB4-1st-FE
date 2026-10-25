@@ -8,11 +8,15 @@
   padding: 20px 18px
     calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 44px);
   border-radius: 28px 28px 0 0;
-  color: #fffff6;
+  color: var(--ui-surface, #fffff6);
   background:
-    radial-gradient(circle at 78% 38%, rgb(174 235 203 / 28%), transparent 44%),
+    radial-gradient(
+      circle at 78% 38%,
+      rgb(var(--ui-accent-rgb, 174 235 203) / 28%),
+      transparent 44%
+    ),
     radial-gradient(circle at 18% 78%, rgb(255 143 112 / 12%), transparent 42%),
-    #3d5146;
+    var(--ui-ink, #3d5146);
 }
 
 .header {
@@ -37,8 +41,8 @@
   height: 40px;
   place-items: center;
   border-radius: 50%;
-  color: #3d5146;
-  background: #d9f3e8;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-soft, #d9f3e8);
 }
 
 .backButton svg {

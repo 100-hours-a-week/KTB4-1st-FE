@@ -24,7 +24,7 @@
   width: 16px;
   height: 16px;
   margin: 0;
-  accent-color: #3d5146;
+  accent-color: var(--ui-ink, #3d5146);
   cursor: pointer;
 }
 
@@ -38,11 +38,11 @@
   width: 100%;
   min-height: 52px;
   padding: 0 24px 0 10px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 15px;
-  outline-color: #94e3c0;
-  color: #3d5146;
-  background: #fff;
+  outline-color: var(--ui-accent-hover, #94e3c0);
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -56,10 +56,10 @@
   min-height: 52px;
   align-items: center;
   padding: 0 12px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 15px;
-  background: #fff;
-  box-shadow: 0 4px 18px rgba(61, 81, 70, 0.07);
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 4px 18px rgba(var(--ui-ink-rgb-comma, 61, 81, 70), 0.07);
 }
 
 .searchField input {
@@ -68,19 +68,19 @@
   height: 48px;
   border: 0;
   outline: 0;
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
   background: transparent;
   font: inherit;
   font-size: 14px;
 }
 
 .searchField:focus-within {
-  border-color: #94e3c0;
-  box-shadow: 0 0 0 3px rgba(148, 227, 192, 0.2);
+  border-color: var(--ui-accent-hover, #94e3c0);
+  box-shadow: 0 0 0 3px rgba(var(--ui-accent-rgb-comma, 148, 227, 192), 0.2);
 }
 
 .searchField input::placeholder {
-  color: #a3aaa5;
+  color: var(--ui-subtle, #a3aaa5);
 }
 
 .searchButton {
@@ -90,8 +90,8 @@
   padding: 0 12px;
   border: 0;
   border-radius: 15px;
-  color: #fff;
-  background: #3d5146;
+  color: var(--ui-surface, #fff);
+  background: var(--ui-ink, #3d5146);
   font: inherit;
   font-size: 14px;
   font-weight: 700;
@@ -99,7 +99,7 @@
 }
 
 .searchButton:active {
-  background: #283c31;
+  background: var(--ui-ink, #283c31);
 }
 
 .searchButton:disabled {
@@ -120,4 +120,16 @@
     min-width: 52px;
     padding-inline: 9px;
   }
+}
+
+.filterRow {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.filterRow > span {
+  width: 40px;
+  height: 26px;
 }

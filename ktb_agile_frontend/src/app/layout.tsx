@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './layout.css'
+import './halloween-ui.css'
 import Script from 'next/script'
 import AuthExpiredModal from '@/components/auth/AuthExpiredModal'
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     
-    <html lang="ko">
+    <html lang="ko" data-theme="halloween">
       <body>
         <Script id="microsoft-clarity" strategy="afterInteractive">
           {`
