@@ -61,6 +61,9 @@ export default function Login() {
     <>
       <section className={styles.loginPage}>
         <h1 className={styles.logoTitle}>바꾸까</h1>
+        <p className={styles.serviceDescription}>
+          동네 사람들과 안 쓰는 물건을 교환하는 물물교환 서비스
+        </p>
         <div className={styles.loginArea}>
           {/* 여우와 두루미가 마주 보는 장식용 일러스트 */}
           <div className={styles.characters} aria-hidden="true">
