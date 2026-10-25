@@ -61,8 +61,8 @@ export default function Login() {
 
   return (
     <>
-      <section className={styles.loginPage}>
-        <h1 className={styles.title}>로그인</h1>
+      <section className="home-page">
+        <h1 className="service-title">바꾸까</h1>
         <button
           className={styles.kakaoLoginButton}
           type="button"
