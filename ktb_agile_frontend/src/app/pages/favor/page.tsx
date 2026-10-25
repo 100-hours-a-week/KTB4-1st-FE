@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './favor.module.css'
 import axios from 'axios'
+import { getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
 import '@/config/api'
 
 const preferenceQuestions = [
@@ -57,11 +58,8 @@ export default function PreferenceSetup() {
   const [selectedAnswers, setSelectedAnswers] = useState<PreferenceAnswer[]>([])
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     const controller = new AbortController()
     async function checkPreferences() {
@@ -119,12 +117,8 @@ export default function PreferenceSetup() {
   async function submitResult() {
     if (preferenceStatus !== 'available') return
     const result = selectedAnswers.map((v) => v)
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setIsSubmitting(true)
     setErrorMessage(null)
@@ -246,7 +240,7 @@ export default function PreferenceSetup() {
           message={errorMessage}
           onConfirm={() => {
             setErrorMessage(null)
-            if(errorMessage.includes('로그인')) router.replace('/auth/login')
+            if(errorMessage.includes('로그인')) redirectToLogin(router)
           }}
         />
       )}

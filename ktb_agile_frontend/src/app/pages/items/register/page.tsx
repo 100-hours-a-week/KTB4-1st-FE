@@ -13,6 +13,7 @@ import { uploadImagesToS3 } from '@/utils/itemImageUpload'
 import type { ItemRegisterFormValues } from '@/types/item'
 import styles from './page.module.css'
 import type { JoinedGroupOption } from '@/types/group'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type ModerationResponse = {
   data: {
@@ -65,11 +66,8 @@ function ItemRegisterContent() {
     { images, setImages }: ItemRegisterSubmitContext,
   ) {
     if (isSubmitting) return
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setIsSubmitting(true)
 

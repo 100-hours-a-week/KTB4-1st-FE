@@ -10,7 +10,7 @@ import type {
   ExchangeHistory,
   ExchangedItemsResponse,
 } from '@/types/exchangedItem'
-import { getUserIdFromAccessToken } from '@/utils/auth'
+import { getUserIdFromAccessToken, getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
 import '@/config/api'
 import styles from './page.module.css'
 
@@ -31,15 +31,11 @@ export default function ExchangeItemsPage() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     if (currentUserId === null) {
-      router.replace('/auth/login')
+      redirectToLogin(router)
       return
     }
 

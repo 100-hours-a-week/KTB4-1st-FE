@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 import { setCurrentGroupId } from '@/utils/currentGroup'
 import styles from './AccountCard.module.css'
+import { redirectToLogin } from '@/utils/auth'
 
 export default function AccountCard() {
   const router = useRouter()
@@ -74,7 +75,7 @@ export default function AccountCard() {
   function returnToLogin() {
     window.sessionStorage.removeItem('accessToken')
     setCurrentGroupId(0)
-    router.replace('/auth/login')
+    redirectToLogin(router)
   }
 
   async function logout() {

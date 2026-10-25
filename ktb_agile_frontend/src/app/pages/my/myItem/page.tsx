@@ -11,6 +11,7 @@ import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
 import '@/config/api'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 export default function MyItemPage() {
   const router = useRouter()
@@ -24,12 +25,8 @@ export default function MyItemPage() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     const controller = new AbortController()
 

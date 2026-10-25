@@ -12,6 +12,7 @@ import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import ModalGroupCreate from '@/components/common/modal/GroupCreate'
+import { getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
 
 const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
@@ -61,10 +62,9 @@ export default function CreateGroup() {
       return
     }
 
-    const accessToken = window.sessionStorage.getItem('accessToken')
+    const accessToken = getAccessTokenOrRedirect(router)
     if (!accessToken) {
       setErrorMessage(AUTH_ERRORS.LOGIN_REQUIRED)
-      router.replace('/auth/login')
       return
     }
 
@@ -238,7 +238,7 @@ export default function CreateGroup() {
             message={errorMessage}
             onConfirm={() => {
               setErrorMessage(null)
-              if(errorMessage === AUTH_ERRORS.LOGIN_REQUIRED) router.replace('/auth/login')
+              if(errorMessage === AUTH_ERRORS.LOGIN_REQUIRED) redirectToLogin(router)
             }}/>
       )}
     </>
