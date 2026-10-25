@@ -1,5 +1,7 @@
 /* Remove data-theme="halloween" in layout.tsx to restore the default palette. */
 :root[data-theme='halloween'] {
+  --like-heart-display: none;
+  --like-pumpkin-display: block;
   --ui-ink: #302039;
   --ui-muted: #786780;
   --ui-subtle: #93839c;

@@ -43,6 +43,58 @@
   transition: fill 160ms ease;
 }
 
+/* The default heart stays available when the seasonal theme is removed. */
+.heartIcon {
+  display: var(--like-heart-display, block);
+}
+
+.pumpkinIcon {
+  display: var(--like-pumpkin-display, none);
+}
+
+.pumpkinBody,
+.stem,
+.ribs {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pumpkinBody {
+  stroke-width: 7;
+  transition: fill 160ms ease;
+}
+
+.stem {
+  stroke-width: 6;
+}
+
+.ribs {
+  stroke-width: 3;
+  opacity: 0.4;
+}
+
+.face {
+  fill: currentColor;
+  transition: fill 160ms ease;
+}
+
+.liked .pumpkinBody {
+  fill: #ffad61;
+}
+
+.liked .face {
+  fill: var(--ui-ink, #302039);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pumpkinBody,
+  .face {
+    transition: none;
+  }
+}
+
 .button span {
   font-size: 11px;
   font-weight: 700;
