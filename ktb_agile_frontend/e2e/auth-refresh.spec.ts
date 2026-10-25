@@ -25,7 +25,7 @@ async function prepareLogin(page: Page, refreshToken: string) {
   // 외부 분석 도구 요청은 테스트와 분리합니다.
   await page.route('**/*clarity.ms/**', (route) => route.abort())
 
-  await page.route('**/users/me/groups?**', async (route) => {
+  await page.route('**/bff/me/groups', async (route) => {
     const headers = { 'Access-Control-Allow-Origin': '*' }
     if (route.request().headers().authorization === `Bearer ${expiredToken}`) {
       requests.expired += 1
@@ -100,10 +100,10 @@ test('refresh token이 유효하면 토큰을 교체하고 요청을 재시도�
   expect(requests.items).toBe(1)
   expect(await page.evaluate(() => sessionStorage.getItem('accessToken'))).toBe(newToken)
   await expect(page.getByText('로그인이 만료되었습니다. 다시 로그인해주세요.')).toHaveCount(0)
-  await expect(page).toHaveURL('/pages/items')
+  await expect(page).toHaveURL('/pages/items?groupId=1')
 })
 
-test('refresh token이 무효하면 토큰을 지우고 모달 확인 후 로그인 화면으로 이동한다', async ({ page }) => {
+test('refresh token이 무효하면 토큰을 지우고 모달 확인 후 랜딩페이지로 이동한다', async ({ page }) => {
   const requests = await prepareLogin(page, 'invalid-refresh-token')
 
   await page.goto('/pages/items')
@@ -114,7 +114,7 @@ test('refresh token이 무효하면 토큰을 지우고 모달 확인 후 로그
   expect(requests.retried).toBe(0)
   expect(requests.items).toBe(0)
   expect(await page.evaluate(() => sessionStorage.getItem('accessToken'))).toBeNull()
-  // 모달을 확인하기 전에는 로그인 화면으로 이동하지 않습니다.
+  // 모달을 확인하기 전에는 랜딩페이지로 이동하지 않습니다.
   await expect(page).toHaveURL('/pages/items')
 
   await page.getByRole('button', { name: '로그인', exact: true }).click()
