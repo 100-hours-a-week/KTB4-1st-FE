@@ -118,6 +118,6 @@ test('refresh token이 무효하면 토큰을 지우고 모달 확인 후 랜딩
   await expect(page).toHaveURL('/pages/items')
 
   await page.getByRole('button', { name: '로그인', exact: true }).click()
-  await expect(page).toHaveURL('/auth/login')
+  await expect(page).toHaveURL('/')
   await expect(page.getByRole('button', { name: '카카오 로그인' })).toBeVisible()
 })
