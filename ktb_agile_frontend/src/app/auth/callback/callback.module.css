@@ -1,0 +1,50 @@
+:global(.app-shell):has(.errorPage) {
+  background: #ffffff;
+}
+
+.errorPage {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+  line-height: 1.6;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+.errorImage {
+  position: relative;
+  left: 36px;
+  z-index: 1;
+  display: block;
+  width: 180px;
+  max-width: 100%;
+  height: auto;
+  margin-bottom: -14px;
+  pointer-events: none;
+}
+
+.returnButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--surface-background);
+  background: var(--foreground);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.returnButton:focus-visible {
+  outline: 3px solid #7c7c7c;
+  outline-offset: 3px;
+}

@@ -1,9 +1,12 @@
 'use client'
 
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import Loading from '@/components/common/Loading'
 import axios from 'axios'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import styles from './callback.module.css'
 
 type RefreshResponse = {
   data: {
@@ -58,14 +61,38 @@ export default function LoginCallback() {
 
   if (errorMessage !== null) {
     return (
-      <section aria-live="assertive">
-        <p>{errorMessage}</p>
-        <button type="button" onClick={() => router.replace('/auth/login')}>
+      <section className={styles.errorPage} aria-live="assertive">
+        <Image
+          className={styles.errorImage}
+          src="/fox_login_error.png"
+          alt="로그인 정보를 불러오지 못했어요. 다시 로그인해주세요."
+          width={1199}
+          height={1312}
+          sizes="(max-width: 227px) calc(100vw - 48px), 180px"
+        />
+        <button
+          className={styles.returnButton}
+          type="button"
+          onClick={() => router.replace('/auth/login')}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m12 5-7 7 7 7M5 12h14" />
+          </svg>
           로그인 페이지로 돌아가기
         </button>
       </section>
     )
   }
 
-  return null
+  return <Loading fullScreen />
 }
