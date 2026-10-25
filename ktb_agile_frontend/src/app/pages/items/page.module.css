@@ -200,10 +200,10 @@
 
 .itemList {
   display: flex;
-  width: calc(100% + (var(--app-content-inline-padding) * 2) - 16px);
+  width: calc(100% + (var(--app-content-inline-padding) * 2));
   flex-direction: column;
-  gap: 14px;
-  margin-inline: calc((var(--app-content-inline-padding) * -1) + 8px);
+  gap: 0;
+  margin-inline: calc(var(--app-content-inline-padding) * -1);
   padding: 4px 0 0;
 }
 

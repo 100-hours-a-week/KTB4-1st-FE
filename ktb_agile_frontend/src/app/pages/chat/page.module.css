@@ -41,10 +41,11 @@
 }
 .list {
   display: grid;
-  width: 100%;
+  width: calc(100% + (var(--app-content-inline-padding) * 2));
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: 0;
+  margin-inline: calc(var(--app-content-inline-padding) * -1);
   list-style: none;
 }
 .list > li {
