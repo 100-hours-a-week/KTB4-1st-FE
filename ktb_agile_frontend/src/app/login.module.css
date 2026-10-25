@@ -276,3 +276,12 @@
     transition: none;
   }
 }
+
+.sceneCandy {
+  position: absolute;
+  left: 4px;
+  top: 15px;
+  width: 54px;
+  transform: rotate(-18deg);
+  opacity: 0.85;
+}

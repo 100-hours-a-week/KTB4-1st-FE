@@ -1,5 +1,8 @@
 /* Remove data-theme="halloween" in layout.tsx to restore the default palette. */
 :root[data-theme='halloween'] {
+  --halloween-decoration-display: inline-flex;
+  --halloween-shelf-display: flex;
+  --halloween-intro-inset: 60px;
   --like-heart-display: none;
   --like-pumpkin-display: block;
   --ui-ink: #302039;

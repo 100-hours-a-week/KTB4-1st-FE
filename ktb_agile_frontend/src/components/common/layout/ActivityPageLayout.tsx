@@ -1,3 +1,4 @@
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import styles from './ActivityPageLayout.module.css'
@@ -26,7 +27,7 @@ export default function ActivityPageLayout({
           </svg>
         </Link>
         <h1>{title}</h1>
-        <span aria-hidden="true" />
+        <HalloweenDecoration kind="pumpkin" />
       </header>
       {children}
     </section>

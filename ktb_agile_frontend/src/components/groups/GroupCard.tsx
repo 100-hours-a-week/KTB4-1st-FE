@@ -1,5 +1,6 @@
 'use client'
 
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import { NO_GROUP_ACTIVITY_MSG } from '@/constants/group'
 import { useState } from 'react'
@@ -65,6 +66,7 @@ export default function GroupCard({
   return (
     <div className={styles.groupList}>
         <article className={styles.card}>
+        <HalloweenDecoration kind="web" className={styles.cornerWeb} />
         <button
             className={styles.summaryButton}
             type="button"

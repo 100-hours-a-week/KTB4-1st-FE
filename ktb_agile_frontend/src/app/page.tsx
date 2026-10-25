@@ -1,5 +1,6 @@
 'use client'
 
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import Image from 'next/image'
 import styles from './login.module.css'
@@ -77,6 +78,7 @@ export default function Login() {
         </span>
         <div className={styles.loginArea}>
           <div className={styles.characters} aria-hidden="true">
+            <HalloweenDecoration kind="candy" className={styles.sceneCandy} />
             <span className={styles.moon} />
             <span className={`${styles.star} ${styles.starOne}`}>✦</span>
             <span className={`${styles.star} ${styles.starTwo}`}>✧</span>

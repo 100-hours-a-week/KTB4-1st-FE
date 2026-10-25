@@ -242,3 +242,11 @@
     font-size: 13px;
   }
 }
+
+.cornerWeb {
+  position: absolute;
+  top: 3px;
+  right: 2px;
+  width: 64px;
+  height: 64px;
+}

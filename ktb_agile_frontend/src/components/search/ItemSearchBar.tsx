@@ -1,5 +1,6 @@
 'use client'
 
+import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import type { JoinedGroupOption } from '@/types/group'
 import styles from './ItemSearchBar.module.css'
 
@@ -67,14 +68,17 @@ export default function ItemSearchBar({
           검색
         </button>
       </div>
-      <label className={styles.stateFilter}>
-        <input
-          type="checkbox"
-          checked={isCheckBoxSelected}
-          onChange={(event) => onCheckBoxSelectedChange(event.target.checked)}
-        />
-        거래 완료된 물품 제외
-      </label>
+      <div className={styles.filterRow}>
+        <label className={styles.stateFilter}>
+          <input
+            type="checkbox"
+            checked={isCheckBoxSelected}
+            onChange={(event) => onCheckBoxSelectedChange(event.target.checked)}
+          />
+          거래 완료된 물품 제외
+        </label>
+        <HalloweenDecoration kind="candy" />
+      </div>
     </div>
   )
 }
