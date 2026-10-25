@@ -3,7 +3,6 @@ import './layout.css'
 import './halloween-ui.css'
 import Script from 'next/script'
 import AuthExpiredModal from '@/components/auth/AuthExpiredModal'
-import MswProvider from '@/components/common/MswProvider'
 
 
 export const metadata: Metadata = {
@@ -28,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <div className="app-shell">
           <main className="app-content">
             <AuthExpiredModal>{children}</AuthExpiredModal>
-            </main>
+          </main>
         </div>
       </body>
     </html>
