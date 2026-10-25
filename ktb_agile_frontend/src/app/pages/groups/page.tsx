@@ -20,6 +20,7 @@ import {
   NO_SEARCH_RESULT_MSG,
   RECOMMENDED_GROUP_DESCRIPTION,
 } from '@/constants/group'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 export default function GroupList() {
     const [inputKeyword, setInputKeyword] = useState('')
@@ -61,11 +62,8 @@ export default function GroupList() {
           return
         }
 
-        const accessToken = window.sessionStorage.getItem('accessToken')
-        if (!accessToken) {
-          router.replace('/auth/login')
-          return
-        }
+        const accessToken = getAccessTokenOrRedirect(router)
+        if (!accessToken) return
 
         const response = await axios.get<GroupListResponse>(
           `${API_BASE_URL}/groups?keyword=${encodeURIComponent(trimmedKeyword)}&size=30&cursor=`,
@@ -96,12 +94,8 @@ export default function GroupList() {
       if (!hasNoJoinedGroups) return
 
       async function recommendGroupListViewProcess() {
-        const accessToken = window.sessionStorage.getItem('accessToken')
-
-        if (!accessToken) {
-          router.replace('/auth/login')
-          return
-        }
+        const accessToken = getAccessTokenOrRedirect(router)
+        if (!accessToken) return
 
         try {
           const response = axios.get<GroupListResponse>(
@@ -140,12 +134,8 @@ export default function GroupList() {
     async function confirmJoin(){
       if (!joinTarget || isJoining) return
 
-      const accessToken = window.sessionStorage.getItem('accessToken')
-
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
+      const accessToken = getAccessTokenOrRedirect(router)
+      if (!accessToken) return
 
       setIsJoining(true)
       try {
@@ -192,12 +182,8 @@ export default function GroupList() {
     async function confirmLeave() {
       if (!leaveTarget || isLeaving) return
 
-      const accessToken = window.sessionStorage.getItem('accessToken')
-
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
+      const accessToken = getAccessTokenOrRedirect(router)
+      if (!accessToken) return
 
       setIsLeaving(true)
       try {

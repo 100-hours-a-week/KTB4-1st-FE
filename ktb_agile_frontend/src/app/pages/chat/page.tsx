@@ -10,6 +10,7 @@ import ChatRoomCard from '@/components/chat/ChatRoomCard'
 import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
 import '@/config/api'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type Direction = 'SENT' | 'RECEIVED'
 type Tab = 'ALL' | Direction
@@ -31,11 +32,8 @@ export default function Chat() {
   const listEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     const controller = new AbortController()
     async function load() {
       setIsLoading(true)

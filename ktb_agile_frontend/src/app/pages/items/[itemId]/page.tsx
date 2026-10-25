@@ -8,7 +8,7 @@ import ModalDefault from '@/components/common/modal/Default'
 import LikeButton from '@/components/item/like/LikeButton'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
-import { getUserIdFromAccessToken } from '@/utils/auth'
+import { getUserIdFromAccessToken, getAccessTokenOrRedirect } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
@@ -25,10 +25,9 @@ export default function ItemDetailsPage() {
 
   useEffect(() => {
     let isMounted = true
-    const accessToken = sessionStorage.getItem('accessToken')
+    const accessToken = getAccessTokenOrRedirect(router)
 
     if (!accessToken) {
-      router.replace('/auth/login')
       return () => {
         isMounted = false
       }
@@ -87,11 +86,8 @@ export default function ItemDetailsPage() {
   async function handleDeleteItem() {
     if (!item || isDeleting) return
 
-    const accessToken = sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setIsDeleting(true)
 

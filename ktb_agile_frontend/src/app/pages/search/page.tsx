@@ -14,6 +14,7 @@ import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type SearchCriteria = {
   keyword: string
@@ -94,10 +95,7 @@ function SearchPageContent() {
   )
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-    }
+    getAccessTokenOrRedirect(router)
   }, [router])
 
   useEffect(() => {
@@ -150,11 +148,8 @@ function SearchPageContent() {
     const { criteria, cursor } = searchRequest
 
     async function searchItems() {
-      const token = window.sessionStorage.getItem('accessToken')
-      if (!token) {
-        router.replace('/auth/login')
-        return
-      }
+      const token = getAccessTokenOrRedirect(router)
+      if (!token) return
 
       try {
         const response = await axios.get<ItemListResponse>('/bff/search', {
@@ -308,11 +303,8 @@ function SearchPageContent() {
   }
 
   async function requestAllHistoryDelete(path: string) {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return false
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return false
 
     const response = await axios.delete(path, {
       headers: {
@@ -331,11 +323,8 @@ function SearchPageContent() {
     try {
       let searchHistoryId = history.searchHistoryId
       if (searchHistoryId === null) {
-        const token = window.sessionStorage.getItem('accessToken')
-        if (!token) {
-          router.replace('/auth/login')
-          return
-        }
+        const token = getAccessTokenOrRedirect(router)
+        if (!token) return
         const response = await axios.get<SearchHistoryResponse>(
           '/bff/search-histories',
           {

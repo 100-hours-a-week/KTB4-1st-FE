@@ -14,6 +14,7 @@ import type {
   SelectedImage,
 } from '@/types/item'
 import styles from './ImageRegister.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 const MAX_IMAGES = 3
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024
@@ -113,11 +114,8 @@ export default function ImageRegister({
     )
       return
 
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setIsAnalyzing(true)
     onAnalysisStateChange(true)

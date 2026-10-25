@@ -11,6 +11,7 @@ import ExchangeForm, {
 } from '@/components/exchange/ExchangeForm'
 import { API_BASE_URL } from '@/config/api'
 import styles from '../page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type ExchangeRequestDetailsResponse = {
   data: {
@@ -40,11 +41,8 @@ function ExchangeEditContent() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     const controller = new AbortController()
     async function loadRequest() {
       try {

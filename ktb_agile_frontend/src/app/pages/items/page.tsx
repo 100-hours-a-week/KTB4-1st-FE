@@ -28,6 +28,7 @@ import {
   type ItemListSnapshot,
 } from '@/utils/itemListSession'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type JoinedGroup = {
   groupId: number
@@ -71,11 +72,8 @@ export default function ItemList() {
   const refreshItems = useCallback(
     async (signal: AbortSignal) => {
       if (selectedGroupId === null || signal.aborted) return
-      const accessToken = window.sessionStorage.getItem('accessToken')
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
+      const accessToken = getAccessTokenOrRedirect(router)
+      if (!accessToken) return
       refreshSignalRef.current = signal
       moreRequestRef.current?.abort()
       moreRequestRef.current = null
@@ -245,12 +243,8 @@ export default function ItemList() {
 
     const groupId = selectedGroupId
     let isActive = true
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setCurrentGroupId(groupId)
     const url = new URL(window.location.href)
@@ -324,11 +318,8 @@ export default function ItemList() {
     )
       return
 
-    const accessToken = window.sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     const controller = new AbortController()
     moreRequestRef.current = controller

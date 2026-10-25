@@ -10,6 +10,7 @@ import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { LikedItem, LikedItemsResponse } from '@/types/likedItem'
 import '@/config/api'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 export default function LikedItemPage() {
   const router = useRouter()
@@ -23,12 +24,8 @@ export default function LikedItemPage() {
   const [retryCount, setRetryCount] = useState(0)
 
   useEffect(() => {
-    const accessToken = window.sessionStorage.getItem('accessToken')
-
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     const controller = new AbortController()
 

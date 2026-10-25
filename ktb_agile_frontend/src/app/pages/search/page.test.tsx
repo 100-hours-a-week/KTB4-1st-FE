@@ -304,7 +304,7 @@ it('삭제 직전에 토큰이 없으면 삭제 요청 없이 로그인으로 �
   fireEvent.click(screen.getByText('×'))
 
   await waitFor(() =>
-    expect(router.replace).toHaveBeenCalledWith('/auth/login'),
+    expect(router.replace).toHaveBeenCalledWith('/'),
   )
   expect(remove).not.toHaveBeenCalled()
   expect(screen.getByText('충전기')).toBeDefined()
