@@ -1,10 +1,19 @@
 :root {
   --outer-background: #fafafa;
-  --surface-background: #ffffff;
+  --surface-background: var(--ui-surface, #ffffff);
   --app-background:
-    radial-gradient(circle at 98% 3%, rgb(174 235 203 / 44%), transparent 35%),
-    linear-gradient(180deg, #fffff6 0%, #fffdf6 48%, #e6f7ef 100%);
-  --foreground: #171717;
+    radial-gradient(
+      circle at 98% 3%,
+      rgb(var(--ui-accent-rgb, 174 235 203) / 44%),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      var(--ui-surface, #fffff6) 0%,
+      #fffdf6 48%,
+      var(--ui-soft, #e6f7ef) 100%
+    );
+  --foreground: var(--ui-ink, #171717);
   --app-shell-tablet-width: 600px;
   --app-shell-desktop-width: 480px;
   --app-shell-max-width: 100%;
@@ -95,7 +104,7 @@ body {
 }
 
 .join-button:focus-visible {
-  outline: 3px solid #7c7c7c;
+  outline: 3px solid var(--ui-muted, #7c7c7c);
   outline-offset: 3px;
 }
 
