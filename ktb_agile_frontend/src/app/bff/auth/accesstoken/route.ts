@@ -14,9 +14,14 @@ export async function POST(request: NextRequest) {
       cache: 'no-store',
     })
 
+    const headers = new Headers({ 'Cache-Control': 'no-store' })
+    for (const cookie of response.headers.getSetCookie()) {
+      headers.append('Set-Cookie', cookie)
+    }
+
     return Response.json(await response.json(), {
       status: response.status,
-      headers: { 'Cache-Control': 'no-store' },
+      headers,
     })
   } catch {
     return Response.json(
