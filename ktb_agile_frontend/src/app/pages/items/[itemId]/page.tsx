@@ -2,13 +2,18 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { itemListKeys } from '@/queries/itemList'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 import LikeButton from '@/components/item/like/LikeButton'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
-import { getUserIdFromAccessToken, getAccessTokenOrRedirect } from '@/utils/auth'
+import {
+  getUserIdFromAccessToken,
+  getAccessTokenOrRedirect,
+} from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
@@ -16,6 +21,7 @@ import styles from './page.module.css'
 export default function ItemDetailsPage() {
   const { itemId } = useParams<{ itemId: string }>()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [item, setItem] = useState<ItemDetail | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -99,6 +105,7 @@ export default function ItemDetailsPage() {
         },
       })
 
+      void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       setIsDeleteModalOpen(false)
       router.replace('/pages/items')
     } catch (error) {

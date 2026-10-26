@@ -2,13 +2,19 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { itemListKeys } from '@/queries/itemList'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/item/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/item/ItemRegisterForm'
 import { API_BASE_URL } from '@/config/api'
-import type { ItemDetailResponse, ItemRegisterFormValues, SelectedImage } from '@/types/item'
+import type {
+  ItemDetailResponse,
+  ItemRegisterFormValues,
+  SelectedImage,
+} from '@/types/item'
 import type { JoinedGroupOption } from '@/types/group'
 import styles from '../../register/page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
@@ -16,6 +22,7 @@ import { getAccessTokenOrRedirect } from '@/utils/auth'
 export default function ItemEditPage() {
   const { itemId } = useParams<{ itemId: string }>()
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [initialValues, setInitialValues] =
     useState<ItemRegisterFormValues | null>(null)
   const [modalMessage, setModalMessage] = useState<string | null>(null)
@@ -35,7 +42,9 @@ export default function ItemEditPage() {
           Accept: 'application/json',
         }
         const [itemResponse, groupResponse] = await Promise.all([
-          axios.get<ItemDetailResponse>(`${API_BASE_URL}/items/${itemId}`, { headers }),
+          axios.get<ItemDetailResponse>(`${API_BASE_URL}/items/${itemId}`, {
+            headers,
+          }),
           axios.get<{ data: { groups: JoinedGroupOption[] } }>(
             '/bff/me/groups',
             { headers: { Accept: 'application/json' } },
@@ -46,7 +55,9 @@ export default function ItemEditPage() {
         setGroups(groupResponse.data.data.groups)
         setInitialImages(
           item.images
-            .toSorted((first, second) => first.displayOrder - second.displayOrder)
+            .toSorted(
+              (first, second) => first.displayOrder - second.displayOrder,
+            )
             .map((image) => ({
               id: String(image.imageId),
               imageId: image.imageId,
@@ -112,12 +123,11 @@ export default function ItemEditPage() {
           },
         },
       )
+      void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       router.replace(`/pages/items/${itemId}`)
     } catch (error) {
       setModalMessage(
-        error instanceof Error
-          ? error.message
-          : ITEM_ERRORS.UPDATE_FAILED,
+        error instanceof Error ? error.message : ITEM_ERRORS.UPDATE_FAILED,
       )
     } finally {
       setIsSubmitting(false)
