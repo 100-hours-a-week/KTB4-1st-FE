@@ -24,9 +24,9 @@
   height: 48px;
   place-items: center;
   padding: 0;
-  border: 2px solid #fffbf6;
+  border: 2px solid var(--ui-surface, #fffbf6);
   border-radius: 50%;
-  background: #aeebcb;
+  background: var(--ui-accent, #aeebcb);
   box-shadow: 0 4px 16px rgba(17, 17, 17, 0.16);
   cursor: pointer;
   pointer-events: auto;
@@ -41,24 +41,24 @@
 }
 
 .buttonOpen {
-  background: #94e3c0;
+  background: var(--ui-accent-hover, #94e3c0);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .button:hover {
-    background: #94e3c0;
+    background: var(--ui-accent-hover, #94e3c0);
     transform: translateY(-2px);
   }
 }
 
 .button:focus-visible {
-  outline: 2px solid #3d5146;
+  outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 3px;
 }
 
 .button {
   position: relative;
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
 }
 
 .buttonLabel {
@@ -74,7 +74,7 @@
   right: 5px;
   width: 14px;
   height: 14px;
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
 }
 
 .panel {
@@ -83,10 +83,10 @@
   height: min(440px, calc(100dvh - var(--app-navbar-height) - 160px));
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 20px;
-  color: #3d5146;
-  background: #fffbf6;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fffbf6);
   box-shadow: 0 12px 40px rgba(24, 40, 32, 0.2);
   pointer-events: auto;
   animation: panel-in 180ms ease-out;
@@ -110,7 +110,11 @@
   align-items: center;
   gap: 10px;
   padding: 12px 12px 12px 14px;
-  background: linear-gradient(135deg, #aeebcb, #e6f7ef);
+  background: linear-gradient(
+    135deg,
+    var(--ui-accent, #aeebcb),
+    var(--ui-soft, #e6f7ef)
+  );
 }
 
 .headerBadge {
@@ -120,13 +124,13 @@
   flex-shrink: 0;
   place-items: center;
   border-radius: 50%;
-  background: #fffbf6;
+  background: var(--ui-surface, #fffbf6);
 }
 
 .headerBadgeIcon {
   width: 18px;
   height: 18px;
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
 }
 
 .headerText {
@@ -143,7 +147,7 @@
 
 .subtitle {
   margin-top: 1px;
-  color: #4f6a5c;
+  color: var(--ui-muted, #4f6a5c);
   font-size: 12px;
   line-height: 1.3;
 }
@@ -157,7 +161,7 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  color: #3d5146;
+  color: var(--ui-ink, #3d5146);
   background: transparent;
   font-size: 22px;
   line-height: 1;
@@ -166,7 +170,7 @@
 }
 
 .closeButton:focus-visible {
-  outline: 2px solid #3d5146;
+  outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 1px;
 }
 
@@ -185,7 +189,7 @@
   overflow-y: auto;
   padding: 14px;
   overscroll-behavior: contain;
-  background: #fffbf6;
+  background: var(--ui-surface, #fffbf6);
 }
 
 .row {
@@ -205,13 +209,13 @@
   flex-shrink: 0;
   place-items: center;
   border-radius: 50%;
-  background: #e6f7ef;
+  background: var(--ui-soft, #e6f7ef);
 }
 
 .avatarIcon {
   width: 16px;
   height: 16px;
-  color: #ff8f70;
+  color: var(--ui-orange, #ff8f70);
 }
 
 .bubble {
@@ -225,20 +229,20 @@
 }
 
 .botBubble {
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 14px 14px 14px 4px;
-  background: #e6f7ef;
+  background: var(--ui-soft, #e6f7ef);
 }
 
 .userBubble {
   border-radius: 14px 14px 4px 14px;
-  background: #ffcbbe;
+  background: var(--ui-peach, #ffcbbe);
 }
 
 .action {
   margin-top: 10px;
   padding-top: 10px;
-  border-top: 1px solid #bddfce;
+  border-top: 1px solid var(--ui-border, #bddfce);
 }
 
 .actionButtons {
@@ -250,21 +254,21 @@
 .actionButtons button {
   min-width: 64px;
   min-height: 40px;
-  border: 1px solid #3d5146;
+  border: 1px solid var(--ui-ink, #3d5146);
   border-radius: 10px;
-  color: #3d5146;
-  background: #fffbf6;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fffbf6);
   font: inherit;
   cursor: pointer;
 }
 
 .actionButtons button:first-child {
-  color: #fffbf6;
-  background: #3d5146;
+  color: var(--ui-surface, #fffbf6);
+  background: var(--ui-ink, #3d5146);
 }
 
 .actionButtons button:focus-visible {
-  outline: 2px solid #3d5146;
+  outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 2px;
 }
 
@@ -274,8 +278,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  border-top: 1px solid #d9f3e8;
-  background: #fffbf6;
+  border-top: 1px solid var(--ui-soft, #d9f3e8);
+  background: var(--ui-surface, #fffbf6);
 }
 
 .input {
@@ -283,21 +287,21 @@
   flex: 1;
   height: 40px;
   padding: 0 14px;
-  border: 1px solid #d9f3e8;
+  border: 1px solid var(--ui-soft, #d9f3e8);
   border-radius: 20px;
-  color: #3d5146;
-  background: #fff;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fff);
   font: inherit;
   font-size: 14px;
 }
 
 .input::placeholder {
-  color: #9aaba1;
+  color: var(--ui-subtle, #9aaba1);
 }
 
 .input:focus-visible {
-  border-color: #94e3c0;
-  outline: 2px solid #94e3c0;
+  border-color: var(--ui-accent-hover, #94e3c0);
+  outline: 2px solid var(--ui-accent-hover, #94e3c0);
   outline-offset: 0;
 }
 
@@ -310,26 +314,26 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: #ff8f70;
+  background: var(--ui-orange, #ff8f70);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 160ms ease;
 }
 
 .sendButton:disabled {
-  background: #d1d8d3;
+  background: var(--ui-border, #d1d8d3);
   cursor: default;
 }
 
 .sendButton:focus-visible {
-  outline: 2px solid #3d5146;
+  outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 2px;
 }
 
 .sendButton svg {
   width: 20px;
   height: 20px;
-  stroke: #fffbf6;
+  stroke: var(--ui-surface, #fffbf6);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 2;

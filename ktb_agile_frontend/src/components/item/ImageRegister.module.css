@@ -23,15 +23,15 @@
   align-items: center;
   padding: 0 7px;
   border-radius: 999px;
-  color: #4b5563;
-  background: #eef0f3;
+  color: var(--ui-muted, #4b5563);
+  background: var(--ui-soft, #eef0f3);
   font-size: 10px;
   font-weight: 700;
 }
 
 .sectionHeading p {
   margin-left: auto;
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   font-size: 11px;
 }
 
@@ -54,16 +54,16 @@
   justify-content: center;
   flex-direction: column;
   gap: 7px;
-  border: 1px dashed #d8dce2;
+  border: 1px dashed var(--ui-border, #d8dce2);
   border-radius: 12px;
-  color: #111827;
-  background: #fafbfc;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-surface, #fafbfc);
   font-family: inherit;
   cursor: pointer;
 }
 
 .uploadArea:disabled {
-  color: #6b7280;
+  color: var(--ui-muted, #6b7280);
   cursor: default;
 }
 
@@ -76,7 +76,7 @@
   margin-bottom: 4px;
   border: 1px solid #d7dbe2;
   border-radius: 12px;
-  background: #fff;
+  background: var(--ui-surface, #fff);
 }
 
 .cameraIcon svg,
@@ -99,7 +99,7 @@
 }
 
 .uploadArea small {
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   font-size: 11px;
 }
 
@@ -116,9 +116,9 @@
   width: 56px;
   height: 56px;
   overflow: hidden;
-  border: 1px solid #d8dce2;
+  border: 1px solid var(--ui-border, #d8dce2);
   border-radius: 9px;
-  background-color: #eef0f3;
+  background-color: var(--ui-soft, #eef0f3);
 }
 
 .preview {
@@ -137,7 +137,7 @@
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  color: #fff;
+  color: var(--ui-surface, #fff);
   background: rgba(17, 24, 39, 0.72);
   font-size: 16px;
   line-height: 1;
@@ -148,7 +148,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--ui-muted, #6b7280);
   cursor: pointer;
 }
 
@@ -161,10 +161,10 @@
   width: 100%;
   height: 42px;
   margin-top: 14px;
-  border: 1px solid #d8dce2;
+  border: 1px solid var(--ui-border, #d8dce2);
   border-radius: 10px;
-  color: #374151;
-  background: #fff;
+  color: var(--ui-muted, #374151);
+  background: var(--ui-surface, #fff);
   font-family: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -172,7 +172,7 @@
 }
 
 .fillFromPhotoButton:disabled {
-  color: #9ca3af;
+  color: var(--ui-subtle, #9ca3af);
   background: #f5f6f8;
   cursor: default;
 }

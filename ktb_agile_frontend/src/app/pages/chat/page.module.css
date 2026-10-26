@@ -27,7 +27,7 @@
   cursor: pointer;
 }
 .activeTab {
-  color: #111;
+  color: var(--ui-ink, #111);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -41,10 +41,11 @@
 }
 .list {
   display: grid;
-  width: 100%;
+  width: calc(100% + (var(--app-content-inline-padding) * 2));
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
+  gap: 0;
+  margin-inline: calc(var(--app-content-inline-padding) * -1);
   list-style: none;
 }
 .list > li {
@@ -60,8 +61,8 @@
   padding: 10px 16px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background: #fff;
-  color: #111;
+  background: var(--ui-surface, #fff);
+  color: var(--ui-ink, #111);
   font: inherit;
   cursor: pointer;
 }

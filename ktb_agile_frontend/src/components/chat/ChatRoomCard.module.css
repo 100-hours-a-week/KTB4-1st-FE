@@ -5,10 +5,10 @@
   min-width: 0;
   min-height: 96px;
   gap: 16px;
-  padding: 15px;
-  border: 1px solid #e5e5e5;
-  border-radius: 12px;
-  background: #fff;
+  padding: 16px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   overflow: hidden;
   color: inherit;
   font: inherit;
@@ -16,7 +16,7 @@
   cursor: pointer;
 }
 .room:focus-visible {
-  outline: 2px solid #111827;
+  outline: 2px solid var(--ui-ink, #111827);
   outline-offset: 2px;
 }
 .images {
@@ -27,8 +27,8 @@
 .itemImage {
   width: 64px;
   height: 64px;
-  border-radius: 8px;
-  background: #d9d9d9;
+  border-radius: 0;
+  background: var(--ui-border, #d9d9d9);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -40,9 +40,9 @@
   width: 40px;
   height: 40px;
   overflow: hidden;
-  border: 2px solid #fff;
+  border: 2px solid var(--ui-surface, #fff);
   border-radius: 50%;
-  background: #d9d9d9;
+  background: var(--ui-border, #d9d9d9);
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -91,15 +91,15 @@
 .preview {
   flex: 1 1 0;
   min-width: 0;
-  color: #111;
+  color: var(--ui-ink, #111);
   font-size: 14px;
 }
 .unread {
   min-width: 22px;
   padding: 3px 6px;
   border-radius: 999px;
-  background: #111;
-  color: #fff;
+  background: var(--ui-ink, #111);
+  color: var(--ui-surface, #fff);
   font-size: 11px;
   font-weight: 700;
   text-align: center;

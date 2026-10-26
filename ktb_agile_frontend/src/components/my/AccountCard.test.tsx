@@ -112,7 +112,7 @@ it('프로필 조회가 실패하면 모달을 보여주고 확인 시 로그인
 
   fireEvent.click(screen.getByRole('button', { name: '로그인' }))
   expect(window.sessionStorage.getItem('accessToken')).toBeNull()
-  expect(replace).toHaveBeenCalledWith('/auth/login')
+  expect(replace).toHaveBeenCalledWith('/')
 })
 
 it('액세스 토큰이 없어도 프로필 실패 모달을 보여준다', async () => {

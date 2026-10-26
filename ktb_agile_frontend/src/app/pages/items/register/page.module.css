@@ -4,7 +4,7 @@
   min-height: 100dvh;
   margin: calc(var(--app-content-block-padding) * -1)
     calc(var(--app-content-inline-padding) * -1);
-  color: #111827;
+  color: var(--ui-ink, #111827);
 }
 
 .header {
@@ -16,8 +16,8 @@
   align-items: center;
   gap: 10px;
   padding: env(safe-area-inset-top) 20px 0;
-  border-bottom: 1px solid #e5e7eb;
-  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid var(--ui-border, #e5e7eb);
+  background: var(--ui-glass, rgba(255, 255, 255, 0.96));
   backdrop-filter: blur(12px);
 }
 
@@ -36,8 +36,8 @@
   justify-content: center;
   border: 0;
   border-radius: 50%;
-  color: #111827;
-  background: #f3f4f6;
+  color: var(--ui-ink, #111827);
+  background: var(--ui-soft, #f3f4f6);
   cursor: pointer;
 }
 

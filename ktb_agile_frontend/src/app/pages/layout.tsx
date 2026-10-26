@@ -1,11 +1,7 @@
 import type { ReactNode } from 'react'
-import SupportWidgets from '@/components/common/chatbot/SupportWidgets'
+import AuthGuard from '@/components/auth/AuthGuard'
 
-export default function PagesLayout({ children }: { children: ReactNode }) {
-  return (
-    <>
-      {children}
-      <SupportWidgets />
-    </>
-  )
+//pages 하위 화면은 모두 로그인이 필요함
+export default function Layout({ children }: { children: ReactNode }) {
+  return <AuthGuard>{children}</AuthGuard>
 }

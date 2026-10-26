@@ -8,7 +8,7 @@ import { useCallback, useRef, useState, type FormEvent } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import type { ItemDetail, ItemDetailResponse, ItemListItem } from '@/types/item'
-import { getUserIdFromAccessToken } from '@/utils/auth'
+import { getUserIdFromAccessToken, redirectToLogin } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import OfferingItemCard from './OfferingItemCard'
 import QuantityControl from '../common/exchange/QuantityControl'
@@ -96,7 +96,7 @@ function ExchangeFormContent({
       const accessToken = sessionStorage.getItem('accessToken')
       const userId = accessToken ? getUserIdFromAccessToken(accessToken) : null
       if (!userId) {
-        router.replace('/auth/login')
+        redirectToLogin(router)
         throw new Error('로그인이 필요합니다.')
       }
       const headers = {
@@ -224,7 +224,7 @@ function ExchangeFormContent({
     if (!canRequest || !item || submitting.current) return
     const accessToken = sessionStorage.getItem('accessToken')
     if (!accessToken || !getUserIdFromAccessToken(accessToken)) {
-      router.replace('/auth/login')
+      redirectToLogin(router)
       return
     }
     const validQuantity = (quantity: number, stock: number) =>

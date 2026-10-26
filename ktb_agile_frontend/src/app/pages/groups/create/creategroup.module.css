@@ -31,14 +31,14 @@
   width: 21px;
   height: 21px;
   fill: none;
-  stroke: #111827;
+  stroke: var(--ui-ink, #111827);
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
 }
 
 .title {
-  color: #111827;
+  color: var(--ui-ink, #111827);
   font-size: 23px;
   font-weight: 700;
   line-height: 1.2;
@@ -62,7 +62,7 @@
 }
 
 .fieldLabel {
-  color: #111827;
+  color: var(--ui-ink, #111827);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.2;
@@ -75,7 +75,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   outline: none;
-  color: #111827;
+  color: var(--ui-ink, #111827);
   background: #f5f5f5;
   font: inherit;
   font-size: 18px;
@@ -95,7 +95,7 @@
 
 .textInput::placeholder,
 .descriptionInput::placeholder {
-  color: #757575;
+  color: var(--ui-muted, #757575);
   opacity: 1;
 }
 
@@ -108,8 +108,8 @@
   justify-content: center;
   border: 0;
   border-radius: 12px;
-  color: #fff;
-  background: #111827;
+  color: var(--ui-surface, #fff);
+  background: var(--ui-ink, #111827);
   font: inherit;
   font-size: 18px;
   font-weight: 600;
@@ -133,14 +133,14 @@
 
 .locationInfo strong {
   flex: none;
-  color: #111827;
+  color: var(--ui-ink, #111827);
   font-size: 20px;
   font-weight: 700;
 }
 
 .optional {
   margin-top: -4px;
-  color: #757575;
+  color: var(--ui-muted, #757575);
   font-size: 14px;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -163,7 +163,7 @@
 }
 
 .notice {
-  color: #757575;
+  color: var(--ui-muted, #757575);
   font-size: 14px;
   line-height: 1.4;
   letter-spacing: -0.02em;

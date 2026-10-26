@@ -11,6 +11,7 @@ import { API_BASE_URL } from '@/config/api'
 import type { ItemDetailResponse, ItemRegisterFormValues, SelectedImage } from '@/types/item'
 import type { JoinedGroupOption } from '@/types/group'
 import styles from '../../register/page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 export default function ItemEditPage() {
   const { itemId } = useParams<{ itemId: string }>()
@@ -25,11 +26,8 @@ export default function ItemEditPage() {
   useEffect(() => {
     let isMounted = true
     async function loadItemForEdit() {
-      const accessToken = sessionStorage.getItem('accessToken')
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
+      const accessToken = getAccessTokenOrRedirect(router)
+      if (!accessToken) return
 
       try {
         const headers = {
@@ -85,11 +83,8 @@ export default function ItemEditPage() {
     context: ItemRegisterSubmitContext,
   ) {
     if (isSubmitting) return
-    const accessToken = sessionStorage.getItem('accessToken')
-    if (!accessToken) {
-      router.replace('/auth/login')
-      return
-    }
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
 
     setIsSubmitting(true)
     try {

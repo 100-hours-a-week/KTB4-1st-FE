@@ -1,18 +1,19 @@
 'use client'
 
 import { AUTH_ERRORS } from '@/constants/errors/auth'
+import Loading from '@/components/common/Loading'
 import axios from 'axios'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-
-const MINIMUM_LOADING_TIME_MS = 3_000
+import { useEffect, useRef, useState } from 'react'
+import styles from './callback.module.css'
 
 type RefreshResponse = {
   data: {
     accessToken: string
     tokenType: string
     expiresIn: number
-    needsPreferenceSetup:boolean
+    needsPreferenceSetup: boolean
   }
   error: null
 }
@@ -20,48 +21,36 @@ type RefreshResponse = {
 export default function LoginCallback() {
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const loginRequestRef = useRef<Promise<RefreshResponse> | null>(null)
 
   useEffect(() => {
     let isActive = true
 
     const completeLogin = async () => {
-      const waitForLoading = new Promise<void>((resolve) => {
-        window.setTimeout(resolve, MINIMUM_LOADING_TIME_MS)
-      })
-
       try {
-        const [response] = await Promise.all([
-          axios.post<RefreshResponse>(
-            '/bff/auth/accesstoken',
-            undefined,
-            {
+        // Effect가 재실행돼도 토큰을 교체하는 요청은 한 번만 보냅니다.
+        if (loginRequestRef.current === null) {
+          loginRequestRef.current = axios
+            .post<RefreshResponse>('/bff/auth/accesstoken', undefined, {
               withCredentials: true,
               headers: { Accept: 'application/json' },
-            },
-          ),
-          waitForLoading,
-        ])
+            })
+            .then((response) => response.data)
+        }
 
-        const accessToken = response.data.data.accessToken
+        const response = await loginRequestRef.current
 
-        if (!accessToken) {
+        if (!isActive) return
+
+        const { accessToken, needsPreferenceSetup } = response.data
+
+        if (typeof accessToken !== 'string' || !accessToken.trim()) {
           throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
         }
 
         window.sessionStorage.setItem('accessToken', accessToken)
-       
-        const needsPreferenceSetup = response.data.data.needsPreferenceSetup;
-
-        if (isActive) {
-          if(needsPreferenceSetup){ 
-            router.replace('/pages/favor')
-            return
-          }
-          router.replace('/pages/items')
-        }
+        router.replace(needsPreferenceSetup ? '/pages/favor' : '/pages/items')
       } catch {
-        await waitForLoading
-
         if (isActive) {
           setErrorMessage(AUTH_ERRORS.LOGIN_INFO_LOAD_FAILED)
         }
@@ -77,18 +66,38 @@ export default function LoginCallback() {
 
   if (errorMessage !== null) {
     return (
-      <section aria-live="assertive">
-        <p>{errorMessage}</p>
-        <button type="button" onClick={() => router.replace('/auth/login')}>
+      <section className={styles.errorPage} aria-live="assertive">
+        <Image
+          className={styles.errorImage}
+          src="/fox_login_error.png"
+          alt="로그인 정보를 불러오지 못했어요. 다시 로그인해주세요."
+          width={1199}
+          height={1312}
+          sizes="(max-width: 227px) calc(100vw - 48px), 180px"
+        />
+        <button
+          className={styles.returnButton}
+          type="button"
+          onClick={() => router.replace('/')}
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m12 5-7 7 7 7M5 12h14" />
+          </svg>
           로그인 페이지로 돌아가기
         </button>
       </section>
     )
   }
 
-  return (
-    <section aria-live="polite" role="status">
-      <p>로그인 처리 중...</p>
-    </section>
-  )
+  return <Loading fullScreen />
 }

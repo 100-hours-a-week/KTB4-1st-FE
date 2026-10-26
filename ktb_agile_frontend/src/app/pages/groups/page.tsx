@@ -1,6 +1,5 @@
 'use client'
 
-import { GROUP_ERRORS } from '@/constants/errors/group'
 import Navbar from '@/components/common/navbar/Navbar'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
@@ -12,36 +11,34 @@ import LeaveConfirmModal from '@/components/groups/modal/LeaveConfirmModal'
 import LeaveFinalConfirmModal from '@/components/groups/modal/LeaveFinalConfirmModal'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
-import ModalDefault from '@/components/common/modal/Default'
-import {
-  JOIN_CONFIRM_MSG,
-  NO_GROUP_MSG,
-  NO_SEARCH_RESULT_MSG,
-  RECOMMENDED_GROUP_DESCRIPTION,
-} from '@/constants/group'
+import { setCurrentGroupId } from '@/utils/currentGroup'
+import GroupJoinModal from '@/components/groups/modal/GroupJoinModal'
+import RecommendedGroupList from '@/components/groups/RecommendedGroupList'
+import { NO_GROUP_MSG, NO_SEARCH_RESULT_MSG } from '@/constants/group'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
-export default function GroupList() {
-    const [inputKeyword, setInputKeyword] = useState('')
-    const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null)
-    const [searchGroupList, setSearchGroupList] = useState<GroupListResponse | null>(null)
-    const [recommendGroupsList, setRecommendGroupsList] = useState<GroupListResponse | null>(null)
-    const [isSearchMode, setIsSearchMode] = useState(false)
-    const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
-    const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
-    const [isLeaving, setIsLeaving] = useState(false)
-    const [joinTarget, setJoinTarget] = useState<GroupCardData |null>(null)
-    const [isJoining, setIsJoining] = useState(false)
-    const [openErrorModal, setOpenErrorModal] = useState(false);
-    const router = useRouter()
-    const hasNoJoinedGroups = myGroupList?.data.groups.length === 0
-  
-    type GroupListResponse = {
-      data: {
-        groups: GroupCardData[]
-      }
+export default function GroupListPage() {
+  const [inputKeyword, setInputKeyword] = useState('')
+  const [myGroupList, setMyGroupList] = useState<GroupListResponse | null>(null)
+  const [searchGroupList, setSearchGroupList] =
+    useState<GroupListResponse | null>(null)
+  const [isSearchMode, setIsSearchMode] = useState(false)
+  const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
+  const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
+  const [isLeaving, setIsLeaving] = useState(false)
+  const [joinTarget, setJoinTarget] = useState<GroupCardData | null>(null)
+  const router = useRouter()
+  const hasNoJoinedGroups = myGroupList?.data.groups.length === 0
+  const hasJoinedGroups = (myGroupList?.data.groups.length ?? 0) > 0
+
+  type GroupListResponse = {
+    data: {
+      groups: GroupCardData[]
     }
+  }
 
-    const fetchGroupList = useCallback(async (keyword = '') => {
+  const fetchGroupList = useCallback(
+    async (keyword = '') => {
       try {
         const trimmedKeyword = keyword.trim()
 
@@ -60,11 +57,8 @@ export default function GroupList() {
           return
         }
 
-        const accessToken = window.sessionStorage.getItem('accessToken')
-        if (!accessToken) {
-          router.replace('/auth/login')
-          return
-        }
+        const accessToken = getAccessTokenOrRedirect(router)
+        if (!accessToken) return
 
         const response = await axios.get<GroupListResponse>(
           `${API_BASE_URL}/groups?keyword=${encodeURIComponent(trimmedKeyword)}&size=30&cursor=`,
@@ -81,264 +75,208 @@ export default function GroupList() {
       } catch (error) {
         console.error(error)
       }
-    }, [router])
+    },
+    [router],
+  )
 
-    useEffect(() => {
-      async function initializeGroupList() {
-        await fetchGroupList()
-      }
+  useEffect(() => {
+    async function initializeGroupList() {
+      await fetchGroupList()
+    }
 
-      initializeGroupList()
-    }, [fetchGroupList])
+    initializeGroupList()
+  }, [fetchGroupList])
 
-    useEffect(() => {
-      if (!hasNoJoinedGroups) return
+  function handleSearch() {
+    fetchGroupList(inputKeyword)
+  }
 
-      async function recommendGroupListViewProcess() {
-        const accessToken = window.sessionStorage.getItem('accessToken')
+  function handleLeave(group: GroupCardData) {
+    setLeaveTarget(group)
+    setLeaveModalStep(1)
+  }
 
-        if (!accessToken) {
-          router.replace('/auth/login')
-          return
-        }
+  function handleJoin(group: GroupCardData) {
+    setJoinTarget(group)
+  }
 
-        try {
-          const response = axios.get<GroupListResponse>(
-            `${API_BASE_URL}/groups/recommendations?latitude=37.3948&longitude=127.1112&size=10&cursor=`,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                Accept: 'application/json',
+  function handleJoined(joinedGroup: GroupCardData) {
+    setMyGroupList((previous) => ({
+      data: {
+        ...previous?.data,
+        groups: [
+          joinedGroup,
+          ...(previous?.data.groups ?? []).filter(
+            (group) => group.groupId !== joinedGroup.groupId,
+          ),
+        ],
+      },
+    }))
+    setJoinTarget(null)
+    setInputKeyword('')
+    setIsSearchMode(false)
+  }
+
+  async function confirmLeave() {
+    if (!leaveTarget || isLeaving) return
+
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
+
+    setIsLeaving(true)
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+        },
+      )
+      const leavingGroupId = leaveTarget.groupId
+      setMyGroupList((previous) =>
+        previous
+          ? {
+              ...previous,
+              data: {
+                ...previous.data,
+                groups: previous.data.groups.filter(
+                  (group) => group.groupId !== leavingGroupId,
+                ),
               },
-            },
-          )
-
-          const data = (await response).data
-          setRecommendGroupsList(data)
-        } catch (error) {
-          console.error(error)
-        }
-      }
-
-      recommendGroupListViewProcess()
-    }, [hasNoJoinedGroups, router])
-
-    function handleSearch() {
-      fetchGroupList(inputKeyword)
+            }
+          : previous,
+      )
+      setLeaveModalStep(null)
+      setLeaveTarget(null)
+      setInputKeyword('')
+      setIsSearchMode(false)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLeaving(false)
     }
-  
-    function handleLeave(group: GroupCardData) {
-      setLeaveTarget(group)
-      setLeaveModalStep(1)
-    }
+  }
 
-    function handleJoin(group: GroupCardData){
-      setJoinTarget(group)
-    } 
+  const displayedGroupList = isSearchMode ? searchGroupList : myGroupList
+  const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
 
-    async function confirmJoin(){
-      if (!joinTarget || isJoining) return
-
-      const accessToken = window.sessionStorage.getItem('accessToken')
-
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
-
-      setIsJoining(true)
-      try {
-        await axios.post(
-          `${API_BASE_URL}/groups/${joinTarget?.groupId}/members`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
-          },
-        )
-        const joinedGroup = {
-          ...joinTarget,
-          isJoined: true,
-          memberCount: joinTarget.memberCount + 1,
-        }
-        setMyGroupList((previous) => ({
-          data: {
-            ...previous?.data,
-            groups: [
-              joinedGroup,
-              ...(previous?.data.groups ?? []).filter(
-                (group) => group.groupId !== joinedGroup.groupId,
-              ),
-            ],
-          },
-        }))
-        setJoinTarget(null)
-        setInputKeyword('')
-        setIsSearchMode(false)
-      } catch (error) {
-        console.error(error)        
-        setOpenErrorModal(true)
-        setJoinTarget(null)
-
-      } finally {
-        setIsJoining(false)
-      }
-    }
-   
-    
-    async function confirmLeave() {
-      if (!leaveTarget || isLeaving) return
-
-      const accessToken = window.sessionStorage.getItem('accessToken')
-
-      if (!accessToken) {
-        router.replace('/auth/login')
-        return
-      }
-
-      setIsLeaving(true)
-      try {
-        await axios.delete(
-          `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
-          },
-        )
-        const leavingGroupId = leaveTarget.groupId
-        setMyGroupList((previous) =>
-          previous
-            ? {
-                ...previous,
-                data: {
-                  ...previous.data,
-                  groups: previous.data.groups.filter(
-                    (group) => group.groupId !== leavingGroupId,
-                  ),
-                },
-              }
-            : previous,
-        )
-        setLeaveModalStep(null)
-        setLeaveTarget(null)
-        setInputKeyword('')
-        setIsSearchMode(false)
-      } catch (error) {
-        console.error(error)
-      } finally {
-        setIsLeaving(false)
-      }
-    }
-
-    const displayedGroupList = isSearchMode ? searchGroupList : myGroupList
-    const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
-
-
-    return (
-      <section className={styles.page}>
-        <header className={styles.header}>
-          <button className={styles.backButton} onClick={()=>router.back()}>
-              {/* 뒤로가기 아이콘 */}
-            <svg viewBox="0 0 24 24">
-              <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
-            </svg>
-          </button>
-          <h1 className={styles.title}>그룹</h1>
-          <button className={styles.createButton} type="button" onClick={()=>router.push('/pages/groups/create')}>
+  return (
+    <section className={styles.page}>
+      <header className={styles.header}>
+        <button
+          className={styles.backButton}
+          type="button"
+          aria-label="뒤로가기"
+          onClick={() => router.back()}
+        >
+          {/* 뒤로가기 아이콘 */}
+          <svg viewBox="0 0 24 24">
+            <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
+          </svg>
+        </button>
+        <h1 className={styles.title}>그룹</h1>
+        <div className={styles.headerActions}>
+          {hasJoinedGroups && (
+            <button
+              className={`${styles.createButton} ${styles.recommendButton}`}
+              type="button"
+              onClick={() => router.push('/pages/groups/recommendGroup')}
+            >
+              추천 그룹
+            </button>
+          )}
+          <button
+            className={styles.createButton}
+            type="button"
+            onClick={() => router.push('/pages/groups/create')}
+          >
             그룹 생성하기
           </button>
-        </header>
-
-        <div className={styles.search}>
-          <input
-            className={styles.searchInput}
-            type="search"
-            placeholder="그룹명을 검색"
-            value={inputKeyword}
-            onChange={(event)=>setInputKeyword(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') handleSearch()
-            }}
-          />
-          <button className={styles.searchButton} type="button" onClick={handleSearch}>
-            그룹검색
-          </button>
         </div>
+      </header>
 
-        {displayedGroupList &&
-          (displayedGroupList.data.groups.length === 0
-            ? (
-            <div className={styles.emptyState}>
-              <p className={styles.emptyMessage}>{emptyMessage}</p>
+      <div className={styles.search}>
+        <input
+          className={styles.searchInput}
+          type="search"
+          placeholder="그룹명을 검색"
+          value={inputKeyword}
+          onChange={(event) => setInputKeyword(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') handleSearch()
+          }}
+        />
+        <button
+          className={styles.searchButton}
+          type="button"
+          onClick={handleSearch}
+        >
+          그룹검색
+        </button>
+      </div>
 
-              {hasNoJoinedGroups && (
-              <section className={styles.recommendations}>
-                <h2 className={styles.recommendationsTitle}>추천 그룹</h2>
-                <p className={styles.recommendationsDescription}>
-                  {RECOMMENDED_GROUP_DESCRIPTION}
-                </p>
+      {displayedGroupList &&
+        (displayedGroupList.data.groups.length === 0 ? (
+          <div className={styles.emptyState}>
+            <p className={styles.emptyMessage}>{emptyMessage}</p>
+            {hasNoJoinedGroups && (
+              <div className={styles.recommendations}>
+                <RecommendedGroupList
+                  showTitle
+                  onJoin={handleJoin}
+                  onLeave={handleLeave}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          displayedGroupList?.data.groups.map((group) => (
+            <GroupCard
+              key={group.groupId}
+              group={group}
+              onSelect={() => {
+                setCurrentGroupId(group.groupId)
+                router.push(`/pages/items?groupId=${group.groupId}`)
+              }}
+              onLeave={() => handleLeave(group)}
+              onJoin={() => handleJoin(group)}
+            />
+          ))
+        ))}
 
-                <div className={styles.recommendationList}>
-                  {recommendGroupsList?.data.groups.map((group) => (
-                    <GroupCard key={group.groupId} group={group} 
-                    onLeave={() => handleLeave(group)} 
-                    onJoin={()=>handleJoin(group)}/>
-                  ))}
-                </div>
-              </section>
-              )}
-            </div>
-          ) : (
-            displayedGroupList.data.groups.map((group) => (
-              <GroupCard key={group.groupId} group={group}
-               onLeave={() => handleLeave(group)} 
-               onJoin={()=>handleJoin(group)}/>
-            ))
-          ))}
+      <GroupJoinModal
+        group={joinTarget}
+        onCancel={() => setJoinTarget(null)}
+        onJoined={handleJoined}
+      />
 
-        {joinTarget 
-          && (
-            <ModalDefault
-              message={JOIN_CONFIRM_MSG}
-              onConfirm={confirmJoin}
-              onCancel={() => setJoinTarget(null)}
-              />
-          )}
-          {openErrorModal&&(
-            <ModalDefault
-            message={GROUP_ERRORS.JOIN_FAILED}
-            onConfirm={() =>setOpenErrorModal(false)}/>
-          )}
+      {leaveTarget && leaveModalStep === 1 && (
+        <LeaveConfirmModal
+          groupName={leaveTarget.groupName}
+          onCancel={() => {
+            setLeaveModalStep(null)
+            setLeaveTarget(null)
+          }}
+          onConfirm={() => setLeaveModalStep(2)}
+        />
+      )}
 
-        {leaveTarget && leaveModalStep === 1 && (
-          <LeaveConfirmModal
-            groupName={leaveTarget.groupName}
-            onCancel={() => {
-              setLeaveModalStep(null)
-              setLeaveTarget(null)
-            }}
-            onConfirm={() => setLeaveModalStep(2)}
-          />
-        )}
-
-        {leaveTarget && leaveModalStep === 2 && (
-          <LeaveFinalConfirmModal
-            groupName={leaveTarget.groupName}
-            isLastMember={leaveTarget.memberCount === 1}
-            isLoading={isLeaving}
-            onCancel={() => {
-              if (isLeaving) return
-              setLeaveModalStep(null)
-              setLeaveTarget(null)
-            }}
-            onConfirm={confirmLeave}
-          />
-        )}
-        <Navbar />
-      </section>
-    )
-  }
+      {leaveTarget && leaveModalStep === 2 && (
+        <LeaveFinalConfirmModal
+          groupName={leaveTarget.groupName}
+          isLastMember={leaveTarget.memberCount === 1}
+          isLoading={isLeaving}
+          onCancel={() => {
+            if (isLeaving) return
+            setLeaveModalStep(null)
+            setLeaveTarget(null)
+          }}
+          onConfirm={confirmLeave}
+        />
+      )}
+      <Navbar />
+    </section>
+  )
+}

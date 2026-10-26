@@ -21,14 +21,7 @@
   align-items: center;
   justify-content: center;
   padding-block: 56px;
-  color: rgb(61 81 70 / 70%);
+  color: rgb(var(--ui-ink-rgb, 61 81 70) / 70%);
   font-size: 15px;
   letter-spacing: -0.02em;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .enter {
-    animation: none;
-    opacity: 1;
-  }
 }

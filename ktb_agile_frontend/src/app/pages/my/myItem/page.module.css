@@ -50,19 +50,28 @@
   list-style: none;
 }
 
+.itemList h2 {
+  color: var(--ui-ink, #263e2e);
+}
+
 .message,
 .emptyState {
   padding: 36px 18px;
   border-radius: 20px;
-  background: rgb(255 255 246 / 78%);
-  color: #586b5c;
+  background: rgb(255 255 246 / 10%);
+  color: var(--ui-surface, #fffff6);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
 }
 
-.itemList + .message {
-  margin-top: 14px;
+.emptyState h2 {
+  font-size: 17px;
+}
+
+.emptyState p {
+  margin-top: 8px;
+  color: var(--ui-soft, #d9f3e8);
 }
 
 .message button,
@@ -71,8 +80,8 @@
   padding: 9px 20px;
   border: 0;
   border-radius: 999px;
-  color: #fffff6;
-  background: #3d5146;
+  color: var(--ui-ink, #263e2e);
+  background: var(--ui-soft, #d9f3e8);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -89,8 +98,8 @@
   height: 52px;
   place-items: center;
   border-radius: 50%;
-  color: #3d5146;
-  background: #d9f3e8;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-soft, #d9f3e8);
 }
 
 .emptyState svg {

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import '@/config/api'
+import { setCurrentGroupId } from '@/utils/currentGroup'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/common/item/ItemCard'
@@ -13,6 +14,7 @@ import type { JoinedGroupOption } from '@/types/group'
 import type { ItemListItem, ItemListResponse } from '@/types/item'
 import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type SearchCriteria = {
   keyword: string
@@ -93,10 +95,7 @@ function SearchPageContent() {
   )
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-    }
+    getAccessTokenOrRedirect(router)
   }, [router])
 
   useEffect(() => {
@@ -149,11 +148,8 @@ function SearchPageContent() {
     const { criteria, cursor } = searchRequest
 
     async function searchItems() {
-      const token = window.sessionStorage.getItem('accessToken')
-      if (!token) {
-        router.replace('/auth/login')
-        return
-      }
+      const token = getAccessTokenOrRedirect(router)
+      if (!token) return
 
       try {
         const response = await axios.get<ItemListResponse>('/bff/search', {
@@ -171,6 +167,7 @@ function SearchPageContent() {
         })
         if (controller.signal.aborted) return
         const page = response.data.data
+        setCurrentGroupId(criteria.groupId)
         if (cursor) {
           setResult((current) =>
             current?.groupId === criteria.groupId &&
@@ -306,11 +303,8 @@ function SearchPageContent() {
   }
 
   async function requestAllHistoryDelete(path: string) {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return false
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return false
 
     const response = await axios.delete(path, {
       headers: {
@@ -329,11 +323,8 @@ function SearchPageContent() {
     try {
       let searchHistoryId = history.searchHistoryId
       if (searchHistoryId === null) {
-        const token = window.sessionStorage.getItem('accessToken')
-        if (!token) {
-          router.replace('/auth/login')
-          return
-        }
+        const token = getAccessTokenOrRedirect(router)
+        if (!token) return
         const response = await axios.get<SearchHistoryResponse>(
           '/bff/search-histories',
           {

@@ -4,7 +4,9 @@ import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
+import { setCurrentGroupId } from '@/utils/currentGroup'
 import styles from './AccountCard.module.css'
+import { redirectToLogin } from '@/utils/auth'
 
 export default function AccountCard() {
   const router = useRouter()
@@ -72,7 +74,8 @@ export default function AccountCard() {
 
   function returnToLogin() {
     window.sessionStorage.removeItem('accessToken')
-    router.replace('/auth/login')
+    setCurrentGroupId(0)
+    redirectToLogin(router)
   }
 
   async function logout() {

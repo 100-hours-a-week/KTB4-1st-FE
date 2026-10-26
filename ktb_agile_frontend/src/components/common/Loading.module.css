@@ -1,0 +1,59 @@
+.container {
+  display: grid;
+  flex: none;
+  width: 100%;
+  padding-block: 1px;
+  place-items: center;
+}
+
+.fullScreen {
+  position: fixed;
+  z-index: 1000;
+  inset-block: 0;
+  left: 50%;
+  max-width: var(--app-shell-max-width, 100%);
+  background: var(--app-background, var(--ui-surface, #fff));
+  transform: translateX(-50%);
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--ui-soft, #d9f3e8);
+  border-top-color: var(--ui-orange, #3d8062);
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+.progress {
+  width: 40px;
+  height: 40px;
+  transform: rotate(-90deg);
+}
+
+.track,
+.arc {
+  fill: none;
+  stroke-width: 3px;
+}
+
+.track {
+  stroke: var(--ui-soft, #d9f3e8);
+}
+
+.arc {
+  stroke: var(--ui-orange, #3d8062);
+  stroke-linecap: round;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

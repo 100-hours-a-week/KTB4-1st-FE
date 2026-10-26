@@ -1,0 +1,287 @@
+.loginPage {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  width: calc(100% + var(--app-content-inline-padding) * 2);
+  min-height: 100dvh;
+  margin: calc(var(--app-content-block-padding) * -1)
+    calc(var(--app-content-inline-padding) * -1);
+  padding: max(40px, env(safe-area-inset-top)) 24px
+    max(22px, env(safe-area-inset-bottom));
+  overflow: hidden;
+  flex-direction: column;
+  align-items: center;
+  color: var(--landing-ink, #fff4df);
+  background: var(--landing-background, #24162f);
+  text-align: center;
+  container-type: inline-size;
+}
+
+/* Paper-like speckles echo the supplied cut-paper characters. */
+.loginPage::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23grain)' opacity='.5' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+  content: '';
+  pointer-events: none;
+}
+
+.web {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 132px;
+  color: #b794cd;
+  opacity: 0.32;
+  pointer-events: none;
+}
+.web svg {
+  display: block;
+  width: 100%;
+}
+.seasonLabel {
+  padding: 8px 13px;
+  border: 1px solid #826393;
+  border-radius: 99px;
+  color: var(--landing-yellow, #ffe298);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+}
+.logoTitle {
+  margin-top: 24px;
+  padding-left: 0.04em;
+  color: var(--landing-yellow, #ffe298);
+  font-size: clamp(60px, 20cqi, 84px);
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: 0.04em;
+  text-shadow: 0 4px 0 #a45931;
+}
+.titleAccent {
+  margin-top: 12px;
+  color: var(--landing-orange, #ffad61);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+}
+.loginArea {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 24px;
+  gap: 24px;
+}
+.characters {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  min-height: 260px;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 26px 0 20px;
+}
+.character {
+  z-index: 1;
+  width: 55%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 14px rgb(0 0 0 / 20%));
+  animation: characterFloat 4.8s ease-in-out infinite;
+}
+.fox {
+  margin-right: -8%;
+  --tilt: -3deg;
+}
+.crane {
+  margin-bottom: 12px;
+  --tilt: 3deg;
+  animation-delay: -2.4s;
+}
+.moon {
+  position: absolute;
+  z-index: -1;
+  top: 28px;
+  right: 25px;
+  width: 94px;
+  height: 94px;
+  border-radius: 50%;
+  background: #ffe7a5;
+  box-shadow: 0 0 64px rgb(255 218 146 / 15%);
+}
+.moon::after {
+  position: absolute;
+  top: -8px;
+  left: -14px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #422651;
+  content: '';
+}
+.star {
+  position: absolute;
+  color: #ffe298;
+}
+.starOne {
+  top: 42px;
+  left: 24px;
+  font-size: 23px;
+  transform: rotate(12deg);
+}
+.starTwo {
+  top: 12px;
+  left: 42%;
+  font-size: 32px;
+}
+.starThree {
+  bottom: 65px;
+  right: 4px;
+  font-size: 18px;
+}
+.orbit {
+  position: absolute;
+  z-index: -1;
+  bottom: 10px;
+  left: 7%;
+  width: 86%;
+  height: 60px;
+  border: 1px solid rgb(211 164 244 / 25%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(175 118 206 / 24%), transparent 70%);
+  transform: rotate(-7deg);
+}
+.pumpkin {
+  position: absolute;
+  z-index: 2;
+  bottom: 13px;
+  left: 45%;
+  width: 52px;
+  height: 42px;
+  border: 1px solid #ffb25d;
+  border-radius: 44%;
+  background: repeating-linear-gradient(
+    90deg,
+    #f5953e 0 10px,
+    #e77b31 11px 13px
+  );
+  box-shadow:
+    inset 0 -5px 8px #c86230,
+    0 8px 14px rgb(0 0 0 / 20%);
+  transform: rotate(-8deg);
+}
+.pumpkin::before {
+  position: absolute;
+  top: -10px;
+  left: 24px;
+  width: 7px;
+  height: 12px;
+  border-radius: 3px;
+  background: #a4a16c;
+  content: '';
+  transform: rotate(14deg);
+}
+.pumpkin i::before,
+.pumpkin i::after {
+  position: absolute;
+  top: 12px;
+  width: 0;
+  height: 0;
+  border-right: 5px solid transparent;
+  border-bottom: 7px solid #3a2138;
+  border-left: 5px solid transparent;
+  content: '';
+}
+.pumpkin i::before {
+  left: 9px;
+}
+.pumpkin i::after {
+  right: 9px;
+}
+.pumpkin b {
+  position: absolute;
+  bottom: 7px;
+  left: 15px;
+  width: 22px;
+  height: 9px;
+  border-radius: 0 0 14px 14px;
+  background: #3a2138;
+}
+.kakaoLoginButton {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  background: #fee500;
+  line-height: 0;
+  cursor: pointer;
+  box-shadow: 0 7px 25px rgb(0 0 0 / 22%);
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+.kakaoLoginImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.kakaoLoginButton:focus-visible {
+  outline: 3px solid #ffe298;
+  outline-offset: 5px;
+}
+.kakaoLoginButton:active:enabled {
+  transform: scale(0.98);
+}
+.kakaoLoginButton:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+@keyframes characterFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--tilt));
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .kakaoLoginButton:hover:enabled {
+    transform: translateY(-2px);
+  }
+}
+@media (max-width: 359px) {
+  .loginPage {
+    padding-inline: 20px;
+  }
+  .characters {
+    min-height: 230px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .character {
+    animation: none;
+  }
+  .kakaoLoginButton {
+    transition: none;
+  }
+}
+
+.sceneCandy {
+  position: absolute;
+  left: 4px;
+  top: 15px;
+  width: 54px;
+  transform: rotate(-18deg);
+  opacity: 0.85;
+}

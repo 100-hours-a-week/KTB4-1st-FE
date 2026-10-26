@@ -14,10 +14,11 @@ import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
+import EventApplyButton from '@/components/event/EventApplyButton'
 import ChatRoomMenu from '@/components/chat/ChatRoomMenu/ChatRoomMenu'
 import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
-import { getUserIdFromAccessToken } from '@/utils/auth'
+import { getUserIdFromAccessToken, getAccessTokenOrRedirect } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import type {
   ChatRoom,
@@ -161,11 +162,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [socketError, setSocketError] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     const controller = new AbortController()
     async function loadDetail() {
       try {
@@ -268,11 +266,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   }
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     const controller = new AbortController()
     async function loadMessages() {
       setIsLoading(true)
@@ -328,11 +323,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
 
   async function loadOlderMessages() {
     if (!nextCursor || isLoadingMore) return
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     setIsLoadingMore(true)
     setMessageError(null)
     try {
@@ -392,11 +384,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       )
     )
       return
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     setIsLeaving(true)
     setActionError(null)
     try {
@@ -468,11 +457,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           ? '거절'
           : '취소'
     if (!window.confirm(`교환 제안을 ${action}하시겠습니까?`)) return
-    const token = window.sessionStorage.getItem('accessToken')
-    if (!token) {
-      router.replace('/auth/login')
-      return
-    }
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
     setIsUpdatingExchange(true)
     setActionError(null)
     try {
@@ -593,6 +579,22 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           ) : (
             <p className={styles.state}>교환 요청 정보를 불러오는 중입니다.</p>
           )}
+
+          {exchangeStatus === CHAT_EXCHANGE_STATUS.COMPLETED &&
+            exchangeRequest && (
+              <EventApplyButton
+                chatRoomId={Number(chatRoomId)}
+                exchangeRequestId={exchangeRequest.exchangeRequestId}
+                isSeller={isSeller}
+                otherUser={otherUser}
+                requestedItemTitle={exchangeRequest.requestedItem.title}
+                offeredItemTitles={
+                  exchangeRequest.offeredItems
+                    .map((item) => item.title)
+                    .join(', ') || '제공 물품 없음'
+                }
+              />
+            )}
 
           {actionError && <p className={styles.error}>{actionError}</p>}
           {socketError && <p className={styles.error}>{socketError}</p>}

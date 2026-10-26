@@ -1,0 +1,314 @@
+/* 화면 전체를 덮어 뒷배경 클릭을 막고, 모달을 정중앙에 배치합니다. */
+.overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--app-content-inline-padding);
+  background: rgba(24, 40, 32, 0.55);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: overlay-in 160ms ease-out;
+}
+
+.modal {
+  display: flex;
+  width: 100%;
+  max-width: 340px;
+  max-height: calc(100dvh - 48px);
+  flex-direction: column;
+  overflow-y: auto;
+  border: 2px solid var(--ui-surface, #fffbf6);
+  border-radius: 24px;
+  color: var(--ui-ink, #3d5146);
+  background: var(--ui-surface, #fffbf6);
+  box-shadow: 0 20px 56px rgba(24, 40, 32, 0.35);
+  animation: modal-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* 상단 민트 그라데이션 헤더 */
+.header {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 52px 14px 16px;
+  background: var(--ui-accent, #aeebcb);
+}
+
+.title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.closeButton {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: inherit;
+  background: rgba(255, 251, 246, 0.6);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: background-color 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px 16px 16px;
+}
+
+/* 교환 정보 카드 */
+.infoCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--ui-soft, #d9f3e8);
+  border-radius: 16px;
+  background: var(--ui-surface, #ffffff);
+}
+
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.infoRow dt {
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: var(--ui-muted, #4f6a5c);
+  background: var(--ui-soft, #e6f7ef);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.infoRow dd {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.names {
+  display: flex;
+  gap: 8px;
+}
+
+/* 두 이름이 가로를 절반씩 꽉 채웁니다. */
+.nameBox {
+  min-width: 0;
+  flex: 1;
+  padding: 8px 10px;
+  border: 1.5px solid var(--ui-accent-hover, #94e3c0);
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.items {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 두 물품이 화살표를 사이에 두고 가로를 꽉 채웁니다. */
+.itemChip {
+  min-width: 0;
+  flex: 1;
+  padding: 6px 8px;
+  text-align: center;
+  border: 1.5px solid var(--ui-orange, #ff8f70);
+  border-radius: 10px;
+  background: transparent;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.arrowBadge {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--ui-surface, #fffbf6);
+  background: var(--ui-orange, #ff8f70);
+}
+
+.arrow {
+  width: 14px;
+  height: 14px;
+}
+
+/* 사진 등록 */
+.photoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photoButton {
+  position: relative;
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1.5px solid var(--ui-ink, #3d5146);
+  border-radius: 10px;
+  background: var(--ui-surface, #fffbf6);
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.cameraIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.photoButton:focus-within,
+.closeButton:focus-visible,
+.applyButton:focus-visible,
+.removeButton:focus-visible {
+  outline: 2px solid var(--ui-ink, #3d5146);
+  outline-offset: 2px;
+}
+
+.photoInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* 사진을 올리기 전에는 비어 있는 썸네일 칸 */
+.thumbnailBox {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  place-items: center;
+  overflow: hidden;
+  border: 2px dashed var(--ui-accent-hover, #94e3c0);
+  border-radius: 16px;
+  background: #f4fbf7;
+}
+
+.thumbnailFilled {
+  border-style: solid;
+}
+
+.thumbnailHint {
+  color: var(--ui-subtle, #9aaba1);
+  font-size: 13px;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.removeButton {
+  align-self: center;
+  padding: 2px 8px;
+  border: 0;
+  color: var(--ui-muted, #4f6a5c);
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* 응모하기 */
+.applyButton {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 16px;
+  color: var(--ui-surface, #fffbf6);
+  background: var(--ui-ink, #3d5146);
+  box-shadow: 0 6px 14px rgba(var(--ui-ink-rgb-comma, 61, 81, 70), 0.25);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.applyButton:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.applyButton:disabled {
+  color: var(--ui-subtle, #9aaba1);
+  background: #e3e8e5;
+  box-shadow: none;
+  cursor: default;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .closeButton:hover {
+    background: var(--ui-surface, #fffbf6);
+  }
+
+  .photoButton:hover {
+    background: var(--ui-soft, #e6f7ef);
+  }
+
+  .applyButton:not(:disabled):hover {
+    background: #2f4036;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .modal {
+    animation: none;
+  }
+}
