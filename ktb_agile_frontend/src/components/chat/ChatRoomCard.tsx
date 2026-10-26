@@ -21,6 +21,9 @@ export default function ChatRoomCard({
     userStatus === USER_STATUS.ACTIVE &&
     groupMemberStatus === GROUP_MEMBER_STATUS.ACTIVE
   const hasUnknownStatus = !isWithdrawn && !hasLeftGroup && !isActive
+  const offeredItem = room.offeredItem
+  const offeredItemCount = room.offeredItemCount ?? 1
+  const additionalOfferedItemCount = Math.max(0, offeredItemCount - 1)
   const statusMessage = isWithdrawn
     ? '탈퇴한 사용자'
     : hasLeftGroup
@@ -52,7 +55,7 @@ export default function ChatRoomCard({
         type="button"
         onClick={onClick}
         className={styles.room}
-        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} 채팅방 열기`}
+        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} ↔ ${offeredItem?.title || '제시 물품 정보 없음'}${additionalOfferedItemCount > 0 ? ` 외 ${additionalOfferedItemCount}개` : ''} 채팅방 열기`}
       >
         <div className={styles.images}>
           <div
@@ -62,11 +65,16 @@ export default function ChatRoomCard({
             }}
           />
           <div
-            className={`${styles.avatar} ${room.otherUser.profileImageUrl ? '' : styles.placeholder}`}
+            className={`${styles.offeredItemImage} ${offeredItem?.thumbnailImageUrl ? '' : styles.placeholder}`}
             style={{
-              backgroundImage: `url("${room.otherUser.profileImageUrl || '/icons/chat-image-placeholder.svg'}")`,
+              backgroundImage: `url("${offeredItem?.thumbnailImageUrl || '/icons/chat-image-placeholder.svg'}")`,
             }}
           />
+          {additionalOfferedItemCount > 0 && (
+            <span className={styles.offeredItemCount} aria-hidden="true">
+              +{additionalOfferedItemCount}
+            </span>
+          )}
         </div>
         <div className={styles.roomContent}>
           <div className={styles.topRow}>
