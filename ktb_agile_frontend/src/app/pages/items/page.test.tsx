@@ -239,26 +239,33 @@ it('목록으로 돌아오면 캐시와 스크롤을 복원하면서 최신 커�
   fireEvent.scroll(window)
   cleanup()
   observers.length = 0
+  vi.mocked(window.scrollTo).mockClear()
   let resolveFirst!: (value: ReturnType<typeof page>) => void
-  get
-    .mockClear()
-    .mockResolvedValueOnce(groups())
-    .mockImplementationOnce(
-      () =>
-        new Promise((resolve) => {
-          resolveFirst = resolve
-        }),
-    )
+  let itemRequests = 0
+  get.mockClear().mockImplementation((url) => {
+    if (url === '/bff/me/groups') return Promise.resolve(groups())
+    itemRequests += 1
+    if (itemRequests === 1)
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
+    if (itemRequests === 2)
+      return Promise.resolve(page(makeItems(120, 20), 'fresh-page-3'))
+    return Promise.resolve(page(makeItems(140, 2), null))
+  })
   render(<ItemList />)
-  await screen.findByText('물품 40')
+  expect(screen.getByText('물품 40')).toBeDefined()
   await waitFor(() =>
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 1500,
       behavior: 'instant',
     }),
   )
+  expect(window.scrollTo).not.toHaveBeenCalledWith({
+    top: 0,
+    behavior: 'instant',
+  })
   expect(get).toHaveBeenCalledTimes(2)
-  get.mockResolvedValueOnce(page(makeItems(120, 20), 'fresh-page-3'))
   await act(async () => resolveFirst(page(makeItems(100, 20), 'fresh-page-2')))
   await screen.findByText('물품 139')
   expect(screen.queryByText('물품 25')).toBeNull()
@@ -266,7 +273,6 @@ it('목록으로 돌아오면 캐시와 스크롤을 복원하면서 최신 커�
     params: { cursor: 'fresh-page-2' },
   })
   await waitFor(() => expect(observers.length).toBeGreaterThan(0))
-  get.mockResolvedValueOnce(page(makeItems(140, 2), null))
   await act(async () => intersect(observers.length - 1))
   await screen.findByText('물품 141')
   expect(get.mock.calls[3][1]).toMatchObject({
@@ -362,42 +368,30 @@ it('이전 버전 스냅샷과 손상된 위치 정보는 목록에 사용하지
   expect(window.sessionStorage.getItem('accessToken')).toBe('test-token')
 })
 
-it('캐시의 이미지와 카드가 준비된 뒤 위치를 복원하고 무한스크롤을 활성화한다', async () => {
-  const imageLoads: (() => void)[] = []
-  vi.stubGlobal(
-    'Image',
-    class {
-      onload: (() => void) | null = null
-      onerror: (() => void) | null = null
-      set src(_value: string) {
-        imageLoads.push(() => this.onload?.())
-      }
-    },
-  )
+it('캐시된 카드를 이미지 대기 없이 표시하고 첫 화면이 그려지기 전에 위치를 복원한다', async () => {
   const items = makeItems(1, 3).map((item) => ({
     ...item,
     thumbnailImageUrl: '/test.png',
   }))
   saveItemListSession({ groupId: 1, scrollY: 500 })
   seed(1, [page(items, 'page-2')])
-  vi.spyOn(axios, 'get')
-    .mockResolvedValueOnce(groups())
-    .mockImplementationOnce(() => new Promise(() => {}))
+  client.setQueryData(
+    ['joined-groups', 'test-token'],
+    [{ groupId: 1, groupName: '테스트 그룹' }],
+  )
+  vi.spyOn(axios, 'get').mockImplementation(() => new Promise(() => {}))
   render(<ItemList />)
-  await waitFor(() => expect(imageLoads).toHaveLength(3))
-  expect(window.scrollTo).not.toHaveBeenCalledWith({
+  expect(screen.getByText('물품 3')).toBeDefined()
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
+  expect(observers).toHaveLength(0)
+  expect(window.scrollTo).toHaveBeenCalledWith({
     top: 500,
     behavior: 'instant',
   })
-  expect(observers).toHaveLength(0)
-  await act(async () => imageLoads.forEach((load) => load()))
-  await screen.findByText('물품 3')
-  await waitFor(() =>
-    expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 500,
-      behavior: 'instant',
-    }),
-  )
+  expect(window.scrollTo).not.toHaveBeenCalledWith({
+    top: 0,
+    behavior: 'instant',
+  })
   // 백그라운드 재조회가 끝날 때까지 추가 페이지 요청을 막습니다.
   expect(observers).toHaveLength(0)
 })
