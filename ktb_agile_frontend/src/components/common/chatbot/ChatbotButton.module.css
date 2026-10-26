@@ -14,10 +14,6 @@
   pointer-events: none;
 }
 
-.aboveComposer {
-  bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 102px);
-}
-
 .button {
   display: grid;
   width: 48px;
@@ -91,10 +87,6 @@
   pointer-events: auto;
   animation: panel-in 180ms ease-out;
   transform-origin: bottom right;
-}
-
-.aboveComposer .panel {
-  height: min(440px, calc(100dvh - var(--app-navbar-height) - 242px));
 }
 
 @keyframes panel-in {
