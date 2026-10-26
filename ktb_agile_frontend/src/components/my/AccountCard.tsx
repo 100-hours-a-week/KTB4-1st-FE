@@ -1,6 +1,7 @@
 'use client'
 
 import axios from 'axios'
+import '@/config/api'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
@@ -30,16 +31,14 @@ export default function AccountCard() {
         const accessToken = window.sessionStorage.getItem('accessToken')
         if (!accessToken) throw new Error('Access token is missing')
 
-        const response = await fetch('/bff/users/me', {
+        const response = await axios.get('/bff/users/me', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
-          cache: 'no-store',
         })
-        if (!response.ok) throw new Error('Profile request failed')
 
-        const result = await response.json()
+        const result = response.data
         if (
           typeof result.data?.nickname !== 'string' ||
           !result.data.nickname.trim()
