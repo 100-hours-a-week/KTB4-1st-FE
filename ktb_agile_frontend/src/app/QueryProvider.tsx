@@ -8,6 +8,10 @@ export default function QueryProvider({
 }: {
   children: React.ReactNode
 }) {
-  const [client] = useState(() => new QueryClient())
+  const [client] = useState(() => {
+    const queryClient = new QueryClient()
+    queryClient.setQueryDefaults(['joined-groups'], { gcTime: 30 * 60 * 1000 })
+    return queryClient
+  })
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>
 }

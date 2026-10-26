@@ -21,6 +21,7 @@ import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
+import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   clearItemListSession,
@@ -42,11 +43,45 @@ type GroupListResponse = {
   }
 }
 
+function getJoinedGroupCacheKey() {
+  const token =
+    typeof window === 'undefined'
+      ? null
+      : window.sessionStorage.getItem('accessToken')
+  return [
+    'joined-groups',
+    token ? (getUserIdFromAccessToken(token) ?? token) : null,
+  ] as const
+}
+
+function chooseGroupId(groups: JoinedGroup[]) {
+  const requestedGroupId = Number(
+    new URLSearchParams(window.location.search).get('groupId'),
+  )
+  const lastGroupId = readLastItemListSession()?.groupId
+  const currentGroupId = getCurrentGroupId()
+  return (
+    groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+    groups.find((group) => group.groupId === lastGroupId)?.groupId ??
+    groups.find((group) => group.groupId === currentGroupId)?.groupId ??
+    groups[0]?.groupId ??
+    null
+  )
+}
+
 export default function ItemList() {
-  const [joinedGroups, setJoinedGroups] = useState<JoinedGroup[]>([])
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
-  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
   const queryClient = useQueryClient()
+  const groupCacheKey = useMemo(() => getJoinedGroupCacheKey(), [])
+  const cachedGroups = queryClient.getQueryData<JoinedGroup[]>(groupCacheKey)
+  const [joinedGroups, setJoinedGroups] = useState<JoinedGroup[]>(
+    () => cachedGroups ?? [],
+  )
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(() =>
+    cachedGroups && typeof window !== 'undefined'
+      ? chooseGroupId(cachedGroups)
+      : null,
+  )
+  const [isLoadingGroups, setIsLoadingGroups] = useState(!cachedGroups)
   const snapshotRef = useRef<ItemListSnapshot | null>(null)
   const leavingRef = useRef(false)
   const restoringRef = useRef(true)
@@ -118,12 +153,6 @@ export default function ItemList() {
       ),
     }
   }, [selectedGroupId, queryClient, queryKey])
-  const [restoredPosition, setRestoredPosition] = useState<
-    typeof initialPosition | null
-  >(null)
-  const restoreScrollY =
-    restoredPosition === initialPosition ? null : initialPosition.scrollY
-
   useLayoutEffect(() => {
     if (initialPosition.groupId === null) return
     if (initialPosition.discardSaved) clearItemListSession()
@@ -132,7 +161,9 @@ export default function ItemList() {
       scrollY: initialPosition.scrollY,
     }
     restoringRef.current = true
-    window.scrollTo({ top: 0, behavior: 'instant' })
+    // 캐시된 카드는 이미 DOM에 있으므로 첫 화면이 그려지기 전에 복원합니다.
+    window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
+    restoringRef.current = false
   }, [initialPosition])
 
   const saveCurrentList = useCallback(() => {
@@ -187,11 +218,6 @@ export default function ItemList() {
 
   useEffect(() => {
     removeLegacySnapshots()
-    const currentGroupId = getCurrentGroupId()
-    const lastSnapshot = readLastItemListSession()
-    const requestedGroupId = Number(
-      new URLSearchParams(window.location.search).get('groupId'),
-    )
     const controller = new AbortController()
 
     async function fetchJoinedGroups() {
@@ -210,15 +236,9 @@ export default function ItemList() {
         )
 
         if (controller.signal.aborted) return
+        queryClient.setQueryData(groupCacheKey, groups)
         setJoinedGroups(groups)
-        setSelectedGroupId(
-          groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
-            groups.find((group) => group.groupId === lastSnapshot?.groupId)
-              ?.groupId ??
-            groups.find((group) => group.groupId === currentGroupId)?.groupId ??
-            groups[0]?.groupId ??
-            null,
-        )
+        setSelectedGroupId(chooseGroupId(groups))
         if (groups.length === 0) setCurrentGroupId(0)
       } catch (error) {
         if (!axios.isCancel(error)) {
@@ -234,7 +254,7 @@ export default function ItemList() {
     fetchJoinedGroups()
 
     return () => controller.abort()
-  }, [])
+  }, [queryClient, groupCacheKey])
 
   useEffect(() => {
     if (selectedGroupId === null) return
@@ -259,16 +279,6 @@ export default function ItemList() {
       return
     void fetchNextPage({ cancelRefetch: false })
   }, [hasNextPage, queryClient, queryKey, fetchNextPage])
-
-  const restoreListPosition = useCallback(() => {
-    if (restoreScrollY === null) return
-    const frame = requestAnimationFrame(() => {
-      window.scrollTo({ top: restoreScrollY, behavior: 'instant' })
-      restoringRef.current = false
-      setRestoredPosition(initialPosition)
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [restoreScrollY, initialPosition])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -375,7 +385,7 @@ export default function ItemList() {
         )}
         {isLoadingGroups ||
         isLoadingItems ||
-        (selectedGroup && (items.length > 0 || restoreScrollY !== null)) ? (
+        (selectedGroup && items.length > 0) ? (
           <ItemCardList
             key={selectedGroupId}
             className={styles.itemList}
@@ -385,12 +395,10 @@ export default function ItemList() {
               !isRefreshing &&
               hasNextPage &&
               !isFetching &&
-              !isFetchNextPageError &&
-              restoreScrollY === null
+              !isFetchNextPageError
                 ? loadMore
                 : undefined
             }
-            onReady={restoreListPosition}
           />
         ) : (
           <div className={styles.emptyState}>
