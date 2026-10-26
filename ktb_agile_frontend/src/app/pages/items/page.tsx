@@ -14,6 +14,8 @@ import {
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import Navbar from '@/components/common/navbar/Navbar'
+import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
+import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
 import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
@@ -516,6 +518,8 @@ export default function ItemList() {
         )}
       </div>
       <Navbar />
+      <FloatingInquiryButton />
+      <ChatbotButton />
     </section>
   )
 }
