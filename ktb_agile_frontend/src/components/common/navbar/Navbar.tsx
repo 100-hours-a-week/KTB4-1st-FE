@@ -102,6 +102,7 @@ export default function Navbar() {
               <Link
                 className={`${styles.navLink} ${isActive ? styles.active : ''}`}
                 href={item.href}
+                scroll={item.id === 'home' ? false : undefined}
                 onNavigate={() => setSelectedItemId(item.id)}
               >
                 <span className={styles.icon}>{item.icon}</span>

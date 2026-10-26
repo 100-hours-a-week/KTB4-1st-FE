@@ -170,7 +170,11 @@ export default function LikedItemPage() {
           <div className={styles.emptyState}>
             <h2>아직 좋아요 누른 물품이 없어요</h2>
             <p>마음에 드는 물품을 구경해 보시겠어요?</p>
-            <Link className={styles.homeButton} href="/pages/items">
+            <Link
+              className={styles.homeButton}
+              href="/pages/items"
+              scroll={false}
+            >
               물품 구경하러 가기
             </Link>
           </div>

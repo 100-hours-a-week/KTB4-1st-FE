@@ -164,6 +164,12 @@ export default function ItemList() {
     // 캐시된 카드는 이미 DOM에 있으므로 첫 화면이 그려지기 전에 복원합니다.
     window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
     restoringRef.current = false
+    const frame = requestAnimationFrame(() => {
+      if (window.scrollY !== initialPosition.scrollY) {
+        window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
+      }
+    })
+    return () => cancelAnimationFrame(frame)
   }, [initialPosition])
 
   const saveCurrentList = useCallback(() => {
