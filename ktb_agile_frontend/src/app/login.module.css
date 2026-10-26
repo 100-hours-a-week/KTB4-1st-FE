@@ -215,25 +215,38 @@
   background: #3a2138;
 }
 .kakaoLoginButton {
-  display: block;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   max-width: 360px;
-  padding: 0;
+  min-height: 54px;
+  padding: 16px 52px;
   overflow: hidden;
   border: 0;
   border-radius: 12px;
   background: #fee500;
-  line-height: 0;
+  color: rgb(0 0 0 / 85%);
+  font-family: system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 22px;
   cursor: pointer;
   box-shadow: 0 7px 25px rgb(0 0 0 / 22%);
   transition:
     transform 160ms ease,
     opacity 160ms ease;
 }
-.kakaoLoginImage {
-  display: block;
-  width: 100%;
-  height: auto;
+.loginSymbol {
+  position: absolute;
+  left: 20px;
+  width: 24px;
+  height: 24px;
+  fill: #000;
+}
+.loginLabel {
+  text-align: center;
 }
 .kakaoLoginButton:focus-visible {
   outline: 3px solid #ffe298;
