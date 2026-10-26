@@ -33,7 +33,7 @@
   background-size: cover;
   background-repeat: no-repeat;
 }
-.offeredItemImage {
+.avatar {
   position: absolute;
   right: -8px;
   bottom: -12px;
@@ -74,26 +74,10 @@
   white-space: nowrap;
 }
 .itemTitle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   flex: 1 1 0;
   min-width: 0;
   font-size: 16px;
   font-weight: 600;
-}
-.itemName {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.exchangeArrow {
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  /* Compensate for the font's descender space to center on the visible glyphs. */
-  transform: translateY(-1px);
 }
 .time {
   flex: 0 0 auto;

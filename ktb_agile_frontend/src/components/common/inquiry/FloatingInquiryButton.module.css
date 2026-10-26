@@ -10,6 +10,10 @@
   pointer-events: none;
 }
 
+.aboveComposer {
+  bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom) + 102px);
+}
+
 .button {
   display: inline-flex;
   min-width: 64px;
@@ -34,6 +38,31 @@
 .button:focus-visible {
   outline: 2px solid var(--ui-ink, #3d5146);
   outline-offset: 3px;
+}
+
+.shake {
+  animation: inquiry-shake 450ms ease-in-out 1;
+}
+
+@keyframes inquiry-shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px) rotate(-5deg);
+  }
+  40%,
+  80% {
+    transform: translateX(5px) rotate(5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shake {
+    animation-duration: 1ms;
+  }
 }
 
 .dialog {

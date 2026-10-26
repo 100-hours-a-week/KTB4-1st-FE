@@ -14,7 +14,6 @@ export default function ChatRoomCard({
   room: ChatRoom
   onClick: () => void
 }) {
-  const roomTitle = `${room.targetItem.title} 교환 제안: ${room.offeredItem.title}`
   const { userStatus, groupMemberStatus } = room.otherUser
   const isWithdrawn = userStatus === USER_STATUS.WITHDRAWN
   const hasLeftGroup = groupMemberStatus === GROUP_MEMBER_STATUS.LEFT
@@ -53,7 +52,7 @@ export default function ChatRoomCard({
         type="button"
         onClick={onClick}
         className={styles.room}
-        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${roomTitle} 채팅방 열기`}
+        aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} 채팅방 열기`}
       >
         <div className={styles.images}>
           <div
@@ -63,30 +62,16 @@ export default function ChatRoomCard({
             }}
           />
           <div
-            className={`${styles.offeredItemImage} ${room.offeredItem.thumbnailImageUrl ? '' : styles.placeholder}`}
+            className={`${styles.avatar} ${room.otherUser.profileImageUrl ? '' : styles.placeholder}`}
             style={{
-              backgroundImage: `url("${room.offeredItem.thumbnailImageUrl || '/icons/chat-image-placeholder.svg'}")`,
+              backgroundImage: `url("${room.otherUser.profileImageUrl || '/icons/chat-image-placeholder.svg'}")`,
             }}
           />
         </div>
         <div className={styles.roomContent}>
           <div className={styles.topRow}>
-            <strong className={styles.itemTitle} title={roomTitle}>
-              <span className={styles.itemName}>{room.targetItem.title}</span>
-              <svg
-                className={styles.exchangeArrow}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-                focusable="false"
-              >
-                <path d="M20 12H4m7-5-7 5 7 5" />
-              </svg>
-              <span className={styles.itemName}>{room.offeredItem.title}</span>
+            <strong className={styles.itemTitle}>
+              {room.targetItem.title}
             </strong>
             <span className={styles.time}>
               {formatLastTime(room.lastMessageAt)}

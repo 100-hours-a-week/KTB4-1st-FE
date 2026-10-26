@@ -41,7 +41,7 @@
 
 .thumbnail {
   display: grid;
-  width: min(100%, 88px);
+  width: 100%;
   aspect-ratio: 1;
   place-items: center;
   border-radius: 14px;
@@ -56,8 +56,8 @@
 }
 
 .thumbnail svg {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
