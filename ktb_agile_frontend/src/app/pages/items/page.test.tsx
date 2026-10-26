@@ -379,6 +379,11 @@ it('캐시된 카드를 이미지 대기 없이 표시하고 첫 화면이 그�
     ['joined-groups', 'test-token'],
     [{ groupId: 1, groupName: '테스트 그룹' }],
   )
+  let restoreFrame: FrameRequestCallback | undefined
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    restoreFrame = callback
+    return 1
+  })
   vi.spyOn(axios, 'get').mockImplementation(() => new Promise(() => {}))
   render(<ItemList />)
   expect(screen.getByText('물품 3')).toBeDefined()
@@ -392,6 +397,9 @@ it('캐시된 카드를 이미지 대기 없이 표시하고 첫 화면이 그�
     top: 0,
     behavior: 'instant',
   })
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+  act(() => restoreFrame?.(performance.now()))
+  expect(window.scrollY).toBe(500)
   // 백그라운드 재조회가 끝날 때까지 추가 페이지 요청을 막습니다.
   expect(observers).toHaveLength(0)
 })
