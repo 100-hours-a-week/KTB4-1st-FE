@@ -4,6 +4,8 @@ import { ITEM_ERRORS } from '@/constants/errors/item'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import { Suspense, useEffect, useState } from 'react'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { itemListKeys } from '@/queries/itemList'
 import { API_BASE_URL } from '@/config/api'
 import { useRouter, useSearchParams } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
@@ -29,6 +31,7 @@ function ItemRegisterContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [modalMessage, setModalMessage] = useState<string | null>(null)
   const router = useRouter()
+  const queryClient = useQueryClient()
   const searchParams = useSearchParams()
   const requestedGroupId = Number(searchParams.get('groupId'))
 
@@ -38,15 +41,12 @@ function ItemRegisterContent() {
       try {
         const response = await axios.get<{
           data: { groups: JoinedGroupOption[] }
-        }>(
-          '/bff/me/groups',
-          {
-            headers: {
-              Accept: 'application/json',
-            },
-            signal: controller.signal,
+        }>('/bff/me/groups', {
+          headers: {
+            Accept: 'application/json',
           },
-        )
+          signal: controller.signal,
+        })
         setGroups(response.data.data.groups)
       } catch (error) {
         if (!axios.isCancel(error)) {
@@ -122,6 +122,7 @@ function ItemRegisterContent() {
         },
       )
 
+      void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       router.push('/pages/items')
     } catch (error) {
       console.error(error)
