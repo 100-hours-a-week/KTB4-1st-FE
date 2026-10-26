@@ -114,14 +114,17 @@ export default function Login() {
             disabled={isLoggingIn}
             aria-label="카카오 로그인"
           >
-            <Image
-              className={styles.kakaoLoginImage}
-              src="/kakao_login_large_wide.png"
-              alt="kakao-login-btn"
-              loading="eager"
-              width={600}
-              height={90}
-            />
+            <svg
+              className={styles.loginSymbol}
+              viewBox="0 0 24 24"
+              width={24}
+              height={24}
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M12 3C5.373 3 0 6.806 0 11.5c0 3.016 2.218 5.665 5.564 7.17l-1.13 4.218a.35.35 0 0 0 .536.39l4.95-3.28c.677.068 1.371.102 2.08.102 6.627 0 12-3.806 12-8.5S18.627 3 12 3Z" />
+            </svg>
+            <span className={styles.loginLabel}>카카오 로그인</span>
           </button>
         </div>
       </section>
