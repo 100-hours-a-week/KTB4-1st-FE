@@ -7,19 +7,21 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type MouseEvent,
 } from 'react'
 import axios from 'axios'
-import { API_BASE_URL } from '@/config/api'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
 import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
-import type { ItemListItem, ItemListResponse } from '@/types/item'
+import { useQueryClient } from '@tanstack/react-query'
+import { itemListKeys, useItemList } from '@/queries/itemList'
+import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   clearItemListSession,
@@ -29,7 +31,6 @@ import {
   type ItemListSnapshot,
 } from '@/utils/itemListSession'
 import styles from './page.module.css'
-import { getAccessTokenOrRedirect } from '@/utils/auth'
 
 type JoinedGroup = {
   groupId: number
@@ -42,24 +43,48 @@ type GroupListResponse = {
   }
 }
 
+function getJoinedGroupCacheKey() {
+  const token =
+    typeof window === 'undefined'
+      ? null
+      : window.sessionStorage.getItem('accessToken')
+  return [
+    'joined-groups',
+    token ? (getUserIdFromAccessToken(token) ?? token) : null,
+  ] as const
+}
+
+function chooseGroupId(groups: JoinedGroup[]) {
+  const requestedGroupId = Number(
+    new URLSearchParams(window.location.search).get('groupId'),
+  )
+  const lastGroupId = readLastItemListSession()?.groupId
+  const currentGroupId = getCurrentGroupId()
+  return (
+    groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
+    groups.find((group) => group.groupId === lastGroupId)?.groupId ??
+    groups.find((group) => group.groupId === currentGroupId)?.groupId ??
+    groups[0]?.groupId ??
+    null
+  )
+}
+
 export default function ItemList() {
-  const [joinedGroups, setJoinedGroups] = useState<JoinedGroup[]>([])
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
-  const [isLoadingGroups, setIsLoadingGroups] = useState(true)
-  const [itemResult, setItemResult] = useState<{
-    groupId: number
-    items: ItemListItem[]
-    nextCursor: string | null
-    hasNext: boolean
-    restoreScrollY?: number
-  } | null>(null)
+  const queryClient = useQueryClient()
+  const groupCacheKey = useMemo(() => getJoinedGroupCacheKey(), [])
+  const cachedGroups = queryClient.getQueryData<JoinedGroup[]>(groupCacheKey)
+  const [joinedGroups, setJoinedGroups] = useState<JoinedGroup[]>(
+    () => cachedGroups ?? [],
+  )
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(() =>
+    cachedGroups && typeof window !== 'undefined'
+      ? chooseGroupId(cachedGroups)
+      : null,
+  )
+  const [isLoadingGroups, setIsLoadingGroups] = useState(!cachedGroups)
   const snapshotRef = useRef<ItemListSnapshot | null>(null)
   const leavingRef = useRef(false)
-  const restoringRef = useRef(false)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [loadMoreError, setLoadMoreError] = useState(false)
-  const moreRequestRef = useRef<AbortController | null>(null)
-  const refreshSignalRef = useRef<AbortSignal | null>(null)
+  const restoringRef = useRef(true)
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
 
@@ -67,45 +92,39 @@ export default function ItemList() {
   const router = useRouter()
   const selectedGroup =
     joinedGroups.find((group) => group.groupId === selectedGroupId) ?? null
-  const items = itemResult?.groupId === selectedGroupId ? itemResult.items : []
-  const isLoadingItems =
-    selectedGroupId !== null && itemResult?.groupId !== selectedGroupId
+  const {
+    data,
+    queryKey,
+    isPending,
+    isFetching,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+  } = useItemList(selectedGroupId, router)
+  const items = useMemo(
+    () => data?.pages.flatMap((page) => page.items) ?? [],
+    [data],
+  )
+  const isLoadingItems = selectedGroupId !== null && isPending
   const refreshItems = useCallback(
     async (signal: AbortSignal) => {
       if (selectedGroupId === null || signal.aborted) return
-      const accessToken = getAccessTokenOrRedirect(router)
-      if (!accessToken) return
-      refreshSignalRef.current = signal
-      moreRequestRef.current?.abort()
-      moreRequestRef.current = null
-      setIsLoadingMore(false)
-      setLoadMoreError(false)
       setRefreshError(false)
+      const cancel = () => {
+        void queryClient.cancelQueries({ queryKey, exact: true })
+      }
+      signal.addEventListener('abort', cancel, { once: true })
       try {
-        const response = await axios.get<ItemListResponse>(
-          `${API_BASE_URL}/groups/${selectedGroupId}/items`,
-          {
-            params: { size: 10, cursor: '' },
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
-            signal,
-          },
-        )
-        if (signal.aborted) return
-        // 기존 페이지와 커서를 새 첫 페이지로 교체합니다.
-        setItemResult({ groupId: selectedGroupId, ...response.data.data })
-      } catch (error) {
-        if (!signal.aborted) {
-          console.error(error)
-          setRefreshError(true)
-        }
+        const result = await refetch()
+        if (!signal.aborted) setRefreshError(result.isError)
       } finally {
-        if (refreshSignalRef.current === signal) refreshSignalRef.current = null
+        signal.removeEventListener('abort', cancel)
       }
     },
-    [selectedGroupId, router],
+    [selectedGroupId, queryClient, queryKey, refetch],
   )
   const {
     contentRef: pullContentRef,
@@ -123,20 +142,35 @@ export default function ItemList() {
     ...(selectedGroupId === null ? {} : { groupId: String(selectedGroupId) }),
   })}`
 
+  const initialPosition = useMemo(() => {
+    const saved = readLastItemListSession()
+    const cached = queryClient.getQueryData(queryKey)
+    return {
+      groupId: selectedGroupId,
+      scrollY: cached && saved?.groupId === selectedGroupId ? saved.scrollY : 0,
+      discardSaved: Boolean(
+        saved && (!cached || saved.groupId !== selectedGroupId),
+      ),
+    }
+  }, [selectedGroupId, queryClient, queryKey])
   useLayoutEffect(() => {
-    if (!itemResult || itemResult.groupId !== selectedGroupId) {
-      restoringRef.current = true
-      return
-    }
-    restoringRef.current = itemResult.restoreScrollY !== undefined
+    if (initialPosition.groupId === null) return
+    if (initialPosition.discardSaved) clearItemListSession()
     snapshotRef.current = {
-      groupId: itemResult.groupId,
-      items: itemResult.items,
-      nextCursor: itemResult.nextCursor,
-      hasNext: itemResult.hasNext,
-      scrollY: itemResult.restoreScrollY ?? window.scrollY,
+      groupId: initialPosition.groupId,
+      scrollY: initialPosition.scrollY,
     }
-  }, [itemResult, selectedGroupId])
+    restoringRef.current = true
+    // 캐시된 카드는 이미 DOM에 있으므로 첫 화면이 그려지기 전에 복원합니다.
+    window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
+    restoringRef.current = false
+    const frame = requestAnimationFrame(() => {
+      if (window.scrollY !== initialPosition.scrollY) {
+        window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
+      }
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [initialPosition])
 
   const saveCurrentList = useCallback(() => {
     const snapshot = snapshotRef.current
@@ -190,11 +224,6 @@ export default function ItemList() {
 
   useEffect(() => {
     removeLegacySnapshots()
-    const currentGroupId = getCurrentGroupId()
-    const lastSnapshot = readLastItemListSession()
-    const requestedGroupId = Number(
-      new URLSearchParams(window.location.search).get('groupId'),
-    )
     const controller = new AbortController()
 
     async function fetchJoinedGroups() {
@@ -213,15 +242,9 @@ export default function ItemList() {
         )
 
         if (controller.signal.aborted) return
+        queryClient.setQueryData(groupCacheKey, groups)
         setJoinedGroups(groups)
-        setSelectedGroupId(
-          groups.find((group) => group.groupId === requestedGroupId)?.groupId ??
-            groups.find((group) => group.groupId === lastSnapshot?.groupId)
-              ?.groupId ??
-            groups.find((group) => group.groupId === currentGroupId)?.groupId ??
-            groups[0]?.groupId ??
-            null,
-        )
+        setSelectedGroupId(chooseGroupId(groups))
         if (groups.length === 0) setCurrentGroupId(0)
       } catch (error) {
         if (!axios.isCancel(error)) {
@@ -237,16 +260,12 @@ export default function ItemList() {
     fetchJoinedGroups()
 
     return () => controller.abort()
-  }, [])
+  }, [queryClient, groupCacheKey])
 
   useEffect(() => {
     if (selectedGroupId === null) return
 
     const groupId = selectedGroupId
-    let isActive = true
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
-
     setCurrentGroupId(groupId)
     const url = new URL(window.location.href)
     if (url.searchParams.get('groupId') !== String(groupId)) {
@@ -255,132 +274,17 @@ export default function ItemList() {
         scroll: false,
       })
     }
-
-    async function fetchItems() {
-      try {
-        const snapshot = readLastItemListSession()
-        if (snapshot?.groupId === groupId) {
-          if (isActive) {
-            setItemResult({
-              ...snapshot,
-              restoreScrollY: snapshot.scrollY,
-            })
-            setIsLoadingMore(false)
-            setLoadMoreError(false)
-          }
-          return
-        }
-        if (snapshot) {
-          clearItemListSession()
-          snapshotRef.current = null
-          window.scrollTo({ top: 0, behavior: 'instant' })
-        }
-        const response = await axios.get<ItemListResponse>(
-          `${API_BASE_URL}/groups/${groupId}/items?size=10&cursor=`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
-          },
-        )
-
-        if (isActive) {
-          setItemResult({ groupId, ...response.data.data })
-          setIsLoadingMore(false)
-          setLoadMoreError(false)
-        }
-      } catch (error) {
-        if (isActive) console.error(error)
-      }
-    }
-
-    // 저장된 목록도 첫 조회와 같은 비동기 흐름으로 반영합니다.
-    queueMicrotask(() => {
-      if (isActive) void fetchItems()
-    })
-
-    return () => {
-      isActive = false
-      moreRequestRef.current?.abort()
-      moreRequestRef.current = null
-    }
   }, [selectedGroupId, router])
 
-  const loadMore = useCallback(async () => {
+  const loadMore = useCallback(() => {
     if (
-      !itemResult ||
-      itemResult.groupId !== selectedGroupId ||
-      !itemResult.hasNext ||
-      !itemResult.nextCursor ||
-      itemResult.restoreScrollY !== undefined ||
-      moreRequestRef.current ||
-      refreshSignalRef.current
+      restoringRef.current ||
+      !hasNextPage ||
+      queryClient.isFetching({ queryKey, exact: true })
     )
       return
-
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
-
-    const controller = new AbortController()
-    moreRequestRef.current = controller
-    setIsLoadingMore(true)
-    setLoadMoreError(false)
-    try {
-      const response = await axios.get<ItemListResponse>(
-        `${API_BASE_URL}/groups/${itemResult.groupId}/items`,
-        {
-          params: { cursor: itemResult.nextCursor },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/json',
-          },
-          signal: controller.signal,
-        },
-      )
-      if (controller.signal.aborted) return
-      const page = response.data.data
-      setItemResult((current) =>
-        current === itemResult
-          ? {
-              groupId: current.groupId,
-              items: [...current.items, ...page.items],
-              nextCursor: page.nextCursor,
-              hasNext: page.hasNext,
-            }
-          : current,
-      )
-    } catch (error) {
-      if (!controller.signal.aborted) {
-        console.error(error)
-        setLoadMoreError(true)
-      }
-    } finally {
-      if (moreRequestRef.current === controller) {
-        moreRequestRef.current = null
-        setIsLoadingMore(false)
-      }
-    }
-  }, [itemResult, selectedGroupId, router])
-
-  const restoreListPosition = useCallback(() => {
-    if (
-      !itemResult ||
-      itemResult.groupId !== selectedGroupId ||
-      itemResult.restoreScrollY === undefined
-    )
-      return
-    const scrollY = itemResult.restoreScrollY
-    const frame = requestAnimationFrame(() => {
-      window.scrollTo({ top: scrollY, behavior: 'instant' })
-      setItemResult((current) =>
-        current === itemResult
-          ? { ...current, restoreScrollY: undefined }
-          : current,
-      )
-    })
-    return () => cancelAnimationFrame(frame)
-  }, [itemResult, selectedGroupId])
+    void fetchNextPage({ cancelRefetch: false })
+  }, [hasNextPage, queryClient, queryKey, fetchNextPage])
 
   useEffect(() => {
     if (!isGroupMenuOpen) return
@@ -430,6 +334,10 @@ export default function ItemList() {
                               clearItemListSession()
                               snapshotRef.current = null
                               restoringRef.current = true
+                              // 그룹 전환은 첫 페이지부터 다시 시작합니다.
+                              queryClient.removeQueries({
+                                queryKey: itemListKeys.group(group.groupId),
+                              })
                               window.scrollTo({ top: 0, behavior: 'instant' })
                               setSelectedGroupId(group.groupId)
                             }
@@ -471,6 +379,11 @@ export default function ItemList() {
             <Loading progress={isRefreshing ? undefined : pullProgress} />
           </div>
         )}
+        {isError && !data && (
+          <button type="button" onClick={() => void refetch()}>
+            목록 다시 불러오기
+          </button>
+        )}
         {refreshError && (
           <p role="alert" className={styles.refreshError}>
             새로고침하지 못했습니다. 다시 당겨서 시도해주세요.
@@ -478,8 +391,7 @@ export default function ItemList() {
         )}
         {isLoadingGroups ||
         isLoadingItems ||
-        (selectedGroup &&
-          (items.length > 0 || itemResult?.restoreScrollY !== undefined)) ? (
+        (selectedGroup && items.length > 0) ? (
           <ItemCardList
             key={selectedGroupId}
             className={styles.itemList}
@@ -487,12 +399,12 @@ export default function ItemList() {
             items={items}
             onLoadMore={
               !isRefreshing &&
-              itemResult?.hasNext &&
-              itemResult.restoreScrollY === undefined
+              hasNextPage &&
+              !isFetching &&
+              !isFetchNextPageError
                 ? loadMore
                 : undefined
             }
-            onReady={restoreListPosition}
           />
         ) : (
           <div className={styles.emptyState}>
@@ -508,10 +420,10 @@ export default function ItemList() {
             </p>
           </div>
         )}
-        {!isLoadingItems && isLoadingMore && (
+        {!isLoadingItems && isFetchingNextPage && (
           <p role="status">물품을 더 불러오는 중...</p>
         )}
-        {!isLoadingItems && loadMoreError && (
+        {!isLoadingItems && isFetchNextPageError && (
           <button type="button" onClick={loadMore}>
             다시 불러오기
           </button>

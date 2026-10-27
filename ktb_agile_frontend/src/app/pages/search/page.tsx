@@ -444,8 +444,11 @@ function SearchPageContent() {
 
       {groups.length === 0 && (
         <p className={styles.searchMessage}>
-          그룹 정보를 사용하려면 <Link href="/pages/items">물품 목록</Link>에서
-          검색을 열어주세요.
+          그룹 정보를 사용하려면{' '}
+          <Link href="/pages/items" scroll={false}>
+            물품 목록
+          </Link>
+          에서 검색을 열어주세요.
         </p>
       )}
       {searchError && <p className={styles.searchMessage}>{searchError}</p>}

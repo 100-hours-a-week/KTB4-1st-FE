@@ -41,6 +41,12 @@ const room = (id: number): ChatRoom => ({
     groupMemberStatus: 'ACTIVE',
   },
   targetItem: { itemId: id, title: `물품 ${id}`, thumbnailImageUrl: null },
+  offeredItem: {
+    itemId: id + 100,
+    title: `제시 물품 ${id}`,
+    thumbnailImageUrl: `https://example.com/offered-${id}.png`,
+  },
+  offeredItemCount: 3,
   lastMessage: {
     messageId: id,
     content: '교환 요청이 접수되었습니다.',
@@ -103,6 +109,18 @@ it('새 문서의 null 그룹과 시스템 메시지를 표시하고 하단 도�
     '/bff/chat-rooms',
     expect.objectContaining({ params: { size: 20 } }),
   )
+})
+
+it('응답의 제시 물품 썸네일과 추가 물품 개수를 채팅 목록 카드에 표시한다', async () => {
+  vi.spyOn(axios, 'get').mockResolvedValue(page([room(1)]))
+  render(<Chat />)
+
+  expect(
+    await screen.findByRole('button', {
+      name: '민지님과 물품 1 ↔ 제시 물품 1 외 2개 채팅방 열기',
+    }),
+  ).toBeDefined()
+  expect(screen.getByText('+2')).toBeDefined()
 })
 
 it('하단에서 커서를 그대로 전달하고 중복 관찰과 중복 방을 처리한다', async () => {

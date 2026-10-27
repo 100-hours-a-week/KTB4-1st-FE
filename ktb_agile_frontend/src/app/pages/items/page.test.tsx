@@ -2,13 +2,19 @@ import {
   act,
   cleanup,
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
 } from '@testing-library/react'
 import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ItemList from './page'
+import {
+  QueryClient,
+  QueryClientProvider,
+  focusManager,
+} from '@tanstack/react-query'
+import type { ReactElement } from 'react'
 import type { ItemListItem } from '@/types/item'
 import {
   readItemListSession,
@@ -67,7 +73,25 @@ const page = (items: ItemListItem[], nextCursor: string | null) => ({
   },
 })
 
+let client: QueryClient
+const render = (ui: ReactElement) =>
+  rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
+const seed = (groupId: number, pages: ReturnType<typeof page>[]) =>
+  client.setQueryData(['items', groupId, 'test-token'], {
+    pages: pages.map((value) => value.data.data),
+    pageParams: pages.map((_, index) =>
+      index === 0 ? '' : `page-${index + 1}`,
+    ),
+  })
+const groups = (ids = [1]) => ({
+  data: {
+    data: {
+      groups: ids.map((groupId) => ({ groupId, groupName: `그룹 ${groupId}` })),
+    },
+  },
+})
 beforeEach(() => {
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   window.history.replaceState(null, '', '/pages/items')
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
   vi.spyOn(window, 'scrollTo').mockImplementation(
@@ -97,6 +121,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   cleanup()
+  client.clear()
   observers.length = 0
   window.sessionStorage.clear()
   vi.restoreAllMocks()
@@ -112,6 +137,14 @@ async function showList(nextCursor: string | null = 'page-2') {
     .mockResolvedValueOnce(page(makeItems(1, 20), nextCursor))
   render(<ItemList />)
   await screen.findByText('물품 20')
+  await waitFor(() =>
+    expect(window.scrollTo).toHaveBeenCalledWith({
+      top: 0,
+      behavior: 'instant',
+    }),
+  )
+  if (nextCursor)
+    await waitFor(() => expect(observers.length).toBeGreaterThan(0))
   return get
 }
 function intersect(index: number, visible = true) {
@@ -193,242 +226,209 @@ it('마지막 페이지를 추가한 뒤에는 더 요청하지 않는다', asyn
   expect(get).toHaveBeenCalledTimes(3)
 })
 
-it('물품 클릭 시 누적 목록과 위치를 저장하고 복원 후 저장된 커서로 이어 조회한다', async () => {
+it('목록으로 돌아오면 캐시와 스크롤을 복원하면서 최신 커서로 모든 페이지를 재조회한다', async () => {
   const get = await showList()
-  get.mockResolvedValueOnce(page(makeItems(21, 20), 'page-3'))
+  get.mockResolvedValueOnce(page(makeItems(21, 20), 'old-page-3'))
   await act(async () => intersect(0))
   await screen.findByText('물품 40')
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 1500 })
   fireEvent.scroll(window)
   fireEvent.click(screen.getByText('물품 25'))
-  expect(readItemListSession(1)).toMatchObject({
-    groupId: 1,
-    scrollY: 1500,
-    nextCursor: 'page-3',
-    hasNext: true,
-  })
-  expect(readItemListSession(1)?.items).toHaveLength(40)
-  // 페이지 이동 과정에서 스크롤이 초기화되어도 저장 위치는 유지합니다.
+  expect(readItemListSession(1)).toEqual({ groupId: 1, scrollY: 1500 })
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
   fireEvent.scroll(window)
   cleanup()
   observers.length = 0
-  get.mockClear().mockResolvedValueOnce({
-    data: { data: { groups: [{ groupId: 1, groupName: '테스트 그룹' }] } },
+  vi.mocked(window.scrollTo).mockClear()
+  let resolveFirst!: (value: ReturnType<typeof page>) => void
+  let itemRequests = 0
+  get.mockClear().mockImplementation((url) => {
+    if (url === '/bff/me/groups') return Promise.resolve(groups())
+    itemRequests += 1
+    if (itemRequests === 1)
+      return new Promise((resolve) => {
+        resolveFirst = resolve
+      })
+    if (itemRequests === 2)
+      return Promise.resolve(page(makeItems(120, 20), 'fresh-page-3'))
+    return Promise.resolve(page(makeItems(140, 2), null))
   })
   render(<ItemList />)
-  await screen.findByText('물품 40')
+  expect(screen.getByText('물품 40')).toBeDefined()
   await waitFor(() =>
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 1500,
       behavior: 'instant',
     }),
   )
-  expect(get).toHaveBeenCalledTimes(1)
-  await waitFor(() => expect(observers).toHaveLength(1))
-  get.mockResolvedValueOnce(page(makeItems(41, 2), null))
-  await act(async () => intersect(0))
-  await screen.findByText('물품 42')
-  expect(get.mock.calls[1][1]).toMatchObject({ params: { cursor: 'page-3' } })
+  expect(window.scrollTo).not.toHaveBeenCalledWith({
+    top: 0,
+    behavior: 'instant',
+  })
+  expect(get).toHaveBeenCalledTimes(2)
+  await act(async () => resolveFirst(page(makeItems(100, 20), 'fresh-page-2')))
+  await screen.findByText('물품 139')
+  expect(screen.queryByText('물품 25')).toBeNull()
+  expect(get.mock.calls[2][1]).toMatchObject({
+    params: { cursor: 'fresh-page-2' },
+  })
+  await waitFor(() => expect(observers.length).toBeGreaterThan(0))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 141')
+  expect(get.mock.calls[3][1]).toMatchObject({
+    params: { cursor: 'fresh-page-3' },
+  })
 })
 
-it('페이지를 닫거나 목록이 해제될 때 마지막 스크롤 위치를 저장한다', async () => {
+it('페이지를 닫거나 목록이 해제될 때 마지막 스크롤 위치만 저장한다', async () => {
   await showList()
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
   fireEvent.scroll(window)
   fireEvent(window, new Event('pagehide'))
-  expect(readItemListSession(1)?.scrollY).toBe(800)
+  expect(readItemListSession(1)).toEqual({ groupId: 1, scrollY: 800 })
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 })
   fireEvent.scroll(window)
   cleanup()
   expect(readItemListSession(1)?.scrollY).toBe(900)
 })
 
-it('다른 그룹의 저장 목록은 사용하지 않는다', async () => {
-  saveItemListSession({
-    groupId: 2,
-    items: makeItems(100, 20),
-    nextCursor: null,
-    hasNext: false,
-    scrollY: 1000,
+it('새로고침으로 Query 캐시가 없으면 저장 위치를 무시하고 첫 페이지를 표시한다', async () => {
+  saveItemListSession({ groupId: 1, scrollY: 1500 })
+  const get = await showList(null)
+  expect(get.mock.calls[1][1]).toMatchObject({
+    params: { cursor: '', size: 10 },
   })
-  const get = await showList()
-  expect(get).toHaveBeenCalledTimes(2)
-  expect(screen.queryByText('물품 100')).toBeNull()
-  expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'instant' })
+  expect(window.scrollY).toBe(0)
   expect(readLastItemListSession()).toBeNull()
 })
 
-it('그룹 지정 없이 다른 페이지에서 진입하면 마지막 목록의 그룹과 위치를 복원한다', async () => {
-  window.sessionStorage.setItem('item-list:v1:1', '{old-data}')
-  window.sessionStorage.setItem('item-list:v1:2', '{old-data}')
-  window.sessionStorage.setItem('item-list:last-group', '1')
-  saveItemListSession({
-    groupId: 2,
-    items: makeItems(100, 20),
-    nextCursor: 'saved-cursor',
-    hasNext: true,
-    scrollY: 1200,
-  })
-  const get = vi.spyOn(axios, 'get').mockResolvedValueOnce({
-    data: {
-      data: {
-        groups: [
-          { groupId: 1, groupName: '다른 화면에서 선택한 그룹' },
-          { groupId: 2, groupName: '마지막 목록 그룹' },
-        ],
-      },
-    },
-  })
-  // 현재 그룹은 1이지만 마지막 목록은 그룹 2에 저장돼 있습니다.
+it('명시된 그룹을 우선하며 다른 그룹의 위치와 캐시는 복원하지 않는다', async () => {
+  saveItemListSession({ groupId: 2, scrollY: 1000 })
+  seed(2, [page(makeItems(100, 3), null)])
+  window.history.replaceState(null, '', '/pages/items?groupId=1')
+  vi.spyOn(axios, 'get')
+    .mockResolvedValueOnce(groups([1, 2]))
+    .mockResolvedValueOnce(page(makeItems(1, 3), null))
+  render(<ItemList />)
+  await screen.findByText('물품 3')
+  await waitFor(() => expect(window.scrollY).toBe(0))
+  expect(screen.queryByText('물품 100')).toBeNull()
+})
+
+it('그룹 지정이 없으면 마지막 목록 그룹을 선택하고 캐시 위치를 복원한다', async () => {
+  saveItemListSession({ groupId: 2, scrollY: 1200 })
+  seed(2, [page(makeItems(100, 20), null)])
+  vi.spyOn(axios, 'get')
+    .mockResolvedValueOnce(groups([1, 2]))
+    .mockResolvedValueOnce(page(makeItems(100, 20), null))
   render(<ItemList />)
   await screen.findByText('물품 119')
-  expect(screen.getByRole('button', { name: '마지막 목록 그룹' })).toBeDefined()
+  expect(screen.getByRole('button', { name: '그룹 2' })).toBeDefined()
   await waitFor(() =>
     expect(window.scrollTo).toHaveBeenCalledWith({
       top: 1200,
       behavior: 'instant',
     }),
   )
-  expect(get).toHaveBeenCalledTimes(1)
-  expect(window.sessionStorage.getItem('item-list:v1:1')).toBeNull()
-  expect(window.sessionStorage.getItem('item-list:v1:2')).toBeNull()
-  expect(window.sessionStorage.getItem('item-list:last-group')).toBeNull()
-  expect(window.sessionStorage.getItem('accessToken')).toBe('test-token')
-  expect(readLastItemListSession()?.groupId).toBe(2)
 })
 
-it('마지막으로 저장한 그룹만 유지하고 다른 그룹 링크는 새 목록을 최상단부터 보여준다', async () => {
-  saveItemListSession({
-    groupId: 1,
-    items: makeItems(1, 20),
-    nextCursor: null,
-    hasNext: false,
-    scrollY: 300,
-  })
-  saveItemListSession({
-    groupId: 2,
-    items: makeItems(100, 20),
-    nextCursor: null,
-    hasNext: false,
-    scrollY: 1200,
-  })
-  expect(readItemListSession(1)).toBeNull()
-  expect(readItemListSession(2)?.scrollY).toBe(1200)
-  window.history.replaceState(null, '', '/pages/items?groupId=1')
+it('그룹 전환과 재선택 시 새 첫 페이지를 조회하고 최상단으로 이동한다', async () => {
   const get = vi
     .spyOn(axios, 'get')
-    .mockResolvedValueOnce({
-      data: {
-        data: {
-          groups: [
-            { groupId: 1, groupName: '지정한 그룹' },
-            { groupId: 2, groupName: '마지막 목록 그룹' },
-          ],
-        },
-      },
-    })
-    .mockResolvedValueOnce(page(makeItems(1, 20), null))
-  render(<ItemList />)
-  await screen.findByText('물품 20')
-  expect(screen.queryByText('물품 100')).toBeNull()
-  await waitFor(() =>
-    expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 0,
-      behavior: 'instant',
-    }),
-  )
-  expect(get).toHaveBeenCalledTimes(2)
-})
-
-it('그룹을 바꾸거나 이전 그룹을 다시 선택하면 목록을 새로 조회하고 최상단으로 이동한다', async () => {
-  const get = vi
-    .spyOn(axios, 'get')
-    .mockResolvedValueOnce({
-      data: {
-        data: {
-          groups: [
-            { groupId: 1, groupName: '그룹 A' },
-            { groupId: 2, groupName: '그룹 B' },
-          ],
-        },
-      },
-    })
+    .mockResolvedValueOnce(groups([1, 2]))
     .mockResolvedValueOnce(page(makeItems(1, 20), null))
     .mockResolvedValueOnce(page(makeItems(100, 20), null))
     .mockResolvedValueOnce(page(makeItems(200, 20), null))
   render(<ItemList />)
   await screen.findByText('물품 20')
-  Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 })
-  fireEvent.scroll(window)
+  await waitFor(() => expect(window.scrollTo).toHaveBeenCalled())
+  fireEvent.click(screen.getByRole('button', { name: '그룹 1' }))
+  fireEvent.click(screen.getByRole('button', { name: '그룹 2' }))
   fireEvent(window, new Event('pagehide'))
-  expect(readItemListSession(1)?.scrollY).toBe(900)
-
-  fireEvent.click(screen.getByRole('button', { name: '그룹 A' }))
-  fireEvent.click(screen.getByRole('button', { name: '그룹 B' }))
-  expect(window.scrollY).toBe(0)
-  expect(readLastItemListSession()).toBeNull()
-  // 새 그룹이 준비되기 전에 떠나도 이전 그룹을 다시 저장하지 않습니다.
-  fireEvent(window, new Event('pagehide'))
-  expect(readLastItemListSession()).toBeNull()
+  expect(readLastItemListSession()?.groupId).not.toBe(1)
   await screen.findByText('물품 119')
-
-  Object.defineProperty(window, 'scrollY', { configurable: true, value: 600 })
-  fireEvent.scroll(window)
-  fireEvent.click(screen.getByRole('button', { name: '그룹 B' }))
-  fireEvent.click(screen.getByRole('button', { name: '그룹 A' }))
+  fireEvent.click(screen.getByRole('button', { name: '그룹 2' }))
+  fireEvent.click(screen.getByRole('button', { name: '그룹 1' }))
   await screen.findByText('물품 219')
   expect(window.scrollY).toBe(0)
-  expect(screen.queryByText('물품 20')).toBeNull()
   expect(get).toHaveBeenCalledTimes(4)
-  cleanup()
-  expect(readItemListSession(2)).toBeNull()
-  expect(readItemListSession(1)?.scrollY).toBe(0)
 })
 
-it('잘못된 저장 데이터가 있으면 첫 페이지를 새로 조회한다', async () => {
-  window.sessionStorage.setItem('item-list:v2:latest', '{broken')
-  const get = await showList()
-  expect(get).toHaveBeenCalledTimes(2)
-  expect(window.scrollTo).not.toHaveBeenCalled()
-})
-
-it('저장된 이미지와 카드가 준비된 뒤 위치를 복원하고 무한스크롤을 활성화한다', async () => {
-  const imageLoads: (() => void)[] = []
-  vi.stubGlobal(
-    'Image',
-    class {
-      onload: (() => void) | null = null
-      onerror: (() => void) | null = null
-      set src(_value: string) {
-        imageLoads.push(() => this.onload?.())
-      }
-    },
+it('이전 버전 스냅샷과 손상된 위치 정보는 목록에 사용하지 않는다', async () => {
+  window.sessionStorage.setItem('item-list:v1:1', '{old}')
+  window.sessionStorage.setItem(
+    'item-list:v2:latest',
+    JSON.stringify({ groupId: 1, items: makeItems(100, 3) }),
   )
-  saveItemListSession({
-    groupId: 1,
-    items: makeItems(1, 3).map((item) => ({
-      ...item,
-      thumbnailImageUrl: '/test.png',
-    })),
-    nextCursor: 'page-2',
-    hasNext: true,
-    scrollY: 500,
+  window.sessionStorage.setItem('item-list:v3:position', '{broken')
+  await showList(null)
+  expect(screen.queryByText('물품 100')).toBeNull()
+  expect(window.sessionStorage.getItem('item-list:v1:1')).toBeNull()
+  expect(window.sessionStorage.getItem('item-list:v2:latest')).toBeNull()
+  expect(window.sessionStorage.getItem('accessToken')).toBe('test-token')
+})
+
+it('캐시된 카드를 이미지 대기 없이 표시하고 첫 화면이 그려지기 전에 위치를 복원한다', async () => {
+  const items = makeItems(1, 3).map((item) => ({
+    ...item,
+    thumbnailImageUrl: '/test.png',
+  }))
+  saveItemListSession({ groupId: 1, scrollY: 500 })
+  seed(1, [page(items, 'page-2')])
+  client.setQueryData(
+    ['joined-groups', 'test-token'],
+    [{ groupId: 1, groupName: '테스트 그룹' }],
+  )
+  let restoreFrame: FrameRequestCallback | undefined
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    restoreFrame = callback
+    return 1
   })
-  vi.spyOn(axios, 'get').mockResolvedValueOnce({
-    data: { data: { groups: [{ groupId: 1, groupName: '테스트 그룹' }] } },
-  })
+  vi.spyOn(axios, 'get').mockImplementation(() => new Promise(() => {}))
   render(<ItemList />)
-  await waitFor(() => expect(imageLoads).toHaveLength(3))
-  expect(window.scrollTo).not.toHaveBeenCalled()
+  expect(screen.getByText('물품 3')).toBeDefined()
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
   expect(observers).toHaveLength(0)
-  await act(async () => imageLoads.forEach((load) => load()))
-  await screen.findByText('물품 3')
-  await waitFor(() =>
-    expect(window.scrollTo).toHaveBeenCalledWith({
-      top: 500,
-      behavior: 'instant',
-    }),
+  expect(window.scrollTo).toHaveBeenCalledWith({
+    top: 500,
+    behavior: 'instant',
+  })
+  expect(window.scrollTo).not.toHaveBeenCalledWith({
+    top: 0,
+    behavior: 'instant',
+  })
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
+  act(() => restoreFrame?.(performance.now()))
+  expect(window.scrollY).toBe(500)
+  // 백그라운드 재조회가 끝날 때까지 추가 페이지 요청을 막습니다.
+  expect(observers).toHaveLength(0)
+})
+
+it('창에 다시 포커스하면 다른 사용자가 바꾼 물품 상태도 재조회한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(
+    page(
+      [{ ...makeItems(1, 1)[0], title: '교환 완료', itemState: 'UNAVAILABLE' }],
+      null,
+    ),
   )
-  await waitFor(() => expect(observers).toHaveLength(1))
+  await act(async () => {
+    focusManager.setFocused(false)
+    focusManager.setFocused(true)
+  })
+  await screen.findByText('교환 완료')
+  expect(screen.queryByText('물품 20')).toBeNull()
+  focusManager.setFocused(undefined)
+})
+
+it('추가 조회 실패 후 버튼으로 같은 커서를 재시도한다', async () => {
+  const get = await showList()
+  get.mockRejectedValueOnce(new Error('network'))
+  await act(async () => intersect(0))
+  const retry = await screen.findByRole('button', { name: '다시 불러오기' })
+  expect(observers).toHaveLength(1)
+  get.mockResolvedValueOnce(page(makeItems(21, 2), null))
+  fireEvent.click(retry)
+  await screen.findByText('물품 22')
+  expect(get.mock.calls[3][1]).toMatchObject({ params: { cursor: 'page-2' } })
 })

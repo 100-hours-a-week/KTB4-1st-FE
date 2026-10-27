@@ -30,6 +30,8 @@ function isBffRequest(request: InternalAxiosRequestConfig) {
       '/bff/smart-search',
       '/bff/chatbot',
       '/bff/search-histories',
+      '/bff/users/me',
+      '/bff/events/applications',
     ].includes(requestUrl) ||
     requestUrl.startsWith('/bff/chat-rooms/') ||
     requestUrl.startsWith('/bff/chat/rooms/') ||

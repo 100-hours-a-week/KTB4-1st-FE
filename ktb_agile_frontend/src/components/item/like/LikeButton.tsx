@@ -2,6 +2,8 @@
 
 import axios from 'axios'
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { itemListKeys } from '@/queries/itemList'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './LikeButton.module.css'
 
@@ -18,10 +20,27 @@ export default function LikeButton({
   initialLikeCount,
   placement = 'card',
 }: LikeButtonProps) {
+  const queryClient = useQueryClient()
+  const [serverValue, setServerValue] = useState({
+    itemId,
+    isLiked,
+    initialLikeCount,
+  })
   const [liked, setLiked] = useState(isLiked)
   const [count, setCount] = useState(initialLikeCount)
   const [isPending, setIsPending] = useState(false)
   const [hasRequestError, setHasRequestError] = useState(false)
+
+  // 서버 props가 바뀌면 낙관적 상태도 새 기준으로 맞춥니다.
+  if (
+    serverValue.itemId !== itemId ||
+    serverValue.isLiked !== isLiked ||
+    serverValue.initialLikeCount !== initialLikeCount
+  ) {
+    setServerValue({ itemId, isLiked, initialLikeCount })
+    setLiked(isLiked)
+    setCount(initialLikeCount)
+  }
 
   async function toggleLike() {
     if (isPending) return
@@ -52,7 +71,8 @@ export default function LikeButton({
           headers: { Authorization: `Bearer ${accessToken}` },
         })
       }
-    } catch (error) {
+      void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
+    } catch {
       setLiked(!nextLiked)
       setCount(previousCount)
       setHasRequestError(true)

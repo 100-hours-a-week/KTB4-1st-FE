@@ -5,7 +5,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
-import axios from 'axios'
+import axios, { AxiosError, AxiosHeaders } from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import AccountCard from './AccountCard'
 
@@ -16,16 +16,12 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }))
 beforeEach(() => {
   vi.clearAllMocks()
   window.sessionStorage.setItem('accessToken', 'access-token')
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        data: { nickname: '테스트', profileImageUrl: null },
-        error: null,
-      }),
-    }),
-  )
+  vi.spyOn(axios, 'get').mockResolvedValue({
+    data: {
+      data: { nickname: '테스트', profileImageUrl: null },
+      error: null,
+    },
+  })
 })
 
 afterEach(() => {
@@ -36,27 +32,24 @@ afterEach(() => {
 })
 
 it('BFF에서 조회한 닉네임과 프로필 이미지를 표시한다', async () => {
-  const fetchMock = vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({
+  const get = vi.mocked(axios.get).mockResolvedValue({
+    data: {
       data: {
         nickname: '민지',
         profileImageUrl: 'https://example.com/profile.jpg',
       },
       error: null,
-    }),
+    },
   })
-  vi.stubGlobal('fetch', fetchMock)
 
   const { container } = render(<AccountCard />)
 
   expect(await screen.findByText('안녕하세요 민지님!')).toBeDefined()
-  expect(fetchMock).toHaveBeenCalledWith('/bff/users/me', {
+  expect(get).toHaveBeenCalledWith('/bff/users/me', {
     headers: {
       Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
-    cache: 'no-store',
   })
   expect(container.querySelector('[style]')?.getAttribute('style')).toContain(
     'profile.jpg',
@@ -64,19 +57,58 @@ it('BFF에서 조회한 닉네임과 프로필 이미지를 표시한다', async
   expect(screen.queryByText(/사진이 안 보일 수 있어요/)).toBeNull()
 })
 
+it('프로필 조회 토큰이 만료되면 자동 갱신 후 프로필을 표시한다', async () => {
+  vi.mocked(axios.get).mockRestore()
+  const originalAdapter = axios.defaults.adapter
+  let refreshCount = 0
+  axios.defaults.adapter = async (config) => {
+    const response = {
+      config,
+      status: 200,
+      statusText: 'OK',
+      headers: new AxiosHeaders(),
+      data: {},
+    }
+    if (config.url === '/bff/auth/accesstoken') {
+      refreshCount += 1
+      return { ...response, data: { data: { accessToken: 'new-token' } } }
+    }
+    if (config.headers.get('Authorization') !== 'Bearer new-token') {
+      throw new AxiosError('Expired', 'ERR_BAD_REQUEST', config, undefined, {
+        ...response,
+        status: 401,
+      })
+    }
+    return {
+      ...response,
+      data: { data: { nickname: '민지', profileImageUrl: null } },
+    }
+  }
+
+  try {
+    render(<AccountCard />)
+    expect(await screen.findByText('안녕하세요 민지님!')).toBeDefined()
+    expect(refreshCount).toBe(1)
+    expect(window.sessionStorage.getItem('accessToken')).toBe('new-token')
+    expect(
+      screen.queryByText(
+        '프로필 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.',
+      ),
+    ).toBeNull()
+  } finally {
+    axios.defaults.adapter = originalAdapter
+  }
+})
+
 it.each([null, undefined, ''])(
   '프로필 이미지가 %s이면 안내 말풍선을 보여준다',
   async (profileImageUrl) => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          data: { nickname: '민지', profileImageUrl },
-          error: null,
-        }),
-      }),
-    )
+    vi.mocked(axios.get).mockResolvedValue({
+      data: {
+        data: { nickname: '민지', profileImageUrl },
+        error: null,
+      },
+    })
     render(<AccountCard />)
 
     expect(
@@ -99,7 +131,7 @@ it('말풍선 밖을 터치하면 말풍선을 서서히 숨긴다', async () =>
 })
 
 it('프로필 조회가 실패하면 모달을 보여주고 확인 시 로그인으로 이동한다', async () => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
+  vi.mocked(axios.get).mockRejectedValue(new Error('Profile request failed'))
   render(<AccountCard />)
 
   expect(
@@ -117,8 +149,7 @@ it('프로필 조회가 실패하면 모달을 보여주고 확인 시 로그인
 
 it('액세스 토큰이 없어도 프로필 실패 모달을 보여준다', async () => {
   window.sessionStorage.removeItem('accessToken')
-  const fetchMock = vi.fn()
-  vi.stubGlobal('fetch', fetchMock)
+  const get = vi.mocked(axios.get)
   render(<AccountCard />)
 
   expect(
@@ -126,7 +157,7 @@ it('액세스 토큰이 없어도 프로필 실패 모달을 보여준다', asyn
       '프로필 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.',
     ),
   ).toBeDefined()
-  expect(fetchMock).not.toHaveBeenCalled()
+  expect(get).not.toHaveBeenCalled()
 })
 
 it('204 응답을 받으면 Access Token을 삭제하고 메인으로 이동한다', async () => {

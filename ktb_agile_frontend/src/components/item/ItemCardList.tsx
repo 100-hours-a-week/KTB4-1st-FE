@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import type { ItemListItem } from '@/types/item'
 import ItemCard from '@/components/common/item/ItemCard'
 import styles from './ItemCardList.module.css'
@@ -10,16 +10,6 @@ type ItemCardListProps = {
   isLoading?: boolean
   className?: string
   onLoadMore?: () => void
-  onReady?: () => void | (() => void)
-}
-
-function preloadImage(url: string) {
-  return new Promise<void>((resolve) => {
-    const image = new Image()
-    image.onload = () => resolve()
-    image.onerror = () => resolve()
-    image.src = url
-  })
 }
 
 export default function ItemCardList({
@@ -27,39 +17,12 @@ export default function ItemCardList({
   isLoading = false,
   className,
   onLoadMore,
-  onReady,
 }: ItemCardListProps) {
   const triggerRef = useRef<HTMLDivElement>(null)
-  const [preloadedItems, setPreloadedItems] = useState<ItemListItem[] | null>(
-    null,
-  )
-
-  useEffect(() => {
-    if (isLoading) return
-
-    let isActive = true
-    const urls = items.flatMap((item) =>
-      item.thumbnailImageUrl ? [item.thumbnailImageUrl] : [],
-    )
-
-    Promise.all(urls.map(preloadImage)).then(() => {
-      if (isActive) setPreloadedItems(items)
-    })
-
-    return () => {
-      isActive = false
-    }
-  }, [items, isLoading])
-
-  const isReady = !isLoading && preloadedItems === items
-
-  useEffect(() => {
-    if (isReady) return onReady?.()
-  }, [isReady, onReady])
 
   useEffect(() => {
     const target = triggerRef.current
-    if (!isReady || !target || !onLoadMore) return
+    if (isLoading || !target || !onLoadMore) return
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -68,19 +31,19 @@ export default function ItemCardList({
           onLoadMore()
         }
       },
-      { threshold: 0 },
+      { threshold: 0, rootMargin: '600px 0px' },
     )
     observer.observe(target)
     return () => observer.disconnect()
-  }, [isReady, items, onLoadMore])
+  }, [isLoading, items, onLoadMore])
 
-  if (isLoading || !preloadedItems) {
+  if (isLoading) {
     return <p className={styles.loading}>로딩 중 ...</p>
   }
 
   return (
     <div className={className}>
-      {preloadedItems.map((item, index) => (
+      {items.map((item, index) => (
         <div
           ref={index === Math.max(0, items.length - 3) ? triggerRef : undefined}
           key={item.itemId}

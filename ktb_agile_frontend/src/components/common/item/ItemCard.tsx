@@ -15,16 +15,18 @@ export default function ItemCard({ item }: ItemCardProps) {
   return (
     <article className={styles.card}>
       <Link className={styles.link} href={`/pages/items/${item.itemId}`}>
-        <div
-          className={styles.thumbnail}
-          style={
-            item.thumbnailImageUrl
-              ? {
-                  backgroundImage: `url("${item.thumbnailImageUrl.replaceAll('"', '%22')}")`,
-                }
-              : undefined
-          }
-        />
+        <div className={styles.thumbnail}>
+          {item.thumbnailImageUrl && (
+            // 서버 이미지 URL은 Next Image의 허용 도메인이 고정되지 않아 브라우저의 지연 로딩을 사용합니다.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={styles.thumbnailImage}
+              src={item.thumbnailImageUrl}
+              alt=""
+              loading="lazy"
+            />
+          )}
+        </div>
         <div className={styles.content}>
           <h2 className={styles.title}>{item.title}</h2>
           <p className={styles.preview}>{item.contentPreview}</p>

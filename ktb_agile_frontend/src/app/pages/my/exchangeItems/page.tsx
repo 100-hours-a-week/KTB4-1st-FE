@@ -4,13 +4,16 @@ import axios from 'axios'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import Navbar from '@/components/common/navbar/Navbar'
 import ExchangeHistoryCard from '@/components/my/ExchangeHistoryCard'
 import type {
   ExchangeHistory,
   ExchangedItemsResponse,
 } from '@/types/exchangedItem'
-import { getUserIdFromAccessToken, getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
+import {
+  getUserIdFromAccessToken,
+  getAccessTokenOrRedirect,
+  redirectToLogin,
+} from '@/utils/auth'
 import '@/config/api'
 import styles from './page.module.css'
 
@@ -150,7 +153,11 @@ export default function ExchangeItemsPage() {
           <div className={styles.emptyState}>
             <h2>아직 완료한 교환이 없어요</h2>
             <p>교환할 물품을 구경해 보시겠어요?</p>
-            <Link className={styles.homeButton} href="/pages/items">
+            <Link
+              className={styles.homeButton}
+              href="/pages/items"
+              scroll={false}
+            >
               물품 구경하러 가기
             </Link>
           </div>

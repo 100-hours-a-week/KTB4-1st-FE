@@ -11,6 +11,8 @@ import {
 
 export const runtime = 'nodejs'
 
+class EventAuthenticationError extends Error {}
+
 function failure(message: string, status: number) {
   return Response.json(
     { data: null, error: { message } },
@@ -37,6 +39,7 @@ async function findRoom(
       cache: 'no-store',
       signal: AbortSignal.timeout(15_000),
     })
+    if (response.status === 401) throw new EventAuthenticationError()
     if (!response.ok) throw new Error('채팅방 조회 실패')
     const result = (await response.json()) as ChatRoomResponse
     if (!result.data) throw new Error('채팅방 조회 실패')
@@ -121,6 +124,8 @@ export const POST = withAuth(async (request, authorization) => {
       { headers: { 'Cache-Control': 'no-store' } },
     )
   } catch (error) {
+    if (error instanceof EventAuthenticationError)
+      return failure('다시 로그인해주세요.', 401)
     if (error instanceof EventConfigurationError)
       return failure(
         '이벤트 연결 설정이 필요합니다. 운영자에게 문의해주세요.',
@@ -157,6 +162,8 @@ export const GET = withAuth(async (request, authorization) => {
       { headers: { 'Cache-Control': 'no-store' } },
     )
   } catch (error) {
+    if (error instanceof EventAuthenticationError)
+      return failure('다시 로그인해주세요.', 401)
     if (error instanceof EventConfigurationError)
       return failure(
         '이벤트 연결 설정이 필요합니다. 운영자에게 문의해주세요.',

@@ -22,6 +22,12 @@ export type ChatRoom = {
     title: string
     thumbnailImageUrl: string | null
   }
+  offeredItem?: {
+    itemId: number
+    title: string
+    thumbnailImageUrl: string | null
+  } | null
+  offeredItemCount?: number
   lastMessage: {
     messageId: number
     content: string
