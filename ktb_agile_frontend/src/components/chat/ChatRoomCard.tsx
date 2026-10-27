@@ -7,6 +7,13 @@ import { formatLastTime } from '@/utils/date'
 import type { ChatRoom } from '@/types/chatRoom'
 import styles from './ChatRoomCard.module.css'
 
+function formatItemTitle(title: string) {
+  const characters = Array.from(title)
+  return characters.length > 15
+    ? `${characters.slice(0, 15).join('')}...`
+    : title
+}
+
 export default function ChatRoomCard({
   room,
   onClick,
@@ -24,6 +31,7 @@ export default function ChatRoomCard({
   const offeredItem = room.offeredItem
   const offeredItemCount = room.offeredItemCount ?? 1
   const additionalOfferedItemCount = Math.max(0, offeredItemCount - 1)
+  const offeredItemTitle = offeredItem?.title || '제시 물품 정보 없음'
   const statusMessage = isWithdrawn
     ? '탈퇴한 사용자'
     : hasLeftGroup
@@ -78,9 +86,30 @@ export default function ChatRoomCard({
         </div>
         <div className={styles.roomContent}>
           <div className={styles.topRow}>
-            <strong className={styles.itemTitle}>
-              {room.targetItem.title}
-            </strong>
+            <div className={styles.itemExchange}>
+              <strong
+                className={styles.itemTitle}
+                title={room.targetItem.title}
+              >
+                {formatItemTitle(room.targetItem.title)}
+              </strong>
+              <svg
+                className={styles.exchangeArrow}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M19 12H5m0 0 6-4.5M5 12l6 4.5" />
+              </svg>
+              <span
+                className={styles.offeredItemTitle}
+                title={offeredItemTitle}
+              >
+                {formatItemTitle(offeredItemTitle)}
+                {additionalOfferedItemCount > 0
+                  ? ` 외 ${additionalOfferedItemCount}개`
+                  : ''}
+              </span>
+            </div>
             <span className={styles.time}>
               {formatLastTime(room.lastMessageAt)}
             </span>
