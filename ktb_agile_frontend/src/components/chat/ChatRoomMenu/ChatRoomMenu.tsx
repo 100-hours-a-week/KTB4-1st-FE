@@ -5,7 +5,6 @@ import styles from './ChatRoomMenu.module.css'
 type ChatRoomMenuProps = {
   isRequester: boolean
   exchangeStatus: ChatExchangeStatus
-  itemAvailable: boolean | null
   exchangeRequestId: ChatRoom['exchangeRequestId']
   isUpdatingExchange: boolean
   isLeaving: boolean
@@ -16,7 +15,6 @@ type ChatRoomMenuProps = {
 export default function ChatRoomMenu({
   isRequester,
   exchangeStatus,
-  itemAvailable,
   exchangeRequestId,
   isUpdatingExchange,
   isLeaving,
@@ -26,7 +24,6 @@ export default function ChatRoomMenu({
   const canCancel =
     isRequester &&
     exchangeStatus === CHAT_EXCHANGE_STATUS.AVAILABLE &&
-    itemAvailable === true &&
     Number.isSafeInteger(exchangeRequestId) &&
     exchangeRequestId > 0
 

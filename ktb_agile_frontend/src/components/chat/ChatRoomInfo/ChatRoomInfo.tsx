@@ -47,7 +47,6 @@ export default function ChatRoomInfo({
   const canEdit =
     isRequester &&
     exchangeStatus === EXCHANGE_STATUS.PENDING &&
-    itemAvailable === true &&
     Number.isSafeInteger(itemId) &&
     itemId > 0 &&
     Number.isSafeInteger(exchangeRequestId) &&
