@@ -15,7 +15,6 @@ import ChatMessageBubble, {
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import EventApplyButton from '@/components/event/EventApplyButton'
-import ChatRoomMenu from '@/components/chat/ChatRoomMenu/ChatRoomMenu'
 import { API_BASE_URL } from '@/config/api'
 import {
   getUserIdFromAccessToken,
@@ -26,7 +25,7 @@ import type {
   ChatRoom,
   ChatRoomDetail,
   ChatRoomDetailResponse,
-  ExchangeUpdateStatus,
+  ExchangeActionStatus,
 } from '@/types/chatRoom'
 import type { ChatMessageDto, ChatMessageResponse } from '@/types/chatMessage'
 import styles from './page.module.css'
@@ -90,7 +89,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const group = searchParams.get('group') ?? ''
   const otherUser = searchParams.get('user') ?? ''
   const isSeller = direction === 'RECEIVED'
-  const isRequester = direction === 'SENT'
   const returnTo = `/pages/chat/${chatRoomId}?${searchParams.toString()}`
   const messagesRef = useRef<HTMLDivElement>(null)
   const lastMessageIdRef = useRef<number | null>(null)
@@ -117,7 +115,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [hasNext, setHasNext] = useState(false)
   const [messageError, setMessageError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
-  const [menuOpen, setMenuOpen] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [isClosedByEvent, setIsClosedByEvent] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
@@ -438,47 +435,37 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     } catch {
       setActionError(CHAT_ERRORS.LEAVE_FAILED)
       setIsLeaving(false)
-      setMenuOpen(false)
     }
   }
 
-  async function changeExchangeStatus(status: ExchangeUpdateStatus) {
+  async function changeExchangeStatus(status: ExchangeActionStatus) {
     if (
       (status === EXCHANGE_STATUS.COMPLETED && itemAvailable !== true) ||
       exchangeStatus !== CHAT_EXCHANGE_STATUS.AVAILABLE ||
       !detail
     )
       return
-    if (status === EXCHANGE_STATUS.CANCELED ? !isRequester : !isSeller) return
+    if (!isSeller) return
     if (!Number.isSafeInteger(exchangeRequestId) || exchangeRequestId < 1)
       return
-    const action =
-      status === EXCHANGE_STATUS.COMPLETED
-        ? '완료'
-        : status === EXCHANGE_STATUS.REJECTED
-          ? '거절'
-          : '취소'
+    const action = status === EXCHANGE_STATUS.COMPLETED ? '완료' : '거절'
     if (!window.confirm(`교환 제안을 ${action}하시겠습니까?`)) return
     const token = getAccessTokenOrRedirect(router)
     if (!token) return
     setIsUpdatingExchange(true)
     setActionError(null)
     try {
-      if (status === EXCHANGE_STATUS.CANCELED) {
-        await cancelExchangeRequest(token)
-      } else {
-        await axios.patch(
-          `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
-          { status },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: 'application/json',
-              'Content-Type': 'application/json',
-            },
+      await axios.patch(
+        `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
           },
-        )
-      }
+        },
+      )
       setRoomDetail((current) =>
         current?.chatRoomId === Number(chatRoomId)
           ? {
@@ -490,7 +477,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             }
           : current,
       )
-      setMenuOpen(false)
     } catch (cause) {
       setActionError(
         axios.isAxiosError<ChatMessageResponse>(cause)
@@ -516,30 +502,14 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             <img src="/figma/chat/back.svg" alt="" width="24" height="24" />
           </button>
           <h1>채팅</h1>
-          <div className={styles.menuAnchor}>
-            <button
-              className={styles.iconButton}
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="채팅방 메뉴"
-              aria-expanded={menuOpen}
-            >
-              <img src="/figma/chat/more.svg" alt="" width="24" height="24" />
-            </button>
-            {menuOpen && (
-              <ChatRoomMenu
-                isRequester={isRequester}
-                exchangeStatus={exchangeStatus}
-                exchangeRequestId={exchangeRequestId}
-                isUpdatingExchange={isUpdatingExchange}
-                isLeaving={isLeaving}
-                onCancelExchange={() =>
-                  void changeExchangeStatus(EXCHANGE_STATUS.CANCELED)
-                }
-                onLeave={() => void leaveChatRoom()}
-              />
-            )}
-          </div>
+          <button
+            className={styles.leaveButton}
+            type="button"
+            onClick={() => void leaveChatRoom()}
+            disabled={isLeaving || isUpdatingExchange}
+          >
+            {isLeaving ? '나가는 중...' : '채팅방 나가기'}
+          </button>
         </header>
 
         <div className={styles.content}>
