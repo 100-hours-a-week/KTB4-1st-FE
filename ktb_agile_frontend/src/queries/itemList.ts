@@ -10,6 +10,11 @@ import {
 export const itemListKeys = {
   all: ['items'] as const,
   group: (groupId: number | null) => ['items', groupId] as const,
+  list: (
+    groupId: number | null,
+    userId: number | string | null,
+    sort: ItemSort,
+  ) => ['items', groupId, userId, sort] as const,
 }
 
 export function useItemList(
@@ -23,7 +28,7 @@ export function useItemList(
       : window.sessionStorage.getItem('accessToken')
   const userId = token ? (getUserIdFromAccessToken(token) ?? token) : null
   const queryKey = useMemo(
-    () => [...itemListKeys.group(groupId), userId, sort],
+    () => itemListKeys.list(groupId, userId, sort),
     [groupId, userId, sort],
   )
   const query = useInfiniteQuery({
