@@ -144,18 +144,40 @@ it('상세 API의 물품·수량과 목록의 그룹·상대방을 표시하고 
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
 })
 
-it.each(['requested', 'offered'])(
-  '%s 물품 재고가 부족하면 교환 동작을 막는다',
-  async (target) => {
+it.each([
+  ['requested', 0],
+  ['offered', 0],
+  ['requested', 1],
+  ['offered', 1],
+] as const)(
+  '%s 물품 재고가 %i개로 부족해도 거절은 허용하고 완료만 막는다',
+  async (target, stock) => {
     const value = detail()
     if (target === 'requested')
-      value.exchangeRequest.requestedItem.availableQuantity = 1
-    else value.exchangeRequest.offeredItems[1].availableQuantity = 1
+      value.exchangeRequest.requestedItem.availableQuantity = stock
+    else value.exchangeRequest.offeredItems[1].availableQuantity = stock
     mockResponses(value)
+    const patch = vi.spyOn(axios, 'patch').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
     await screen.findByText('재고 부족')
-    expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '교환 거절' })).toBeNull()
+    const complete = screen.getByRole('button', {
+      name: '교환 완료',
+    }) as HTMLButtonElement
+    const reject = screen.getByRole('button', {
+      name: '교환 거절',
+    }) as HTMLButtonElement
+    expect(complete.disabled).toBe(true)
+    expect(reject.disabled).toBe(false)
+    fireEvent.click(complete)
+    expect(patch).not.toHaveBeenCalled()
+    fireEvent.click(reject)
+    await screen.findByText('거래 거절')
+    expect(patch).toHaveBeenCalledWith(
+      '/api/exchange-requests/50/status',
+      { status: 'REJECTED' },
+      expect.anything(),
+    )
   },
 )
 
@@ -189,7 +211,7 @@ it('닫힌 방에서는 재고가 있어도 교환 동작을 막는다', async (
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
 })
 
-it('SENT 방향에서는 제안 수정과 취소만 제공한다', async () => {
+it('SENT 방향에서는 제안 수정과 헤더 나가기 버튼을 제공한다', async () => {
   params.set('direction', 'SENT')
   mockResponses(detail())
   render(<ChatRoomPage />)
@@ -198,9 +220,41 @@ it('SENT 방향에서는 제안 수정과 취소만 제공한다', async () => {
     expect.stringContaining('itemId=101&exchangeRequestId=50'),
   )
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
-  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
-  expect(screen.getByRole('button', { name: '제안 취소' })).toBeDefined()
+  expect(screen.getByRole('button', { name: '채팅방 나가기' })).toBeDefined()
+  expect(screen.queryByRole('button', { name: '채팅방 메뉴' })).toBeNull()
+  expect(screen.queryByRole('button', { name: '제안 취소' })).toBeNull()
 })
+
+it.each(['requested', 'offered'])(
+  '제안자는 %s 물품 재고가 0개여도 수정과 나가기를 할 수 있다',
+  async (target) => {
+    params.set('direction', 'SENT')
+    const value = detail()
+    if (target === 'requested')
+      value.exchangeRequest.requestedItem.availableQuantity = 0
+    else value.exchangeRequest.offeredItems[0].availableQuantity = 0
+    mockResponses(value)
+    const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('재고 부족')
+    fireEvent.click(screen.getByRole('button', { name: '제안 수정' }))
+    expect(router.push).toHaveBeenCalledWith(
+      expect.stringContaining('/pages/chat/exchange/edit?'),
+    )
+    fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
+    await waitFor(() =>
+      expect(remove).toHaveBeenCalledWith(
+        '/api/exchange-requests/50',
+        expect.anything(),
+      ),
+    )
+    await waitFor(() =>
+      expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
+    )
+    expect(screen.queryByLabelText('메시지')).toBeNull()
+  },
+)
 
 it('상세 조회 실패 시 동작을 노출하지 않고 재시도로 복구한다', async () => {
   const get = mockResponses(detail())
@@ -528,7 +582,7 @@ it.each([
 )
 
 it.each(['REJECTED', 'CANCELED'] as const)(
-  '직접 %s 처리하면 소켓 알림 없이도 입력창을 숨긴다',
+  '%s 처리하면 소켓 알림 없이도 입력창을 숨긴다',
   async (status) => {
     if (status === 'CANCELED') params.set('direction', 'SENT')
     mockResponses(detail())
@@ -538,11 +592,9 @@ it.each(['REJECTED', 'CANCELED'] as const)(
     render(<ChatRoomPage />)
     await screen.findByText('상품명: 캠핑 의자')
     expect(screen.getByLabelText('메시지')).toBeDefined()
-    if (status === 'CANCELED')
-      fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
     fireEvent.click(
       screen.getByRole('button', {
-        name: status === 'REJECTED' ? '교환 거절' : '제안 취소',
+        name: status === 'REJECTED' ? '교환 거절' : '채팅방 나가기',
       }),
     )
     await waitFor(() => expect(screen.queryByLabelText('메시지')).toBeNull())
@@ -557,7 +609,6 @@ it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', a
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   render(<ChatRoomPage />)
   await screen.findByText('상품명: 캠핑 의자')
-  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
   await waitFor(() =>
     expect(router.replace).toHaveBeenCalledWith('/pages/chat'),
@@ -567,7 +618,6 @@ it('나가기에 성공하면 화면 이동 전에도 입력창을 숨긴다', a
 })
 
 function clickLeaveRoom() {
-  fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   fireEvent.click(screen.getByRole('button', { name: '채팅방 나가기' }))
 }
 
