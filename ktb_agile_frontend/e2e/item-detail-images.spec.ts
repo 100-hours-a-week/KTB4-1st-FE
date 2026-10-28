@@ -123,3 +123,56 @@ test('한 장만 등록된 경우 양쪽으로 당겨도 같은 사진을 유지
     ).toHaveAttribute('src', '/fox.webp')
   }
 })
+
+for (const width of [390, 800, 1280]) {
+  test(`확대 모달은 스마트폰 화면 안에서 사진을 넘기고 닫는다 (${width}px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 700 })
+    await openItem(page)
+    await drag(page, -140)
+    const area = page.getByRole('region', { name: '물품 사진' })
+    await area.click()
+
+    const modal = page.getByRole('dialog', { name: '물품 사진 확대' })
+    await expect(modal).toBeVisible()
+    const image = modal.getByRole('img', { name: '사진 넘김 확인' })
+    await expect(image).toHaveAttribute('src', '/kakao_login_large_wide.png')
+    const shellBox = (await page.locator('.app-shell').boundingBox())!
+    const modalBox = (await modal.boundingBox())!
+    expect(modalBox.x).toBeCloseTo(shellBox.x, 0)
+    expect(modalBox.width).toBeCloseTo(shellBox.width, 0)
+    expect(modalBox.y).toBe(0)
+    expect(modalBox.height).toBe(700)
+    await expect(modal).toHaveCSS('background-color', 'rgb(0, 0, 0)')
+    await expect(image).toHaveCSS('object-fit', 'contain')
+    await expect(page.locator('body')).toHaveCSS('overflow', 'hidden')
+
+    const box = (await modal.getByRole('region').boundingBox())!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2 - 140, box.y + box.height / 2, {
+      steps: 8,
+    })
+    await page.mouse.up()
+    await expect(image).toHaveAttribute('src', '/fox_login_error.png')
+    await modal.getByRole('region').focus()
+    await page.keyboard.press('ArrowLeft')
+    await expect(image).toHaveAttribute('src', '/kakao_login_large_wide.png')
+    await page.keyboard.press('Tab')
+    await expect(
+      modal.getByRole('button', { name: '사진 확대 닫기' }),
+    ).toBeFocused()
+    await page.keyboard.press('Shift+Tab')
+    await expect(modal.getByRole('region')).toBeFocused()
+    await modal.getByRole('button', { name: '사진 확대 닫기' }).click()
+    await expect(modal).toHaveCount(0)
+    await expect(area).toBeFocused()
+    await expect(page.locator('body')).not.toHaveCSS('overflow', 'hidden')
+
+    await area.press('Enter')
+    await expect(modal).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(modal).toHaveCount(0)
+  })
+}
