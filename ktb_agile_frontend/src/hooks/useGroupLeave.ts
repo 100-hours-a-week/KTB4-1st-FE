@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
+import { GROUP_ERRORS } from '@/constants/errors/group'
 import type { GroupCardData } from '@/types/group'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
@@ -16,8 +17,10 @@ export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
   const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
   const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
 
   function handleGroupLeave(group: GroupCardData) {
+    setLeaveError(null)
     setLeaveTarget(group)
     setLeaveModalStep(1)
   }
@@ -30,6 +33,10 @@ export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
 
   function proceedGroupLeave() {
     setLeaveModalStep(2)
+  }
+
+  function dismissLeaveError() {
+    setLeaveError(null)
   }
 
   async function confirmGroupLeave() {
@@ -51,18 +58,33 @@ export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
       )
       setLeaveModalStep(null)
       setLeaveTarget(null)
-      onSuccess(leaveTarget)
     } catch (error) {
       console.error(error)
+      const message = axios.isAxiosError<{ error?: { message?: string } }>(
+        error,
+      )
+        ? error.response?.data?.error?.message
+        : undefined
+      setLeaveError(
+        typeof message === 'string' && message.trim()
+          ? message
+          : GROUP_ERRORS.LEAVE_FAILED,
+      )
+      setLeaveModalStep(null)
+      setLeaveTarget(null)
+      return
     } finally {
       setIsLeaving(false)
     }
+    onSuccess(leaveTarget)
   }
 
   return {
     leaveTarget,
     leaveModalStep,
     isLeaving,
+    leaveError,
+    dismissLeaveError,
     handleGroupLeave,
     cancelGroupLeave,
     proceedGroupLeave,

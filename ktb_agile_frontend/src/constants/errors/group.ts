@@ -1,5 +1,6 @@
 export const GROUP_ERRORS = {
   JOIN_FAILED: '오류가 발생했습니다',
+  LEAVE_FAILED: '그룹 탈퇴에 실패했습니다. 다시 시도해주세요.',
   LOCATION_DENIED: '위치 제공이 되지 않으면 그룹 참여가 불가능 합니다',
   LOCATION_PERMISSION_HELP:
     '브라우저 주소창의 사이트 설정에서 위치 권한을 허용한 뒤 다시 시도해주세요. 차단된 권한 요청창은 자동으로 다시 열리지 않을 수 있습니다.',

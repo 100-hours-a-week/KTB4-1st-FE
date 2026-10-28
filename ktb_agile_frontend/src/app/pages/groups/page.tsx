@@ -17,6 +17,7 @@ import RecommendedGroupList from '@/components/groups/RecommendedGroupList'
 import { NO_GROUP_MSG, NO_SEARCH_RESULT_MSG } from '@/constants/group'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 import { useGroupLeave } from '@/hooks/useGroupLeave'
+import ModalDefault from '@/components/common/modal/Default'
 
 export default function GroupListPage() {
   const [inputKeyword, setInputKeyword] = useState('')
@@ -114,6 +115,8 @@ export default function GroupListPage() {
     leaveTarget,
     leaveModalStep,
     isLeaving,
+    leaveError,
+    dismissLeaveError,
     handleGroupLeave,
     cancelGroupLeave,
     proceedGroupLeave,
@@ -246,6 +249,13 @@ export default function GroupListPage() {
           isLoading={isLeaving}
           onCancel={cancelGroupLeave}
           onConfirm={confirmGroupLeave}
+        />
+      )}
+      {leaveError && (
+        <ModalDefault
+          message={leaveError}
+          confirmLabel="확인"
+          onConfirm={dismissLeaveError}
         />
       )}
       <Navbar />
