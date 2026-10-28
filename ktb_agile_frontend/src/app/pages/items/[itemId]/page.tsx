@@ -124,16 +124,16 @@ export default function ItemDetailsPage() {
   return (
     <>
       <div className={styles.page}>
-        <div
-          className={styles.imageArea}
-          style={
-            primaryImage
-              ? {
-                  backgroundImage: `url("${primaryImage.imageUrl.replaceAll('"', '%22')}")`,
-                }
-              : undefined
-          }
-        >
+        <div className={styles.imageArea}>
+          {primaryImage && (
+            // 고정된 이미지 영역 안에서 업로드 이미지의 원본 비율을 유지합니다.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={styles.itemImage}
+              src={primaryImage.imageUrl}
+              alt={item?.title ?? '물품 사진'}
+            />
+          )}
           <button
             className={styles.backButton}
             type="button"
