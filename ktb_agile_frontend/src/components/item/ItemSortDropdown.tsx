@@ -1,17 +1,28 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef } from 'react'
+import type { ItemSort } from '@/types/item'
 import styles from './ItemSortDropdown.module.css'
 
 type Props = {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
+  value: ItemSort
+  onChange: (sort: ItemSort) => void
 }
 
-const options = ['최신순', '추천순'] as const
+const options = [
+  { value: 'latest', label: '최신순' },
+  { value: 'recommended', label: '추천순' },
+] as const
 
-export default function ItemSortDropdown({ isOpen, onOpenChange }: Props) {
-  const [selected, setSelected] = useState<(typeof options)[number]>('최신순')
+export default function ItemSortDropdown({
+  isOpen,
+  onOpenChange,
+  value,
+  onChange,
+}: Props) {
+  const selectedLabel = options.find((option) => option.value === value)?.label
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const optionsId = useId()
@@ -53,12 +64,12 @@ export default function ItemSortDropdown({ isOpen, onOpenChange }: Props) {
         ref={triggerRef}
         type="button"
         className={styles.trigger}
-        aria-label={`정렬 방법: ${selected}`}
+        aria-label={`정렬 방법: ${selectedLabel}`}
         aria-expanded={isOpen}
         aria-controls={isOpen ? optionsId : undefined}
         onClick={() => onOpenChange(!isOpen)}
       >
-        {selected}
+        {selectedLabel}
         <svg
           width="16"
           height="16"
@@ -78,17 +89,17 @@ export default function ItemSortDropdown({ isOpen, onOpenChange }: Props) {
         >
           {options.map((option) => (
             <button
-              key={option}
+              key={option.value}
               type="button"
               className={styles.option}
-              aria-pressed={selected === option}
+              aria-pressed={value === option.value}
               onClick={() => {
-                setSelected(option)
+                onChange(option.value)
                 onOpenChange(false)
                 triggerRef.current?.focus()
               }}
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

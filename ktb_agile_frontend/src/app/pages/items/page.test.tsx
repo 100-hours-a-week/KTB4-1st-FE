@@ -77,7 +77,7 @@ let client: QueryClient
 const render = (ui: ReactElement) =>
   rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
 const seed = (groupId: number, pages: ReturnType<typeof page>[]) =>
-  client.setQueryData(['items', groupId, 'test-token'], {
+  client.setQueryData(['items', groupId, 'test-token', 'latest'], {
     pages: pages.map((value) => value.data.data),
     pageParams: pages.map((_, index) =>
       index === 0 ? '' : `page-${index + 1}`,
@@ -165,7 +165,7 @@ it('최상단에서 당겨 놓으면 첫 페이지를 다시 조회해 기존 �
   await screen.findByText('물품 101')
   expect(screen.queryByText('물품 1')).toBeNull()
   expect(get.mock.calls[2][1]).toMatchObject({
-    params: { size: 10, cursor: '' },
+    params: { size: 10 },
     signal: expect.any(AbortSignal),
   })
 })
@@ -296,7 +296,7 @@ it('새로고침으로 Query 캐시가 없으면 저장 위치를 무시하고 �
   saveItemListSession({ groupId: 1, scrollY: 1500 })
   const get = await showList(null)
   expect(get.mock.calls[1][1]).toMatchObject({
-    params: { cursor: '', size: 10 },
+    params: { size: 10 },
   })
   expect(window.scrollY).toBe(0)
   expect(readLastItemListSession()).toBeNull()
@@ -431,4 +431,56 @@ it('추가 조회 실패 후 버튼으로 같은 커서를 재시도한다', asy
   fireEvent.click(retry)
   await screen.findByText('물품 22')
   expect(get.mock.calls[3][1]).toMatchObject({ params: { cursor: 'page-2' } })
+})
+
+it('추천순을 선택하면 직접 추천 API의 첫 페이지를 요청하고 추천 커서로 추가 조회한다', async () => {
+  const get = await showList('latest-cursor')
+  expect(String(get.mock.calls[1][0])).toMatch(/\/groups\/1\/items$/)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
+  fireEvent.scroll(window)
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  await screen.findByText('물품 101')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(window.scrollY).toBe(0)
+  const [url, options] = get.mock.calls[2]
+  expect(String(url)).toMatch(/\/items\/recommendations$/)
+  expect(options).toMatchObject({
+    params: { groupId: 1, size: 10 },
+    headers: { Authorization: 'Bearer test-token' },
+    signal: expect.any(AbortSignal),
+  })
+  expect(options?.params).not.toHaveProperty('cursor')
+  get.mockResolvedValueOnce(page(makeItems(104, 2), null))
+  await waitFor(() => expect(observers.length).toBeGreaterThan(1))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 105')
+  expect(get.mock.calls[3][1]).toMatchObject({
+    params: { groupId: 1, size: 10, cursor: 'recommendation-cursor' },
+  })
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'latest']),
+  ).toBeDefined()
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'recommended']),
+  ).toBeDefined()
+})
+
+it('추천순에서 최신순으로 전환하면 추천 커서를 보내지 않고 최신 API로 조회한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  await screen.findByText('물품 101')
+  fireEvent(window, new Event('pagehide'))
+  expect(readLastItemListSession()).toBeNull()
+
+  get.mockResolvedValueOnce(page(makeItems(201, 3), null))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '최신순' }))
+  await screen.findByText('물품 201')
+  expect(screen.queryByText('물품 101')).toBeNull()
+  expect(String(get.mock.calls[3][0])).toMatch(/\/groups\/1\/items$/)
+  expect(get.mock.calls[3][1]?.params).toEqual({ size: 10 })
 })

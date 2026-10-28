@@ -22,6 +22,7 @@ import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
+import type { ItemSort } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
@@ -89,6 +90,7 @@ export default function ItemList() {
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
   const [isSortMenuOpen, setSortMenuOpen] = useState(false)
+  const [sort, setSort] = useState<ItemSort>('latest')
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -105,7 +107,7 @@ export default function ItemList() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useItemList(selectedGroupId, router)
+  } = useItemList(selectedGroupId, router, sort)
   const items = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data],
@@ -150,19 +152,21 @@ export default function ItemList() {
     const cached = queryClient.getQueryData(queryKey)
     return {
       groupId: selectedGroupId,
+      sort,
       scrollY: cached && saved?.groupId === selectedGroupId ? saved.scrollY : 0,
       discardSaved: Boolean(
         saved && (!cached || saved.groupId !== selectedGroupId),
       ),
     }
-  }, [selectedGroupId, queryClient, queryKey])
+  }, [selectedGroupId, queryClient, queryKey, sort])
   useLayoutEffect(() => {
     if (initialPosition.groupId === null) return
     if (initialPosition.discardSaved) clearItemListSession()
-    snapshotRef.current = {
-      groupId: initialPosition.groupId,
-      scrollY: initialPosition.scrollY,
-    }
+    // 추천순 위치 복원은 후속 작업에서 정렬 저장과 함께 연결합니다.
+    snapshotRef.current =
+      initialPosition.sort === 'latest'
+        ? { groupId: initialPosition.groupId, scrollY: initialPosition.scrollY }
+        : null
     restoringRef.current = true
     // 캐시된 카드는 이미 DOM에 있으므로 첫 화면이 그려지기 전에 복원합니다.
     window.scrollTo({ top: initialPosition.scrollY, behavior: 'instant' })
@@ -380,6 +384,13 @@ export default function ItemList() {
         <ItemSortDropdown
           isOpen={isSortMenuOpen}
           onOpenChange={setSortMenuOpen}
+          value={sort}
+          onChange={(nextSort) => {
+            if (nextSort === sort) return
+            clearItemListSession()
+            setRefreshError(false)
+            setSort(nextSort)
+          }}
         />
         {(pullProgress > 0 || isRefreshing) && (
           <div className={styles.pullIndicator}>
@@ -400,7 +411,7 @@ export default function ItemList() {
         isLoadingItems ||
         (selectedGroup && items.length > 0) ? (
           <ItemCardList
-            key={selectedGroupId}
+            key={`${selectedGroupId}-${sort}`}
             className={styles.itemList}
             isLoading={isLoadingGroups || isLoadingItems}
             items={items}
