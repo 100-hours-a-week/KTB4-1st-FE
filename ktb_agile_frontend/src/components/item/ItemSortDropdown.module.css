@@ -1,0 +1,72 @@
+.dropdown {
+  position: relative;
+  align-self: flex-end;
+  margin-bottom: 8px;
+}
+
+.trigger,
+.option {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  border: 0;
+  color: var(--ui-ink, #3d5146);
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.trigger {
+  gap: 6px;
+  padding: 8px 0 8px 12px;
+}
+
+.trigger svg {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.options {
+  position: absolute;
+  z-index: 10;
+  top: 100%;
+  right: 0;
+  min-width: 108px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--ui-surface, #fff);
+  box-shadow: 0 4px 20px rgb(var(--ui-ink-rgb, 61 81 70) / 14%);
+}
+
+.option {
+  width: 100%;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.option[aria-pressed='true'] {
+  background: var(--ui-soft, #e6f7ef);
+  font-weight: 600;
+}
+
+.trigger:focus-visible,
+.option:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.option:active {
+  background: var(--ui-soft, #e6f7ef);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .option:hover {
+    background: var(--ui-soft, #e6f7ef);
+  }
+}

@@ -1,4 +1,5 @@
 export type ItemState = 'AVAILABLE' | 'UNAVAILABLE'
+export type ItemSort = 'latest' | 'recommended'
 
 export type ItemRegisterFormValues = {
   title: string
