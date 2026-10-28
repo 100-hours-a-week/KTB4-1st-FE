@@ -17,6 +17,7 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import ItemSortDropdown from '@/components/item/ItemSortDropdown'
 import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
@@ -87,6 +88,7 @@ export default function ItemList() {
   const restoringRef = useRef(true)
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
+  const [isSortMenuOpen, setSortMenuOpen] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -134,6 +136,7 @@ export default function ItemList() {
     !isLoadingGroups &&
       !isLoadingItems &&
       !isGroupMenuOpen &&
+      !isSortMenuOpen &&
       selectedGroupId !== null,
     refreshItems,
   )
@@ -374,6 +377,10 @@ export default function ItemList() {
           <HalloweenDecoration kind="pumpkin" />
           <HalloweenDecoration kind="candy" />
         </div>
+        <ItemSortDropdown
+          isOpen={isSortMenuOpen}
+          onOpenChange={setSortMenuOpen}
+        />
         {(pullProgress > 0 || isRefreshing) && (
           <div className={styles.pullIndicator}>
             <Loading progress={isRefreshing ? undefined : pullProgress} />
