@@ -16,9 +16,11 @@ import ChatMessageBubble, {
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import EventApplyButton from '@/components/event/EventApplyButton'
 import ChatRoomMenu from '@/components/chat/ChatRoomMenu/ChatRoomMenu'
-import Navbar from '@/components/common/navbar/Navbar'
 import { API_BASE_URL } from '@/config/api'
-import { getUserIdFromAccessToken, getAccessTokenOrRedirect } from '@/utils/auth'
+import {
+  getUserIdFromAccessToken,
+  getAccessTokenOrRedirect,
+} from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import type {
   ChatRoom,
@@ -442,7 +444,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
 
   async function changeExchangeStatus(status: ExchangeUpdateStatus) {
     if (
-      itemAvailable !== true ||
+      (status === EXCHANGE_STATUS.COMPLETED && itemAvailable !== true) ||
       exchangeStatus !== CHAT_EXCHANGE_STATUS.AVAILABLE ||
       !detail
     )
@@ -528,7 +530,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
               <ChatRoomMenu
                 isRequester={isRequester}
                 exchangeStatus={exchangeStatus}
-                itemAvailable={itemAvailable}
                 exchangeRequestId={exchangeRequestId}
                 isUpdatingExchange={isUpdatingExchange}
                 isLeaving={isLeaving}

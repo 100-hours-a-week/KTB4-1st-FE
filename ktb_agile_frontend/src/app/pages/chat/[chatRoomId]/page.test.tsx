@@ -144,18 +144,40 @@ it('상세 API의 물품·수량과 목록의 그룹·상대방을 표시하고 
   expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
 })
 
-it.each(['requested', 'offered'])(
-  '%s 물품 재고가 부족하면 교환 동작을 막는다',
-  async (target) => {
+it.each([
+  ['requested', 0],
+  ['offered', 0],
+  ['requested', 1],
+  ['offered', 1],
+] as const)(
+  '%s 물품 재고가 %i개로 부족해도 거절은 허용하고 완료만 막는다',
+  async (target, stock) => {
     const value = detail()
     if (target === 'requested')
-      value.exchangeRequest.requestedItem.availableQuantity = 1
-    else value.exchangeRequest.offeredItems[1].availableQuantity = 1
+      value.exchangeRequest.requestedItem.availableQuantity = stock
+    else value.exchangeRequest.offeredItems[1].availableQuantity = stock
     mockResponses(value)
+    const patch = vi.spyOn(axios, 'patch').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<ChatRoomPage />)
     await screen.findByText('재고 부족')
-    expect(screen.queryByRole('button', { name: '교환 완료' })).toBeNull()
-    expect(screen.queryByRole('button', { name: '교환 거절' })).toBeNull()
+    const complete = screen.getByRole('button', {
+      name: '교환 완료',
+    }) as HTMLButtonElement
+    const reject = screen.getByRole('button', {
+      name: '교환 거절',
+    }) as HTMLButtonElement
+    expect(complete.disabled).toBe(true)
+    expect(reject.disabled).toBe(false)
+    fireEvent.click(complete)
+    expect(patch).not.toHaveBeenCalled()
+    fireEvent.click(reject)
+    await screen.findByText('거래 거절')
+    expect(patch).toHaveBeenCalledWith(
+      '/api/exchange-requests/50/status',
+      { status: 'REJECTED' },
+      expect.anything(),
+    )
   },
 )
 
@@ -201,6 +223,36 @@ it('SENT 방향에서는 제안 수정과 취소만 제공한다', async () => {
   fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
   expect(screen.getByRole('button', { name: '제안 취소' })).toBeDefined()
 })
+
+it.each(['requested', 'offered'])(
+  '제안자는 %s 물품 재고가 0개여도 수정과 취소를 할 수 있다',
+  async (target) => {
+    params.set('direction', 'SENT')
+    const value = detail()
+    if (target === 'requested')
+      value.exchangeRequest.requestedItem.availableQuantity = 0
+    else value.exchangeRequest.offeredItems[0].availableQuantity = 0
+    mockResponses(value)
+    const remove = vi.spyOn(axios, 'delete').mockResolvedValue({})
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<ChatRoomPage />)
+    await screen.findByText('재고 부족')
+    fireEvent.click(screen.getByRole('button', { name: '제안 수정' }))
+    expect(router.push).toHaveBeenCalledWith(
+      expect.stringContaining('/pages/chat/exchange/edit?'),
+    )
+    fireEvent.click(screen.getByRole('button', { name: '채팅방 메뉴' }))
+    fireEvent.click(screen.getByRole('button', { name: '제안 취소' }))
+    await waitFor(() =>
+      expect(remove).toHaveBeenCalledWith(
+        '/api/exchange-requests/50',
+        expect.anything(),
+      ),
+    )
+    await screen.findByText('제안 취소')
+    expect(screen.queryByLabelText('메시지')).toBeNull()
+  },
+)
 
 it('상세 조회 실패 시 동작을 노출하지 않고 재시도로 복구한다', async () => {
   const get = mockResponses(detail())

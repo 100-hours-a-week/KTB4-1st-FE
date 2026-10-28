@@ -121,12 +121,9 @@ export default function ChatRoomInfo({
         </div>
       )}
       <ChatExchangeActions
-        isSeller={
-          isSeller &&
-          exchangeStatus === EXCHANGE_STATUS.PENDING &&
-          itemAvailable === true
-        }
+        isSeller={isSeller && exchangeStatus === EXCHANGE_STATUS.PENDING}
         exchangeRequestId={exchangeRequestId}
+        canComplete={itemAvailable === true}
         isUpdating={isUpdatingExchange}
         onUpdate={onUpdateExchange}
       />

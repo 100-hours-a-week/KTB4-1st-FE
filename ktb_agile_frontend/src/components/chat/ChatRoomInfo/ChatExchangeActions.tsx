@@ -6,6 +6,7 @@ import type { ExchangeActionStatus } from '@/types/chatRoom'
 type ChatExchangeActionsProps = {
   isSeller: boolean
   exchangeRequestId: number
+  canComplete: boolean
   isUpdating: boolean
   onUpdate: (status: ExchangeActionStatus) => void
 }
@@ -13,6 +14,7 @@ type ChatExchangeActionsProps = {
 export default function ChatExchangeActions({
   isSeller,
   exchangeRequestId,
+  canComplete,
   isUpdating,
   onUpdate,
 }: ChatExchangeActionsProps) {
@@ -28,7 +30,7 @@ export default function ChatExchangeActions({
       <button
         type="button"
         onClick={() => onUpdate(EXCHANGE_STATUS.COMPLETED)}
-        disabled={disabled}
+        disabled={disabled || !canComplete}
       >
         교환 완료
       </button>
