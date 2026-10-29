@@ -17,10 +17,12 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import ItemSortDropdown from '@/components/item/ItemSortDropdown'
 import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
+import type { ItemSort } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
@@ -87,6 +89,10 @@ export default function ItemList() {
   const restoringRef = useRef(true)
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
+  const [isSortMenuOpen, setSortMenuOpen] = useState(false)
+  const [sort, setSort] = useState<ItemSort>(
+    () => readLastItemListSession()?.sort ?? 'latest',
+  )
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -103,7 +109,7 @@ export default function ItemList() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useItemList(selectedGroupId, router)
+  } = useItemList(selectedGroupId, router, sort)
   const items = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data],
@@ -134,6 +140,7 @@ export default function ItemList() {
     !isLoadingGroups &&
       !isLoadingItems &&
       !isGroupMenuOpen &&
+      !isSortMenuOpen &&
       selectedGroupId !== null,
     refreshItems,
   )
@@ -145,19 +152,22 @@ export default function ItemList() {
   const initialPosition = useMemo(() => {
     const saved = readLastItemListSession()
     const cached = queryClient.getQueryData(queryKey)
+    const canRestore = Boolean(
+      cached && saved?.groupId === selectedGroupId && saved.sort === sort,
+    )
     return {
       groupId: selectedGroupId,
-      scrollY: cached && saved?.groupId === selectedGroupId ? saved.scrollY : 0,
-      discardSaved: Boolean(
-        saved && (!cached || saved.groupId !== selectedGroupId),
-      ),
+      sort,
+      scrollY: canRestore && saved ? saved.scrollY : 0,
+      discardSaved: Boolean(saved && !canRestore),
     }
-  }, [selectedGroupId, queryClient, queryKey])
+  }, [selectedGroupId, queryClient, queryKey, sort])
   useLayoutEffect(() => {
     if (initialPosition.groupId === null) return
     if (initialPosition.discardSaved) clearItemListSession()
     snapshotRef.current = {
       groupId: initialPosition.groupId,
+      sort: initialPosition.sort,
       scrollY: initialPosition.scrollY,
     }
     restoringRef.current = true
@@ -374,6 +384,29 @@ export default function ItemList() {
           <HalloweenDecoration kind="pumpkin" />
           <HalloweenDecoration kind="candy" />
         </div>
+        <ItemSortDropdown
+          isOpen={isSortMenuOpen}
+          onOpenChange={setSortMenuOpen}
+          value={sort}
+          onChange={(nextSort) => {
+            if (nextSort === sort) return
+            clearItemListSession()
+            snapshotRef.current = null
+            restoringRef.current = true
+            // 무효화만 하면 누적된 모든 페이지가 재조회되므로 대상 캐시를 비웁니다.
+            queryClient.removeQueries({
+              queryKey: itemListKeys.list(
+                selectedGroupId,
+                queryKey[2],
+                nextSort,
+              ),
+              exact: true,
+            })
+            window.scrollTo({ top: 0, behavior: 'instant' })
+            setRefreshError(false)
+            setSort(nextSort)
+          }}
+        />
         {(pullProgress > 0 || isRefreshing) && (
           <div className={styles.pullIndicator}>
             <Loading progress={isRefreshing ? undefined : pullProgress} />
@@ -393,7 +426,7 @@ export default function ItemList() {
         isLoadingItems ||
         (selectedGroup && items.length > 0) ? (
           <ItemCardList
-            key={selectedGroupId}
+            key={`${selectedGroupId}-${sort}`}
             className={styles.itemList}
             isLoading={isLoadingGroups || isLoadingItems}
             items={items}

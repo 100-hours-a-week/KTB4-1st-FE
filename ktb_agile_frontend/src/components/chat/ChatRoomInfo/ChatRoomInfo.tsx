@@ -47,7 +47,6 @@ export default function ChatRoomInfo({
   const canEdit =
     isRequester &&
     exchangeStatus === EXCHANGE_STATUS.PENDING &&
-    itemAvailable === true &&
     Number.isSafeInteger(itemId) &&
     itemId > 0 &&
     Number.isSafeInteger(exchangeRequestId) &&
@@ -122,12 +121,9 @@ export default function ChatRoomInfo({
         </div>
       )}
       <ChatExchangeActions
-        isSeller={
-          isSeller &&
-          exchangeStatus === EXCHANGE_STATUS.PENDING &&
-          itemAvailable === true
-        }
+        isSeller={isSeller && exchangeStatus === EXCHANGE_STATUS.PENDING}
         exchangeRequestId={exchangeRequestId}
+        canComplete={itemAvailable === true}
         isUpdating={isUpdatingExchange}
         onUpdate={onUpdateExchange}
       />

@@ -1,0 +1,50 @@
+.modal {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: var(--app-shell-max-width, 100%);
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: #fff;
+  background: #000;
+}
+
+.modal::backdrop {
+  background: transparent;
+}
+
+.viewport {
+  touch-action: none;
+}
+
+.closeButton {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #000;
+  cursor: pointer;
+}
+
+.closeButton svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

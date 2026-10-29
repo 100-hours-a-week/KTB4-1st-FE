@@ -1,5 +1,10 @@
-// 서버 데이터와 커서는 Query 캐시가 관리하고, 화면 위치만 저장합니다.
-export type ItemListSnapshot = { groupId: number; scrollY: number }
+import type { ItemSort } from '@/types/item'
+
+export type ItemListSnapshot = {
+  groupId: number
+  sort: ItemSort
+  scrollY: number
+}
 const SNAPSHOT_KEY = 'item-list:v3:position'
 
 export function removeLegacySnapshots() {
@@ -17,9 +22,12 @@ export function removeLegacySnapshots() {
     /* 저장소에 접근하지 못해도 목록은 조회합니다. */
   }
 }
-export function readItemListSession(groupId: number): ItemListSnapshot | null {
+export function readItemListSession(
+  groupId: number,
+  sort: ItemSort = 'latest',
+): ItemListSnapshot | null {
   const saved = readLastItemListSession()
-  return saved?.groupId === groupId ? saved : null
+  return saved?.groupId === groupId && saved.sort === sort ? saved : null
 }
 export function readLastItemListSession(): ItemListSnapshot | null {
   try {
@@ -30,21 +38,33 @@ export function readLastItemListSession(): ItemListSnapshot | null {
       value &&
       Number.isSafeInteger(value.groupId) &&
       value.groupId > 0 &&
+      (value.sort === undefined ||
+        value.sort === 'latest' ||
+        value.sort === 'recommended') &&
       Number.isFinite(value.scrollY) &&
       value.scrollY >= 0
     ) {
-      return { groupId: value.groupId, scrollY: value.scrollY }
+      // 정렬 정보가 없는 기존 저장값은 최신순 목록의 위치입니다.
+      return {
+        groupId: value.groupId,
+        sort: value.sort ?? 'latest',
+        scrollY: value.scrollY,
+      }
     }
   } catch {
     /* 잘못된 위치 정보는 무시합니다. */
   }
   return null
 }
-export function saveItemListSession({ groupId, scrollY }: ItemListSnapshot) {
+export function saveItemListSession({
+  groupId,
+  sort,
+  scrollY,
+}: ItemListSnapshot) {
   try {
     window.sessionStorage.setItem(
       SNAPSHOT_KEY,
-      JSON.stringify({ groupId, scrollY }),
+      JSON.stringify({ groupId, sort, scrollY }),
     )
   } catch {
     /* 페이지 이동은 계속합니다. */

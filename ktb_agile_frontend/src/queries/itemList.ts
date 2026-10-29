@@ -1,8 +1,7 @@
 import { useMemo } from 'react'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import { API_BASE_URL } from '@/config/api'
-import type { ItemListResponse } from '@/types/item'
+import { fetchItems } from '@/api/items'
+import type { ItemSort } from '@/types/item'
 import {
   getAccessTokenOrRedirect,
   getUserIdFromAccessToken,
@@ -11,11 +10,17 @@ import {
 export const itemListKeys = {
   all: ['items'] as const,
   group: (groupId: number | null) => ['items', groupId] as const,
+  list: (
+    groupId: number | null,
+    userId: number | string | null,
+    sort: ItemSort,
+  ) => ['items', groupId, userId, sort] as const,
 }
 
 export function useItemList(
   groupId: number | null,
   router: { replace(href: string): void },
+  sort: ItemSort = 'latest',
 ) {
   const token =
     typeof window === 'undefined'
@@ -23,8 +28,8 @@ export function useItemList(
       : window.sessionStorage.getItem('accessToken')
   const userId = token ? (getUserIdFromAccessToken(token) ?? token) : null
   const queryKey = useMemo(
-    () => [...itemListKeys.group(groupId), userId],
-    [groupId, userId],
+    () => itemListKeys.list(groupId, userId, sort),
+    [groupId, userId, sort],
   )
   const query = useInfiniteQuery({
     queryKey,
@@ -33,18 +38,14 @@ export function useItemList(
     queryFn: async ({ pageParam, signal }) => {
       const accessToken = getAccessTokenOrRedirect(router)
       if (!accessToken) throw new Error('로그인이 필요합니다.')
-      const response = await axios.get<ItemListResponse>(
-        `${API_BASE_URL}/groups/${groupId}/items`,
-        {
-          params: { size: 10, cursor: pageParam },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/json',
-          },
-          signal,
-        },
-      )
-      return response.data.data
+      if (groupId === null) throw new Error('그룹을 선택해주세요.')
+      return fetchItems({
+        groupId,
+        sort,
+        cursor: pageParam,
+        accessToken,
+        signal,
+      })
     },
     getNextPageParam: (lastPage) =>
       lastPage.hasNext && lastPage.nextCursor ? lastPage.nextCursor : undefined,

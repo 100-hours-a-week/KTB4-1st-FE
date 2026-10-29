@@ -15,7 +15,7 @@ import {
   focusManager,
 } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import type { ItemListItem } from '@/types/item'
+import type { ItemListItem, ItemSort } from '@/types/item'
 import {
   readItemListSession,
   readLastItemListSession,
@@ -76,8 +76,12 @@ const page = (items: ItemListItem[], nextCursor: string | null) => ({
 let client: QueryClient
 const render = (ui: ReactElement) =>
   rtlRender(<QueryClientProvider client={client}>{ui}</QueryClientProvider>)
-const seed = (groupId: number, pages: ReturnType<typeof page>[]) =>
-  client.setQueryData(['items', groupId, 'test-token'], {
+const seed = (
+  groupId: number,
+  pages: ReturnType<typeof page>[],
+  sort: ItemSort = 'latest',
+) =>
+  client.setQueryData(['items', groupId, 'test-token', sort], {
     pages: pages.map((value) => value.data.data),
     pageParams: pages.map((_, index) =>
       index === 0 ? '' : `page-${index + 1}`,
@@ -165,7 +169,7 @@ it('최상단에서 당겨 놓으면 첫 페이지를 다시 조회해 기존 �
   await screen.findByText('물품 101')
   expect(screen.queryByText('물품 1')).toBeNull()
   expect(get.mock.calls[2][1]).toMatchObject({
-    params: { size: 10, cursor: '' },
+    params: { size: 10 },
     signal: expect.any(AbortSignal),
   })
 })
@@ -234,7 +238,11 @@ it('목록으로 돌아오면 캐시와 스크롤을 복원하면서 최신 커�
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 1500 })
   fireEvent.scroll(window)
   fireEvent.click(screen.getByText('물품 25'))
-  expect(readItemListSession(1)).toEqual({ groupId: 1, scrollY: 1500 })
+  expect(readItemListSession(1)).toEqual({
+    groupId: 1,
+    sort: 'latest',
+    scrollY: 1500,
+  })
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
   fireEvent.scroll(window)
   cleanup()
@@ -285,7 +293,11 @@ it('페이지를 닫거나 목록이 해제될 때 마지막 스크롤 위치만
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
   fireEvent.scroll(window)
   fireEvent(window, new Event('pagehide'))
-  expect(readItemListSession(1)).toEqual({ groupId: 1, scrollY: 800 })
+  expect(readItemListSession(1)).toEqual({
+    groupId: 1,
+    sort: 'latest',
+    scrollY: 800,
+  })
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 })
   fireEvent.scroll(window)
   cleanup()
@@ -293,17 +305,17 @@ it('페이지를 닫거나 목록이 해제될 때 마지막 스크롤 위치만
 })
 
 it('새로고침으로 Query 캐시가 없으면 저장 위치를 무시하고 첫 페이지를 표시한다', async () => {
-  saveItemListSession({ groupId: 1, scrollY: 1500 })
+  saveItemListSession({ groupId: 1, sort: 'latest', scrollY: 1500 })
   const get = await showList(null)
   expect(get.mock.calls[1][1]).toMatchObject({
-    params: { cursor: '', size: 10 },
+    params: { size: 10 },
   })
   expect(window.scrollY).toBe(0)
   expect(readLastItemListSession()).toBeNull()
 })
 
 it('명시된 그룹을 우선하며 다른 그룹의 위치와 캐시는 복원하지 않는다', async () => {
-  saveItemListSession({ groupId: 2, scrollY: 1000 })
+  saveItemListSession({ groupId: 2, sort: 'latest', scrollY: 1000 })
   seed(2, [page(makeItems(100, 3), null)])
   window.history.replaceState(null, '', '/pages/items?groupId=1')
   vi.spyOn(axios, 'get')
@@ -316,7 +328,7 @@ it('명시된 그룹을 우선하며 다른 그룹의 위치와 캐시는 복원
 })
 
 it('그룹 지정이 없으면 마지막 목록 그룹을 선택하고 캐시 위치를 복원한다', async () => {
-  saveItemListSession({ groupId: 2, scrollY: 1200 })
+  saveItemListSession({ groupId: 2, sort: 'latest', scrollY: 1200 })
   seed(2, [page(makeItems(100, 20), null)])
   vi.spyOn(axios, 'get')
     .mockResolvedValueOnce(groups([1, 2]))
@@ -373,7 +385,7 @@ it('캐시된 카드를 이미지 대기 없이 표시하고 첫 화면이 그�
     ...item,
     thumbnailImageUrl: '/test.png',
   }))
-  saveItemListSession({ groupId: 1, scrollY: 500 })
+  saveItemListSession({ groupId: 1, sort: 'latest', scrollY: 500 })
   seed(1, [page(items, 'page-2')])
   client.setQueryData(
     ['joined-groups', 'test-token'],
@@ -431,4 +443,158 @@ it('추가 조회 실패 후 버튼으로 같은 커서를 재시도한다', asy
   fireEvent.click(retry)
   await screen.findByText('물품 22')
   expect(get.mock.calls[3][1]).toMatchObject({ params: { cursor: 'page-2' } })
+})
+
+it('인기순을 선택하면 직접 추천 API의 첫 페이지를 요청하고 추천 커서로 추가 조회한다', async () => {
+  const get = await showList('latest-cursor')
+  expect(String(get.mock.calls[1][0])).toMatch(/\/groups\/1\/items$/)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
+  fireEvent.scroll(window)
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
+  await screen.findByText('물품 101')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(window.scrollY).toBe(0)
+  const [url, options] = get.mock.calls[2]
+  expect(String(url)).toMatch(/\/items\/recommendations$/)
+  expect(options).toMatchObject({
+    params: { groupId: 1, size: 10 },
+    headers: { Authorization: 'Bearer test-token' },
+    signal: expect.any(AbortSignal),
+  })
+  expect(options?.params).not.toHaveProperty('cursor')
+  get.mockResolvedValueOnce(page(makeItems(104, 2), null))
+  await waitFor(() => expect(observers.length).toBeGreaterThan(1))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 105')
+  expect(get.mock.calls[3][1]).toMatchObject({
+    params: { groupId: 1, size: 10, cursor: 'recommendation-cursor' },
+  })
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'latest']),
+  ).toBeDefined()
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'recommended']),
+  ).toBeDefined()
+})
+
+it('인기순에서 최신순으로 전환하면 추천 커서를 보내지 않고 최신 API로 조회한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
+  await screen.findByText('물품 101')
+  fireEvent(window, new Event('pagehide'))
+  expect(readLastItemListSession()).toEqual({
+    groupId: 1,
+    sort: 'recommended',
+    scrollY: 0,
+  })
+
+  get.mockResolvedValueOnce(page(makeItems(201, 3), null))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 인기순' }))
+  fireEvent.click(screen.getByRole('button', { name: '최신순' }))
+  await screen.findByText('물품 201')
+  expect(screen.queryByText('물품 101')).toBeNull()
+  expect(String(get.mock.calls[3][0])).toMatch(/\/groups\/1\/items$/)
+  expect(get.mock.calls[3][1]?.params).toEqual({ size: 10 })
+})
+
+it('여러 페이지가 캐시된 정렬로 전환해도 첫 페이지만 새로 조회한다', async () => {
+  const get = await showList(null)
+  seed(
+    1,
+    [page(makeItems(101, 3), 'old-cursor'), page(makeItems(104, 3), null)],
+    'recommended',
+  )
+  get.mockResolvedValueOnce(page(makeItems(201, 3), null))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
+  expect(screen.queryByText('물품 101')).toBeNull()
+  expect(screen.queryByText('물품 104')).toBeNull()
+  await screen.findByText('물품 201')
+  expect(get).toHaveBeenCalledTimes(3)
+  expect(get.mock.calls[2][1]?.params).toEqual({ groupId: 1, size: 10 })
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'recommended']),
+  ).toMatchObject({
+    pages: [{ items: makeItems(201, 3) }],
+    pageParams: [''],
+  })
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'latest']),
+  ).toBeDefined()
+})
+
+it('인기순 상세에서 돌아오면 정렬과 누적 목록, 스크롤을 함께 복원한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-next'))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
+  await screen.findByText('물품 101')
+  get.mockResolvedValueOnce(page(makeItems(104, 3), null))
+  await waitFor(() => expect(observers.length).toBeGreaterThan(0))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 106')
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 900 })
+  fireEvent.scroll(window)
+  fireEvent.click(screen.getByText('물품 104'))
+  expect(readItemListSession(1, 'recommended')).toEqual({
+    groupId: 1,
+    sort: 'recommended',
+    scrollY: 900,
+  })
+  expect(readItemListSession(1, 'latest')).toBeNull()
+  cleanup()
+  vi.mocked(window.scrollTo).mockClear()
+  get
+    .mockClear()
+    .mockImplementation((url) =>
+      url === '/bff/me/groups'
+        ? Promise.resolve(groups())
+        : new Promise(() => {}),
+    )
+  render(<ItemList />)
+  expect(
+    screen.getByRole('button', { name: '정렬 방법: 인기순' }),
+  ).toBeDefined()
+  expect(screen.getByText('물품 106')).toBeDefined()
+  expect(window.scrollTo).toHaveBeenCalledWith({
+    top: 900,
+    behavior: 'instant',
+  })
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(2))
+  expect(String(get.mock.calls[0][0])).toMatch(/\/items\/recommendations$/)
+})
+
+it('인기순 캐시가 없으면 정렬만 복원하고 이전 스크롤 대신 첫 페이지를 표시한다', async () => {
+  saveItemListSession({ groupId: 1, sort: 'recommended', scrollY: 1200 })
+  const get = await showList(null)
+  expect(
+    screen.getByRole('button', { name: '정렬 방법: 인기순' }),
+  ).toBeDefined()
+  expect(String(get.mock.calls[1][0])).toMatch(/\/items\/recommendations$/)
+  expect(get.mock.calls[1][1]?.params).toEqual({ groupId: 1, size: 10 })
+  expect(window.scrollY).toBe(0)
+})
+
+it('정렬 정보가 없는 기존 위치는 최신순으로 복원한다', async () => {
+  window.sessionStorage.setItem(
+    'item-list:v3:position',
+    JSON.stringify({ groupId: 1, scrollY: 500 }),
+  )
+  seed(1, [page(makeItems(1, 20), null)])
+  vi.spyOn(axios, 'get')
+    .mockResolvedValueOnce(groups())
+    .mockResolvedValueOnce(page(makeItems(1, 20), null))
+  render(<ItemList />)
+  await screen.findByText('물품 20')
+  expect(
+    screen.getByRole('button', { name: '정렬 방법: 최신순' }),
+  ).toBeDefined()
+  expect(window.scrollTo).toHaveBeenCalledWith({
+    top: 500,
+    behavior: 'instant',
+  })
 })

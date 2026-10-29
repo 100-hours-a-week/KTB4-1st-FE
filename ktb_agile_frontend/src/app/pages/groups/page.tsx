@@ -16,6 +16,8 @@ import GroupJoinModal from '@/components/groups/modal/GroupJoinModal'
 import RecommendedGroupList from '@/components/groups/RecommendedGroupList'
 import { NO_GROUP_MSG, NO_SEARCH_RESULT_MSG } from '@/constants/group'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
+import { useGroupLeave } from '@/hooks/useGroupLeave'
+import ModalDefault from '@/components/common/modal/Default'
 
 export default function GroupListPage() {
   const [inputKeyword, setInputKeyword] = useState('')
@@ -23,9 +25,6 @@ export default function GroupListPage() {
   const [searchGroupList, setSearchGroupList] =
     useState<GroupListResponse | null>(null)
   const [isSearchMode, setIsSearchMode] = useState(false)
-  const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
-  const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
-  const [isLeaving, setIsLeaving] = useState(false)
   const [joinTarget, setJoinTarget] = useState<GroupCardData | null>(null)
   const router = useRouter()
   const hasNoJoinedGroups = myGroupList?.data.groups.length === 0
@@ -91,11 +90,6 @@ export default function GroupListPage() {
     fetchGroupList(inputKeyword)
   }
 
-  function handleLeave(group: GroupCardData) {
-    setLeaveTarget(group)
-    setLeaveModalStep(1)
-  }
-
   function handleJoin(group: GroupCardData) {
     setJoinTarget(group)
   }
@@ -117,24 +111,18 @@ export default function GroupListPage() {
     setIsSearchMode(false)
   }
 
-  async function confirmLeave() {
-    if (!leaveTarget || isLeaving) return
-
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
-
-    setIsLeaving(true)
-    try {
-      await axios.delete(
-        `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/json',
-          },
-        },
-      )
-      const leavingGroupId = leaveTarget.groupId
+  const {
+    leaveTarget,
+    leaveModalStep,
+    isLeaving,
+    leaveError,
+    dismissLeaveError,
+    handleGroupLeave,
+    cancelGroupLeave,
+    proceedGroupLeave,
+    confirmGroupLeave,
+  } = useGroupLeave({
+    onSuccess: (group) => {
       setMyGroupList((previous) =>
         previous
           ? {
@@ -142,22 +130,16 @@ export default function GroupListPage() {
               data: {
                 ...previous.data,
                 groups: previous.data.groups.filter(
-                  (group) => group.groupId !== leavingGroupId,
+                  (item) => item.groupId !== group.groupId,
                 ),
               },
             }
           : previous,
       )
-      setLeaveModalStep(null)
-      setLeaveTarget(null)
       setInputKeyword('')
       setIsSearchMode(false)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setIsLeaving(false)
-    }
-  }
+    },
+  })
 
   const displayedGroupList = isSearchMode ? searchGroupList : myGroupList
   const emptyMessage = isSearchMode ? NO_SEARCH_RESULT_MSG : NO_GROUP_MSG
@@ -226,7 +208,7 @@ export default function GroupListPage() {
                 <RecommendedGroupList
                   showTitle
                   onJoin={handleJoin}
-                  onLeave={handleLeave}
+                  onLeave={handleGroupLeave}
                 />
               </div>
             )}
@@ -240,7 +222,7 @@ export default function GroupListPage() {
                 setCurrentGroupId(group.groupId)
                 router.push(`/pages/items?groupId=${group.groupId}`)
               }}
-              onLeave={() => handleLeave(group)}
+              onLeave={() => handleGroupLeave(group)}
               onJoin={() => handleJoin(group)}
             />
           ))
@@ -255,11 +237,8 @@ export default function GroupListPage() {
       {leaveTarget && leaveModalStep === 1 && (
         <LeaveConfirmModal
           groupName={leaveTarget.groupName}
-          onCancel={() => {
-            setLeaveModalStep(null)
-            setLeaveTarget(null)
-          }}
-          onConfirm={() => setLeaveModalStep(2)}
+          onCancel={cancelGroupLeave}
+          onConfirm={proceedGroupLeave}
         />
       )}
 
@@ -268,12 +247,15 @@ export default function GroupListPage() {
           groupName={leaveTarget.groupName}
           isLastMember={leaveTarget.memberCount === 1}
           isLoading={isLeaving}
-          onCancel={() => {
-            if (isLeaving) return
-            setLeaveModalStep(null)
-            setLeaveTarget(null)
-          }}
-          onConfirm={confirmLeave}
+          onCancel={cancelGroupLeave}
+          onConfirm={confirmGroupLeave}
+        />
+      )}
+      {leaveError && (
+        <ModalDefault
+          message={leaveError}
+          confirmLabel="확인"
+          onConfirm={dismissLeaveError}
         />
       )}
       <Navbar />

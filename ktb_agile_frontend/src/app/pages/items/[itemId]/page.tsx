@@ -5,9 +5,10 @@ import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys } from '@/queries/itemList'
 import { useParams, useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 import LikeButton from '@/components/item/like/LikeButton'
+import ItemDetailImageContainer from '@/components/item/ItemDetailImageContainer'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
 import {
@@ -80,13 +81,6 @@ export default function ItemDetailsPage() {
     }
   }, [itemId, router])
 
-  const primaryImage = useMemo(
-    () =>
-      item?.images.toSorted(
-        (first, second) => first.displayOrder - second.displayOrder,
-      )[0],
-    [item],
-  )
   const groupNames = item?.groups.map((group) => group.groupName).join(', ')
 
   async function handleDeleteItem() {
@@ -124,31 +118,12 @@ export default function ItemDetailsPage() {
   return (
     <>
       <div className={styles.page}>
-        <div
-          className={styles.imageArea}
-          style={
-            primaryImage
-              ? {
-                  backgroundImage: `url("${primaryImage.imageUrl.replaceAll('"', '%22')}")`,
-                }
-              : undefined
-          }
-        >
-          <button
-            className={styles.backButton}
-            type="button"
-            onClick={() => router.back()}
-          >
-            ‹
-          </button>
-          {!primaryImage && !isLoading && (
-            <svg className={styles.placeholderIcon} viewBox="0 0 24 24">
-              <rect x="3.5" y="4" width="17" height="16" rx="2" />
-              <circle cx="9" cy="9.5" r="1.5" />
-              <path d="m5 17 4.2-4.2 3.2 3.2 2.1-2.1L19 18.4" />
-            </svg>
-          )}
-        </div>
+        <ItemDetailImageContainer
+          images={item?.images}
+          title={item?.title}
+          isLoading={isLoading}
+          onBack={() => router.back()}
+        />
 
         {item ? (
           <main className={styles.content}>
