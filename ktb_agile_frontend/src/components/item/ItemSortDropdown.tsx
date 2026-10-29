@@ -13,7 +13,7 @@ type Props = {
 
 const options = [
   { value: 'latest', label: '최신순' },
-  { value: 'recommended', label: '추천순' },
+  { value: 'recommended', label: '인기순' },
 ] as const
 
 export default function ItemSortDropdown({

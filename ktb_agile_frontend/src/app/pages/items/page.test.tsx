@@ -445,14 +445,14 @@ it('추가 조회 실패 후 버튼으로 같은 커서를 재시도한다', asy
   expect(get.mock.calls[3][1]).toMatchObject({ params: { cursor: 'page-2' } })
 })
 
-it('추천순을 선택하면 직접 추천 API의 첫 페이지를 요청하고 추천 커서로 추가 조회한다', async () => {
+it('인기순을 선택하면 직접 추천 API의 첫 페이지를 요청하고 추천 커서로 추가 조회한다', async () => {
   const get = await showList('latest-cursor')
   expect(String(get.mock.calls[1][0])).toMatch(/\/groups\/1\/items$/)
   get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
   Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
   fireEvent.scroll(window)
   fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
-  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
   await screen.findByText('물품 101')
   expect(screen.queryByText('물품 1')).toBeNull()
   expect(window.scrollY).toBe(0)
@@ -479,11 +479,11 @@ it('추천순을 선택하면 직접 추천 API의 첫 페이지를 요청하고
   ).toBeDefined()
 })
 
-it('추천순에서 최신순으로 전환하면 추천 커서를 보내지 않고 최신 API로 조회한다', async () => {
+it('인기순에서 최신순으로 전환하면 추천 커서를 보내지 않고 최신 API로 조회한다', async () => {
   const get = await showList(null)
   get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-cursor'))
   fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
-  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
   await screen.findByText('물품 101')
   fireEvent(window, new Event('pagehide'))
   expect(readLastItemListSession()).toEqual({
@@ -493,7 +493,7 @@ it('추천순에서 최신순으로 전환하면 추천 커서를 보내지 않�
   })
 
   get.mockResolvedValueOnce(page(makeItems(201, 3), null))
-  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 인기순' }))
   fireEvent.click(screen.getByRole('button', { name: '최신순' }))
   await screen.findByText('물품 201')
   expect(screen.queryByText('물품 101')).toBeNull()
@@ -510,7 +510,7 @@ it('여러 페이지가 캐시된 정렬로 전환해도 첫 페이지만 새로
   )
   get.mockResolvedValueOnce(page(makeItems(201, 3), null))
   fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
-  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
   expect(screen.queryByText('물품 101')).toBeNull()
   expect(screen.queryByText('물품 104')).toBeNull()
   await screen.findByText('물품 201')
@@ -527,11 +527,11 @@ it('여러 페이지가 캐시된 정렬로 전환해도 첫 페이지만 새로
   ).toBeDefined()
 })
 
-it('추천순 상세에서 돌아오면 정렬과 누적 목록, 스크롤을 함께 복원한다', async () => {
+it('인기순 상세에서 돌아오면 정렬과 누적 목록, 스크롤을 함께 복원한다', async () => {
   const get = await showList(null)
   get.mockResolvedValueOnce(page(makeItems(101, 3), 'recommendation-next'))
   fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
-  fireEvent.click(screen.getByRole('button', { name: '추천순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
   await screen.findByText('물품 101')
   get.mockResolvedValueOnce(page(makeItems(104, 3), null))
   await waitFor(() => expect(observers.length).toBeGreaterThan(0))
@@ -557,7 +557,7 @@ it('추천순 상세에서 돌아오면 정렬과 누적 목록, 스크롤을 �
     )
   render(<ItemList />)
   expect(
-    screen.getByRole('button', { name: '정렬 방법: 추천순' }),
+    screen.getByRole('button', { name: '정렬 방법: 인기순' }),
   ).toBeDefined()
   expect(screen.getByText('물품 106')).toBeDefined()
   expect(window.scrollTo).toHaveBeenCalledWith({
@@ -568,11 +568,11 @@ it('추천순 상세에서 돌아오면 정렬과 누적 목록, 스크롤을 �
   expect(String(get.mock.calls[0][0])).toMatch(/\/items\/recommendations$/)
 })
 
-it('추천순 캐시가 없으면 정렬만 복원하고 이전 스크롤 대신 첫 페이지를 표시한다', async () => {
+it('인기순 캐시가 없으면 정렬만 복원하고 이전 스크롤 대신 첫 페이지를 표시한다', async () => {
   saveItemListSession({ groupId: 1, sort: 'recommended', scrollY: 1200 })
   const get = await showList(null)
   expect(
-    screen.getByRole('button', { name: '정렬 방법: 추천순' }),
+    screen.getByRole('button', { name: '정렬 방법: 인기순' }),
   ).toBeDefined()
   expect(String(get.mock.calls[1][0])).toMatch(/\/items\/recommendations$/)
   expect(get.mock.calls[1][1]?.params).toEqual({ groupId: 1, size: 10 })
