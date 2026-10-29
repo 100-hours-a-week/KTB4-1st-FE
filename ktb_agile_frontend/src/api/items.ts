@@ -15,7 +15,7 @@ export async function fetchItems({
   groupId,
   sort = 'latest',
   cursor,
-  size = 10,
+  size = 20,
   accessToken,
   signal,
 }: FetchItemsParams) {
