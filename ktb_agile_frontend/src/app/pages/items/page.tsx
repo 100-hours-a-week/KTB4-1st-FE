@@ -370,12 +370,29 @@ export default function ItemList() {
               그룹 가입
             </Link>
           )}
-          <Link className={styles.searchLink} href={searchHref}>
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle cx="10.8" cy="10.8" r="6.8" />
-              <path d="m16 16 4.5 4.5" />
-            </svg>
-          </Link>
+          <div className={styles.headerActions}>
+            <Link
+              className={styles.iconButton}
+              href={searchHref}
+              aria-label="물품 검색"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="10.8" cy="10.8" r="6.8" />
+                <path d="m16 16 4.5 4.5" />
+              </svg>
+            </Link>
+            <button
+              className={styles.iconButton}
+              type="button"
+              aria-label="알림"
+              title="알림"
+            >
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+                <path d="M10 21h4" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
       <div ref={pullContentRef} className={styles.pullContent}>

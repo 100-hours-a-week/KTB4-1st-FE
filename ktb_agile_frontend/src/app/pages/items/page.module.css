@@ -58,19 +58,30 @@
   padding-inline: var(--app-content-inline-padding);
 }
 
-.searchLink {
+.headerActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.iconButton {
   display: inline-flex;
   width: 44px;
   height: 44px;
   flex: none;
   align-items: center;
   justify-content: center;
-  margin-left: auto;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   color: var(--ui-ink, #3d5146);
+  background: transparent;
+  cursor: pointer;
 }
 
-.searchLink svg {
+.iconButton svg {
   width: 23px;
   height: 23px;
   stroke: currentColor;
@@ -78,13 +89,14 @@
   stroke-width: 2;
 }
 
-.searchLink:active,
-.searchLink:hover {
+.iconButton:active,
+.iconButton:hover {
   background: var(--ui-soft, #e6f7ef);
 }
 
 .groupDropdown {
   position: relative;
+  min-width: 0;
   max-width: 100%;
 }
 
