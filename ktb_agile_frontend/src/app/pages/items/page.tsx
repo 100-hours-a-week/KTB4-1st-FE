@@ -19,6 +19,7 @@ import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryBu
 import ItemCardList from '@/components/item/ItemCardList'
 import ItemSortDropdown from '@/components/item/ItemSortDropdown'
 import Loading from '@/components/common/Loading'
+import NotificationModal from '@/components/common/modal/NotificationModal'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
@@ -90,6 +91,7 @@ export default function ItemList() {
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
   const [isSortMenuOpen, setSortMenuOpen] = useState(false)
+  const [isNotificationModalOpen, setNotificationModalOpen] = useState(false)
   const [sort, setSort] = useState<ItemSort>(
     () => readLastItemListSession()?.sort ?? 'latest',
   )
@@ -141,6 +143,7 @@ export default function ItemList() {
       !isLoadingItems &&
       !isGroupMenuOpen &&
       !isSortMenuOpen &&
+      !isNotificationModalOpen &&
       selectedGroupId !== null,
     refreshItems,
   )
@@ -386,6 +389,9 @@ export default function ItemList() {
               type="button"
               aria-label="알림"
               title="알림"
+              aria-haspopup="dialog"
+              aria-expanded={isNotificationModalOpen}
+              onClick={() => setNotificationModalOpen(true)}
             >
               <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
@@ -480,6 +486,9 @@ export default function ItemList() {
         )}
       </div>
       <Navbar />
+      {isNotificationModalOpen && (
+        <NotificationModal onClose={() => setNotificationModalOpen(false)} />
+      )}
       <FloatingInquiryButton />
       <ChatbotButton />
     </section>
