@@ -146,18 +146,7 @@ export default function GroupListPage() {
 
   return (
     <section className={styles.page}>
-      <header className={styles.header}>
-        <button
-          className={styles.backButton}
-          type="button"
-          aria-label="뒤로가기"
-          onClick={() => router.back()}
-        >
-          {/* 뒤로가기 아이콘 */}
-          <svg viewBox="0 0 24 24">
-            <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
-          </svg>
-        </button>
+      <header className={`${styles.header} ${styles.listHeader}`}>
         <h1 className={styles.title}>그룹</h1>
         <div className={styles.headerActions}>
           {hasJoinedGroups && (

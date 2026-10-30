@@ -20,6 +20,10 @@
   gap: 10px;
 }
 
+.header.listHeader {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 .backButton {
   display: inline-flex;
   width: 46px;
@@ -205,6 +209,10 @@
 }
 
 @media (max-width: 479px) {
+  .header.listHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .header {
     grid-template-columns: 48px minmax(0, 1fr);
   }
