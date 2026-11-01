@@ -4,6 +4,7 @@ import './halloween-ui.css'
 import Script from 'next/script'
 import QueryProvider from './QueryProvider'
 import AuthExpiredModal from '@/components/auth/AuthExpiredModal'
+import MockProvider from '@/mocks/MockProvider'
 
 export const metadata: Metadata = {
   title: '바꾸까',
@@ -14,19 +15,23 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="ko" data-theme="halloween">
       <body>
-        <Script id="microsoft-clarity" strategy="afterInteractive">
-          {`
+        {process.env.NEXT_PUBLIC_API_MOCKING !== 'enabled' && (
+          <Script id="microsoft-clarity" strategy="afterInteractive">
+            {`
             (function(c,l,a,r,i,t,y){
               c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
               t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
               y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
             })(window, document, "clarity", "script", "yp87wogmb1");
           `}
-        </Script>
+          </Script>
+        )}
         <div className="app-shell">
           <main className="app-content">
             <QueryProvider>
-              <AuthExpiredModal>{children}</AuthExpiredModal>
+              <MockProvider>
+                <AuthExpiredModal>{children}</AuthExpiredModal>
+              </MockProvider>
             </QueryProvider>
           </main>
         </div>
