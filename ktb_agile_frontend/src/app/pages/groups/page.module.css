@@ -139,7 +139,7 @@
   border: 0;
   border-radius: 13px;
   color: var(--ui-surface, #fffff6);
-  background: var(--group-ink);
+  background: var(--ui-button, var(--group-ink));
   font: inherit;
   font-size: 15px;
   font-weight: 800;
@@ -204,7 +204,7 @@
   }
 
   .searchButton:hover {
-    background: var(--ui-ink, #2e4036);
+    background: var(--ui-button-hover, var(--ui-ink, #2e4036));
   }
 }
 
@@ -259,4 +259,27 @@
     width: 80px;
     font-size: 13px;
   }
+}
+
+.winterFriends {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin-top: 28px;
+  padding-top: 8px;
+  pointer-events: none;
+}
+
+.winterFriends img {
+  display: block;
+  width: 40%;
+  min-width: 0;
+  height: auto;
+  object-fit: contain;
+}
+
+.winterFriends img:last-child {
+  width: 30%;
 }

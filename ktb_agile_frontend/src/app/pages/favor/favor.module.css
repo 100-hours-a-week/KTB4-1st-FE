@@ -131,7 +131,7 @@
   border: 0;
   border-radius: 20px;
   color: var(--ui-surface, #ffffff);
-  background: var(--ui-ink, #000000);
+  background: var(--ui-button, var(--ui-ink, #000000));
   font: inherit;
   font-size: 16px;
   font-weight: 700;

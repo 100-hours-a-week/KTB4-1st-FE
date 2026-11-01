@@ -71,7 +71,7 @@
 
 .cancelButton {
   color: var(--ui-surface, #ffffff);
-  background: var(--ui-ink, #111827);
+  background: var(--ui-button, var(--ui-ink, #111827));
 }
 
 @media (max-width: 480px) {

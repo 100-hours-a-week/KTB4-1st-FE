@@ -89,12 +89,12 @@
 }
 
 .active {
-  color: var(--ui-ink, #171717);
+  color: var(--ui-primary, #277a9f);
   background: var(--ui-soft, #f7f7f7);
 }
 
 .active::before {
-  background: var(--ui-ink, #171717);
+  background: var(--ui-primary, #277a9f);
 }
 
 .navLink:active {

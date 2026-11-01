@@ -1,6 +1,7 @@
 'use client'
 
 import Navbar from '@/components/common/navbar/Navbar'
+import Image from 'next/image'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -216,6 +217,23 @@ export default function GroupListPage() {
             />
           ))
         ))}
+
+      <div className={styles.winterFriends} aria-hidden="true">
+        <Image
+          src="/images/winter/winter-fox-snowman.png"
+          alt=""
+          width={1280}
+          height={1280}
+          sizes="(max-width: 679px) 45vw, 260px"
+        />
+        <Image
+          src="/images/winter/winter-crane-snowball.png"
+          alt=""
+          width={1280}
+          height={1280}
+          sizes="(max-width: 679px) 45vw, 260px"
+        />
+      </div>
 
       <GroupJoinModal
         group={joinTarget}
