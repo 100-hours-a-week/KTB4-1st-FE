@@ -169,7 +169,7 @@
 
 .primaryAction {
   color: var(--ui-surface, #fffff6);
-  background: var(--ui-ink, #3d5146);
+  background: var(--ui-button, var(--ui-ink, #3d5146));
 }
 
 .secondaryAction {
@@ -207,7 +207,7 @@
   }
 
   .primaryAction:hover {
-    background: var(--ui-ink, #2e4036);
+    background: var(--ui-button-hover, var(--ui-ink, #2e4036));
   }
 
   .secondaryAction:hover {

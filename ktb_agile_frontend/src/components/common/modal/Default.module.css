@@ -60,7 +60,7 @@
 
 .confirmButton {
   color: var(--ui-surface, #ffffff);
-  background: var(--ui-ink, #000000);
+  background: var(--ui-button, var(--ui-ink, #000000));
 }
 
 .cancelButton {
@@ -75,7 +75,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .confirmButton:hover {
-    background: #2d2d2d;
+    background: var(--ui-button-hover, #2d2d2d);
   }
 
   .cancelButton:hover {

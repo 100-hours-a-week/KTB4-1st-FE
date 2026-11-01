@@ -6,7 +6,7 @@
   padding: 13px;
   border: 1px solid rgb(var(--ui-ink-rgb, 61 81 70) / 10%);
   border-radius: 20px;
-  background: rgb(255 255 246 / 90%);
+  background: var(--ui-surface);
   box-shadow: 0 8px 24px rgb(var(--ui-ink-rgb, 61 81 70) / 7%);
   transition:
     transform 160ms ease,

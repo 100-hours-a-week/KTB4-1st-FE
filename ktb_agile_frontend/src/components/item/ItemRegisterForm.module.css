@@ -22,7 +22,7 @@
   border: 0;
   border-radius: 11px;
   color: var(--ui-surface, #fff);
-  background: var(--ui-ink, #111827);
+  background: var(--ui-button, var(--ui-ink, #111827));
   font-family: inherit;
   font-size: 14px;
   font-weight: 750;

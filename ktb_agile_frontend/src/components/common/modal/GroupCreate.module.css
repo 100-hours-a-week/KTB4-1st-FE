@@ -99,7 +99,7 @@
 
 .confirmButton {
   color: var(--ui-surface, #ffffff);
-  background: #101828;
+  background: var(--ui-button, #101828);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -108,7 +108,7 @@
   }
 
   .confirmButton:hover {
-    background: #1d2939;
+    background: var(--ui-button-hover, #1d2939);
   }
 }
 

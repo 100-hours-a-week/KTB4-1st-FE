@@ -1,6 +1,5 @@
 'use client'
 
-import HalloweenDecoration from '@/components/common/seasonal/HalloweenDecoration'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -379,11 +378,6 @@ export default function ItemList() {
         </div>
       </header>
       <div ref={pullContentRef} className={styles.pullContent}>
-        <div className={styles.seasonalShelf} aria-hidden="true">
-          <HalloweenDecoration kind="candy" />
-          <HalloweenDecoration kind="pumpkin" />
-          <HalloweenDecoration kind="candy" />
-        </div>
         <ItemSortDropdown
           isOpen={isSortMenuOpen}
           onOpenChange={setSortMenuOpen}
