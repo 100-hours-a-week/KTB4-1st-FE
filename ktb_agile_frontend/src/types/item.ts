@@ -14,6 +14,7 @@ export type ItemRegisterFormValues = {
 export type SelectedImage = {
   id: string
   file?: File
+  webpFile?: File
   imageId?: number
   preview: string
   thumbnailObjectKey?: string

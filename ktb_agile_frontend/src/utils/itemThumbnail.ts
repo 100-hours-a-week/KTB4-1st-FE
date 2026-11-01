@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { convertImageToWebp } from './imageWebp'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import type { SelectedImage } from '@/types/item'
@@ -7,33 +8,12 @@ import type { SelectedImage } from '@/types/item'
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
 
 export async function createItemThumbnail(source: Blob): Promise<File> {
-  const bitmap = await createImageBitmap(source)
-  try {
-    const scale = Math.min(
-      1,
-      ITEM_THUMBNAIL_MAX_SIZE / Math.max(bitmap.width, bitmap.height),
-    )
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.max(1, Math.round(bitmap.width * scale))
-    canvas.height = Math.max(1, Math.round(bitmap.height * scale))
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error('썸네일을 생성할 수 없습니다.')
-    context.fillStyle = '#fff'
-    context.fillRect(0, 0, canvas.width, canvas.height)
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-    const encode = (type: string) =>
-      new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.8))
-    let blob = await encode('image/webp')
-    // WebP 인코딩 미지원 브라우저는 PNG를 반환할 수 있어 실제 형식을 확인합니다.
-    if (blob?.type !== 'image/webp') blob = await encode('image/jpeg')
-    if (!blob || !['image/webp', 'image/jpeg'].includes(blob.type)) {
-      throw new Error('썸네일 변환에 실패했습니다.')
-    }
-    const extension = blob.type === 'image/webp' ? 'webp' : 'jpg'
-    return new File([blob], `item-thumbnail.${extension}`, { type: blob.type })
-  } finally {
-    bitmap.close()
-  }
+  return convertImageToWebp(source, {
+    maxSize: ITEM_THUMBNAIL_MAX_SIZE,
+    quality: 0.8,
+    fileName: 'item-thumbnail.webp',
+    background: '#fff',
+  })
 }
 
 export async function uploadItemThumbnail(
