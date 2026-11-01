@@ -31,6 +31,12 @@ export default function ItemImageCarousel({
   )
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
+  const [settledInitialUrl, setSettledInitialUrl] = useState<string | null>(
+    null,
+  )
+  const [requestedUrls, setRequestedUrls] = useState<Set<string>>(
+    () => new Set(),
+  )
   const suppressClick = useRef(false)
   const gesture = useRef<{
     pointerId: number
@@ -44,6 +50,17 @@ export default function ItemImageCarousel({
     0,
     sortedImages.findIndex((image) => image.imageId === activeImageId),
   )
+  const initialImage =
+    sortedImages.find((image) => image.imageId === initialImageId) ??
+    sortedImages[0]
+  const canLoadBackground =
+    !!initialImage && settledInitialUrl === initialImage.imageUrl
+
+  function activateImage(index: number) {
+    const image = sortedImages[index]
+    setRequestedUrls((urls) => new Set(urls).add(image.imageUrl))
+    setActiveImageId(image.imageId)
+  }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (
@@ -108,7 +125,7 @@ export default function ItemImageCarousel({
           activeIndex + (current.deltaX < 0 ? 1 : -1),
         ),
       )
-      setActiveImageId(sortedImages[nextIndex].imageId)
+      activateImage(nextIndex)
     }
     suppressClick.current = cancelled || current.axis !== null
     gesture.current = null
@@ -152,7 +169,7 @@ export default function ItemImageCarousel({
             activeIndex + (event.key === 'ArrowRight' ? 1 : -1),
           ),
         )
-        setActiveImageId(sortedImages[nextIndex].imageId)
+        activateImage(nextIndex)
       }}
     >
       <div
@@ -172,8 +189,24 @@ export default function ItemImageCarousel({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               className={styles.itemImage}
-              src={image.imageUrl}
+              // src를 미뤄 첫 사진 요청이 끝난 뒤 나머지 사진을 준비합니다.
+              src={
+                image === initialImage ||
+                index === activeIndex ||
+                requestedUrls.has(image.imageUrl) ||
+                canLoadBackground
+                  ? image.imageUrl
+                  : undefined
+              }
               alt={title ?? '물품 사진'}
+              loading="eager"
+              fetchPriority={index === activeIndex ? 'high' : 'low'}
+              onLoad={() => {
+                if (image === initialImage) setSettledInitialUrl(image.imageUrl)
+              }}
+              onError={() => {
+                if (image === initialImage) setSettledInitialUrl(image.imageUrl)
+              }}
               draggable={false}
             />
           </div>
