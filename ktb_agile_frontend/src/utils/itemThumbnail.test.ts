@@ -37,45 +37,18 @@ it('원본을 유지하며 긴 변 224px, 원본 비율의 WebP를 만든다', a
   expect(source.name).toBe('original.png')
   expect(bitmap.close).toHaveBeenCalledOnce()
 })
-it.each(['png', 'null'])(
-  'WebP 생성 결과가 %s이면 JPEG로 대체한다',
-  async (result) => {
-    const toBlob = vi
-      .spyOn(HTMLCanvasElement.prototype, 'toBlob')
-      .mockImplementation((callback, type) =>
-        callback(
-          type === 'image/webp'
-            ? result === 'png'
-              ? new Blob(['fallback'], { type: 'image/png' })
-              : null
-            : new Blob(['jpeg'], { type: 'image/jpeg' }),
-        ),
-      )
-    const file = await createItemThumbnail(new Blob())
-    expect(file.type).toBe('image/jpeg')
-    expect(file.name).toBe('item-thumbnail.jpg')
-    expect(toBlob).toHaveBeenNthCalledWith(
-      1,
-      expect.any(Function),
-      'image/webp',
-      0.8,
+it.each(['image/png', null])(
+  'WebP 생성 실패(%s) 시 다른 형식으로 업로드하지 않는다',
+  async (type) => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
+      (callback) => callback(type ? new Blob(['unsupported'], { type }) : null),
     )
-    expect(toBlob).toHaveBeenNthCalledWith(
-      2,
-      expect.any(Function),
-      'image/jpeg',
-      0.8,
+    await expect(createItemThumbnail(new Blob())).rejects.toThrow(
+      'WebP 이미지 변환',
     )
     expect(bitmap.close).toHaveBeenCalledOnce()
   },
 )
-it('JPEG 대체도 미지원이면 다른 형식을 잘못 저장하지 않고 실패한다', async () => {
-  vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
-    (callback) => callback(new Blob(['unsupported'], { type: 'image/png' })),
-  )
-  await expect(createItemThumbnail(new Blob())).rejects.toThrow('썸네일 변환')
-  expect(bitmap.close).toHaveBeenCalledOnce()
-})
 it('작은 이미지를 확대하지 않는다', async () => {
   bitmap.width = 80
   bitmap.height = 120
@@ -86,10 +59,12 @@ it('변환 실패 시 비트맵을 해제한다', async () => {
   vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
     (callback) => callback(null),
   )
-  await expect(createItemThumbnail(new Blob())).rejects.toThrow('썸네일 변환')
+  await expect(createItemThumbnail(new Blob())).rejects.toThrow(
+    'WebP 이미지 변환',
+  )
   expect(bitmap.close).toHaveBeenCalledOnce()
 })
-it.each(['image/webp', 'image/jpeg'])(
+it.each(['image/webp'])(
   '%s 형식으로 업로드하고 재시도에서는 업로드를 생략한다',
   async (contentType) => {
     vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
