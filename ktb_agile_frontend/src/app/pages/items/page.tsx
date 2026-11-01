@@ -429,6 +429,7 @@ export default function ItemList() {
             key={`${selectedGroupId}-${sort}`}
             className={styles.itemList}
             isLoading={isLoadingGroups || isLoadingItems}
+            isLoadingMore={isFetchingNextPage && hasNextPage}
             items={items}
             onLoadMore={
               !isRefreshing &&
@@ -452,9 +453,6 @@ export default function ItemList() {
                 : '그룹에 가입해서 물품들을 구경해보아요.'}
             </p>
           </div>
-        )}
-        {!isLoadingItems && isFetchingNextPage && (
-          <p role="status">물품을 더 불러오는 중...</p>
         )}
         {!isLoadingItems && isFetchNextPageError && (
           <button type="button" onClick={loadMore}>
