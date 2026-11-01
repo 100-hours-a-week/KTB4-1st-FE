@@ -15,8 +15,15 @@
 /playwright-report/
 /test-results/
 
+# local MSW fixtures and assets
+/src/mocks/
+/public/mockServiceWorker.js
+/public/mock-items/
+/scripts/download-mock-photos.py
+
 # next.js
 /.next/
+/.next-mock/
 /out/
 
 # production

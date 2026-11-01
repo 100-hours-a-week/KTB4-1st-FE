@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "NEXT_PUBLIC_API_MOCKING=enabled next dev --hostname 127.0.0.1 --port 3100",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -37,9 +38,15 @@
     "eslint-config-next": "16.3.5",
     "eslint-config-prettier": "^10.1.8",
     "jsdom": "^30.0.1",
+    "msw": "^2.15.0",
     "prettier": "3.9.6",
     "typescript": "5.9.3",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^5.0.1"
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
