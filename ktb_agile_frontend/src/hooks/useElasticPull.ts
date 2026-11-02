@@ -124,7 +124,7 @@ export function useElasticPull(
       if (refreshController || event.button !== 0 || window.scrollY > 0) return
       if (
         (event.target as Element).closest(
-          'button, input, textarea, select, [contenteditable]',
+          'button:not([data-elastic-pull]), input, textarea, select, [contenteditable]',
         )
       )
         return
