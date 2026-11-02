@@ -1,0 +1,22 @@
+.container {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--ui-border, #ddd);
+}
+
+.text {
+  color: var(--ui-ink, #111);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.time {
+  color: var(--ui-muted, #666);
+  font-size: 12px;
+  line-height: 1.5;
+}

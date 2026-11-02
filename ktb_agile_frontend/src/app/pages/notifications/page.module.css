@@ -1,0 +1,12 @@
+.page {
+  width: 100%;
+  min-width: 0;
+  padding-bottom: calc(var(--app-navbar-height) + env(safe-area-inset-bottom));
+}
+
+.heading {
+  margin-bottom: 16px;
+  color: var(--ui-ink, #111);
+  font-size: 28px;
+  font-weight: 700;
+}
