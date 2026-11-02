@@ -226,7 +226,7 @@
   place-items: center;
   border: 0;
   border-radius: 24px;
-  background: var(--ui-ink, #111827);
+  background: var(--ui-button, var(--ui-ink, #111827));
   cursor: pointer;
 }
 .composer button:disabled {

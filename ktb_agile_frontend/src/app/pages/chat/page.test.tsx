@@ -11,7 +11,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ChatRoom } from '@/types/chatRoom'
 import Chat from './page'
 
-const router = { replace: vi.fn() }
+const router = { replace: vi.fn(), push: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/config/api', () => ({}))
 vi.mock('@/components/common/navbar/Navbar', () => ({ default: () => null }))
@@ -74,6 +74,7 @@ function intersect(index = observers.length - 1, isIntersecting = true) {
 
 beforeEach(() => {
   window.sessionStorage.setItem('accessToken', 'access-token')
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 })
   observers.length = 0
   vi.stubGlobal(
     'IntersectionObserver',
@@ -88,6 +89,7 @@ beforeEach(() => {
 })
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   window.sessionStorage.clear()
   vi.restoreAllMocks()
   vi.clearAllMocks()
@@ -210,4 +212,113 @@ it('탭 변경 전에 시작한 늦은 응답은 새 목록에 섞이지 않는�
   await act(async () => resolveOld(page([room(1)], 'old-next')))
   expect(screen.queryByText('물품 1')).toBeNull()
   expect(observers).toHaveLength(0)
+})
+
+async function pullList() {
+  const list = screen.getByRole('heading', { name: '대화 목록' }).parentElement!
+  fireEvent.touchStart(list, { touches: [{ clientX: 100, clientY: 100 }] })
+  fireEvent.touchMove(list, { touches: [{ clientX: 100, clientY: 300 }] })
+  await act(async () => fireEvent.touchEnd(list))
+  return list
+}
+
+it('당겨서 새로고침하면 현재 탭의 첫 페이지로 교체하고 새 커서부터 추가 조회한다', async () => {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValueOnce(page([room(1)]))
+    .mockResolvedValueOnce(page([room(2)], 'old-next'))
+    .mockResolvedValueOnce(page([room(3)]))
+    .mockResolvedValueOnce(page([room(4)], 'new-next'))
+    .mockResolvedValueOnce(page([room(5)]))
+  render(<Chat />)
+  await screen.findByText('물품 1')
+  fireEvent.click(screen.getByText('받은 교환'))
+  await screen.findByText('물품 2')
+  intersect()
+  await screen.findByText('물품 3')
+  vi.useFakeTimers()
+  const list = await pullList()
+  expect(get.mock.calls[3][1]?.params).toEqual({
+    size: 20,
+    direction: 'RECEIVED',
+  })
+  expect(screen.queryByText('물품 2')).toBeNull()
+  expect(screen.queryByText('물품 3')).toBeNull()
+  expect(screen.getByText('물품 4')).toBeDefined()
+  expect(list.style.transform).toBe('translateY(64px)')
+  await act(async () => vi.advanceTimersByTime(800))
+  expect(list.style.transform).toBe('translateY(0px)')
+  await act(async () => intersect())
+  expect(get.mock.calls[4][1]?.params).toEqual({
+    size: 20,
+    direction: 'RECEIVED',
+    cursor: 'new-next',
+  })
+  expect(screen.getByText('물품 5')).toBeDefined()
+})
+
+it('새로고침 실패 시 기존 목록을 유지하고 첫 페이지를 다시 시도한다', async () => {
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValueOnce(page([room(1)], 'next'))
+    .mockRejectedValueOnce(new Error('새로고침 실패'))
+    .mockResolvedValueOnce(page([room(2)]))
+  render(<Chat />)
+  await screen.findByText('물품 1')
+  vi.useFakeTimers()
+  await pullList()
+  expect(screen.getByText('물품 1')).toBeDefined()
+  expect(screen.getByText('새로고침 실패')).toBeDefined()
+  expect(screen.getByText('다시 시도').hasAttribute('disabled')).toBe(true)
+  await act(async () => vi.advanceTimersByTime(800))
+  await act(async () => fireEvent.click(screen.getByText('다시 시도')))
+  expect(get.mock.calls[2][1]?.params).toEqual({ size: 20 })
+  expect(screen.getByText('물품 2')).toBeDefined()
+  expect(screen.queryByText('물품 1')).toBeNull()
+})
+
+it('새로고침 중 중복 당김과 추가 조회를 막고 탭 변경 시 요청을 취소한다', async () => {
+  let resolveRefresh!: (value: ReturnType<typeof page>) => void
+  const get = vi
+    .spyOn(axios, 'get')
+    .mockResolvedValueOnce(page([room(1)], 'next'))
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveRefresh = resolve
+        }),
+    )
+    .mockResolvedValueOnce(page([room(2)]))
+  render(<Chat />)
+  await screen.findByText('물품 1')
+  vi.useFakeTimers()
+  await pullList()
+  const signal = get.mock.calls[1][1]?.signal
+  await pullList()
+  intersect(0)
+  expect(get).toHaveBeenCalledTimes(2)
+  await act(async () => fireEvent.click(screen.getByText('받은 교환')))
+  expect(signal?.aborted).toBe(true)
+  await act(async () => resolveRefresh(page([room(3)], 'stale-next')))
+  expect(screen.getByText('물품 2')).toBeDefined()
+  expect(screen.queryByText('물품 3')).toBeNull()
+})
+
+it('채팅 카드를 마우스로 당기면 새로고침하고 클릭 이동을 막으며 휠에는 탄성을 적용하지 않는다', async () => {
+  const get = vi.spyOn(axios, 'get').mockResolvedValue(page([room(1)]))
+  render(<Chat />)
+  const card = await screen.findByRole('button', { name: /채팅방 열기/ })
+  const list = screen.getByRole('heading', { name: '대화 목록' }).parentElement!
+  fireEvent.wheel(list, { deltaY: -100 })
+  expect(list.style.transform).toBe('')
+  vi.useFakeTimers()
+  fireEvent.mouseDown(card, { button: 0, clientX: 100, clientY: 100 })
+  fireEvent.mouseMove(document, { buttons: 1, clientX: 100, clientY: 300 })
+  await act(async () => fireEvent.mouseUp(document))
+  expect(get).toHaveBeenCalledTimes(2)
+  expect(fireEvent.click(card)).toBe(false)
+  expect(router.push).not.toHaveBeenCalled()
+  await act(async () => vi.advanceTimersByTime(800))
+  fireEvent.click(card)
+  expect(router.push).toHaveBeenCalledTimes(1)
 })

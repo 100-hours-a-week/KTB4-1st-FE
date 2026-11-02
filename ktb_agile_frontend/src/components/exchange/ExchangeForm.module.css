@@ -156,12 +156,12 @@
 }
 
 .requestPage .requestButton {
-  background: var(--ui-ink, #3d5146);
+  background: var(--ui-button, var(--ui-ink, #3d5146));
 }
 
 .requestPage .requestButton:disabled {
-  color: var(--ui-muted, #6d7b72);
-  background: var(--ui-border, #d1d8d3);
+  color: var(--ui-surface, #fff);
+  background: var(--ui-button, #7790c5);
 }
 
 .requestPage .error {
@@ -318,14 +318,15 @@
   border: 0;
   border-radius: 12px;
   color: var(--ui-surface, #fff);
-  background: var(--ui-ink, #111827);
+  background: var(--ui-button, var(--ui-ink, #111827));
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
 .requestButton:disabled {
-  color: var(--ui-muted, #6b7280);
-  background: var(--ui-border, #d1d5db);
+  color: var(--ui-surface, #fff);
+  background: var(--ui-button, #7790c5);
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .hint,

@@ -9,6 +9,7 @@ import { useParams, useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/item/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/item/ItemRegisterForm'
+import { uploadItemThumbnail } from '@/utils/itemThumbnail'
 import { API_BASE_URL } from '@/config/api'
 import type {
   ItemDetailResponse,
@@ -56,7 +57,10 @@ export default function ItemEditPage() {
         setInitialImages(
           item.images
             .toSorted(
-              (first, second) => first.displayOrder - second.displayOrder,
+              (first, second) =>
+                Number(second.imageId === item.thumbnailImageId) -
+                  Number(first.imageId === item.thumbnailImageId) ||
+                first.displayOrder - second.displayOrder,
             )
             .map((image) => ({
               id: String(image.imageId),
@@ -103,6 +107,15 @@ export default function ItemEditPage() {
       if (imageIds.some((imageId) => imageId === undefined)) {
         throw new Error(ITEM_ERRORS.NEW_IMAGE_ON_EDIT_UNSUPPORTED)
       }
+      const firstImage = context.images[0]
+      const thumbnailObjectKey =
+        firstImage && firstImage.id !== initialImages[0]?.id
+          ? await uploadItemThumbnail(
+              firstImage,
+              context.setImages,
+              accessToken,
+            )
+          : undefined
       await axios.put(
         `${API_BASE_URL}/items/${itemId}`,
         {
@@ -114,6 +127,7 @@ export default function ItemEditPage() {
           valueGapToleranceScore: Number((values.condition / 100).toFixed(2)),
           groupIds: values.groupIds,
           imageIds,
+          ...(thumbnailObjectKey ? { thumbnailObjectKey } : {}),
         },
         {
           headers: {

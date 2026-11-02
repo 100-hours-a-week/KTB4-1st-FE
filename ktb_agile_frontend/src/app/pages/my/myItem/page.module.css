@@ -31,8 +31,8 @@
   height: 40px;
   place-items: center;
   border-radius: 50%;
-  color: #3d5146;
-  background: #d9f3e8;
+  color: var(--ui-ink);
+  background: var(--ui-soft);
 }
 
 .backButton svg {
@@ -58,8 +58,8 @@
 .emptyState {
   padding: 36px 18px;
   border-radius: 20px;
-  background: rgb(255 255 246 / 10%);
-  color: var(--ui-surface, #fffff6);
+  background: var(--ui-soft);
+  color: var(--ui-ink);
   font-size: 13px;
   line-height: 1.5;
   text-align: center;
@@ -71,7 +71,7 @@
 
 .emptyState p {
   margin-top: 8px;
-  color: var(--ui-soft, #d9f3e8);
+  color: var(--ui-muted);
 }
 
 .message button,
@@ -81,7 +81,7 @@
   border: 0;
   border-radius: 999px;
   color: var(--ui-ink, #263e2e);
-  background: var(--ui-soft, #d9f3e8);
+  background: var(--ui-soft);
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -99,7 +99,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--ui-ink, #3d5146);
-  background: var(--ui-soft, #d9f3e8);
+  background: var(--ui-soft);
 }
 
 .emptyState svg {
@@ -113,7 +113,7 @@
 
 .emptyState h2 {
   margin-top: 16px;
-  color: #263e2e;
+  color: var(--ui-ink);
   font-size: 16px;
 }
 
@@ -130,7 +130,7 @@
   padding: 10px 22px;
   border-radius: 999px;
   color: #fffff6;
-  background: #3d5146;
+  background: var(--ui-button, var(--ui-primary));
   font-size: 13px;
   font-weight: 700;
 }

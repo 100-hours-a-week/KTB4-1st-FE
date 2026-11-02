@@ -3,6 +3,7 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  distDir: process.env.NEXT_PUBLIC_API_MOCKING === 'enabled' ? '.next-mock' : '.next',
   output: 'standalone',
   allowedDevOrigins: ['127.0.0.1'],
 

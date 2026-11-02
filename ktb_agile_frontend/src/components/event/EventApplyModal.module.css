@@ -256,7 +256,7 @@
   border: 0;
   border-radius: 16px;
   color: var(--ui-surface, #fffbf6);
-  background: var(--ui-ink, #3d5146);
+  background: var(--ui-button, var(--ui-ink, #3d5146));
   box-shadow: 0 6px 14px rgba(var(--ui-ink-rgb-comma, 61, 81, 70), 0.25);
   font: inherit;
   font-size: 17px;

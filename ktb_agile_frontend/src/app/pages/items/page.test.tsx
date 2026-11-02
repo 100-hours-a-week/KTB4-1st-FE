@@ -169,7 +169,7 @@ it('최상단에서 당겨 놓으면 첫 페이지를 다시 조회해 기존 �
   await screen.findByText('물품 101')
   expect(screen.queryByText('물품 1')).toBeNull()
   expect(get.mock.calls[2][1]).toMatchObject({
-    params: { size: 10 },
+    params: { size: 20 },
     signal: expect.any(AbortSignal),
   })
 })
@@ -187,9 +187,12 @@ it('당겨서 재조회에 실패하면 기존 목록을 유지하고 오류를 
   expect(screen.getByText('물품 20')).toBeDefined()
 })
 
-it('뒤에서 세 번째 카드가 보이면 커서로 한 번 요청하고 다음 물품을 추가한다', async () => {
+it('뒤에서 일곱 번째 카드가 보이면 한 번 요청하고 하단 스켈레톤 하나를 표시한 뒤 물품으로 교체한다', async () => {
   const get = await showList()
-  expect(observers[0].observe.mock.calls[0][0].textContent).toBe('물품 18')
+  expect(
+    screen.queryByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toBeNull()
+  expect(observers[0].observe.mock.calls[0][0].textContent).toBe('물품 14')
   act(() => intersect(0, false))
   expect(get).toHaveBeenCalledTimes(2)
   let resolvePage!: (value: ReturnType<typeof page>) => void
@@ -204,13 +207,21 @@ it('뒤에서 세 번째 카드가 보이면 커서로 한 번 요청하고 다�
     intersect(0)
   })
   expect(get).toHaveBeenCalledTimes(3)
+  expect(screen.queryByText('물품을 더 불러오는 중...')).toBeNull()
+  await screen.findByRole('status', { name: '다음 물품 불러오는 중' })
+  expect(
+    screen.getAllByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toHaveLength(1)
   expect(get.mock.calls[2][1]).toMatchObject({ params: { cursor: 'page-2' } })
   await act(async () => resolvePage(page(makeItems(21, 20), 'page-3')))
   await screen.findByText('물품 40')
+  expect(
+    screen.queryByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toBeNull()
   expect(screen.getByText('물품 1')).toBeDefined()
   await waitFor(() =>
     expect(observers.at(-1)?.observe.mock.calls[0][0].textContent).toBe(
-      '물품 38',
+      '물품 34',
     ),
   )
 })
@@ -308,7 +319,7 @@ it('새로고침으로 Query 캐시가 없으면 저장 위치를 무시하고 �
   saveItemListSession({ groupId: 1, sort: 'latest', scrollY: 1500 })
   const get = await showList(null)
   expect(get.mock.calls[1][1]).toMatchObject({
-    params: { size: 10 },
+    params: { size: 20 },
   })
   expect(window.scrollY).toBe(0)
   expect(readLastItemListSession()).toBeNull()
@@ -459,7 +470,7 @@ it('인기순을 선택하면 직접 추천 API의 첫 페이지를 요청하고
   const [url, options] = get.mock.calls[2]
   expect(String(url)).toMatch(/\/items\/recommendations$/)
   expect(options).toMatchObject({
-    params: { groupId: 1, size: 10 },
+    params: { groupId: 1, size: 20 },
     headers: { Authorization: 'Bearer test-token' },
     signal: expect.any(AbortSignal),
   })
@@ -469,7 +480,7 @@ it('인기순을 선택하면 직접 추천 API의 첫 페이지를 요청하고
   await act(async () => intersect(observers.length - 1))
   await screen.findByText('물품 105')
   expect(get.mock.calls[3][1]).toMatchObject({
-    params: { groupId: 1, size: 10, cursor: 'recommendation-cursor' },
+    params: { groupId: 1, size: 20, cursor: 'recommendation-cursor' },
   })
   expect(
     client.getQueryData(['items', 1, 'test-token', 'latest']),
@@ -498,7 +509,7 @@ it('인기순에서 최신순으로 전환하면 추천 커서를 보내지 않�
   await screen.findByText('물품 201')
   expect(screen.queryByText('물품 101')).toBeNull()
   expect(String(get.mock.calls[3][0])).toMatch(/\/groups\/1\/items$/)
-  expect(get.mock.calls[3][1]?.params).toEqual({ size: 10 })
+  expect(get.mock.calls[3][1]?.params).toEqual({ size: 20 })
 })
 
 it('여러 페이지가 캐시된 정렬로 전환해도 첫 페이지만 새로 조회한다', async () => {
@@ -515,7 +526,7 @@ it('여러 페이지가 캐시된 정렬로 전환해도 첫 페이지만 새로
   expect(screen.queryByText('물품 104')).toBeNull()
   await screen.findByText('물품 201')
   expect(get).toHaveBeenCalledTimes(3)
-  expect(get.mock.calls[2][1]?.params).toEqual({ groupId: 1, size: 10 })
+  expect(get.mock.calls[2][1]?.params).toEqual({ groupId: 1, size: 20 })
   expect(
     client.getQueryData(['items', 1, 'test-token', 'recommended']),
   ).toMatchObject({
@@ -575,7 +586,7 @@ it('인기순 캐시가 없으면 정렬만 복원하고 이전 스크롤 대신
     screen.getByRole('button', { name: '정렬 방법: 인기순' }),
   ).toBeDefined()
   expect(String(get.mock.calls[1][0])).toMatch(/\/items\/recommendations$/)
-  expect(get.mock.calls[1][1]?.params).toEqual({ groupId: 1, size: 10 })
+  expect(get.mock.calls[1][1]?.params).toEqual({ groupId: 1, size: 20 })
   expect(window.scrollY).toBe(0)
 })
 

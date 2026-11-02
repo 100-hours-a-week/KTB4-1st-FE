@@ -91,7 +91,7 @@
   border: 0;
   border-radius: 15px;
   color: var(--ui-surface, #fff);
-  background: var(--ui-ink, #3d5146);
+  background: var(--ui-button, var(--ui-ink, #3d5146));
   font: inherit;
   font-size: 14px;
   font-weight: 700;
@@ -99,7 +99,7 @@
 }
 
 .searchButton:active {
-  background: var(--ui-ink, #283c31);
+  background: var(--ui-button-hover, var(--ui-ink, #283c31));
 }
 
 .searchButton:disabled {

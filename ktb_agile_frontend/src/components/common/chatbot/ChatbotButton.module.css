@@ -256,7 +256,7 @@
 
 .actionButtons button:first-child {
   color: var(--ui-surface, #fffbf6);
-  background: var(--ui-ink, #3d5146);
+  background: var(--ui-button, var(--ui-ink, #3d5146));
 }
 
 .actionButtons button:focus-visible {

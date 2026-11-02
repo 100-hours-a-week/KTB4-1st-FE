@@ -3,6 +3,7 @@ import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import type { Dispatch, SetStateAction } from 'react'
 import type { SelectedImage } from '@/types/item'
+import { convertImageToWebp } from './imageWebp'
 
 type PresignedUpload = {
   uploadUrl: string
@@ -24,11 +25,25 @@ export async function uploadImagesToS3(
     return !image.objectKey
   })
   if (pendingImages.some((image) => !image.file)) {
-    throw new Error(
-      ITEM_ERRORS.EXISTING_IMAGE_UPLOAD_UNSUPPORTED,
-    )
+    throw new Error(ITEM_ERRORS.EXISTING_IMAGE_UPLOAD_UNSUPPORTED)
   }
   let presignedUploads: PresignedUpload[] = []
+  const uploadFiles = new Map<string, File>()
+
+  // 업로드 직전에만 변환하고, 실패 후 재시도에서도 변환 결과를 재사용합니다.
+  for (const image of pendingImages) {
+    const webpFile = image.webpFile ?? (await convertImageToWebp(image.file!))
+    uploadFiles.set(image.id, webpFile)
+    if (!image.webpFile) {
+      setImages((currentImages) =>
+        currentImages.map((currentImage) =>
+          currentImage.id === image.id && currentImage.file === image.file
+            ? { ...currentImage, webpFile }
+            : currentImage,
+        ),
+      )
+    }
+  }
 
   // 아직 S3에 올리지 않은 사진의 업로드 URL만 발급받습니다.
   if (pendingImages.length > 0) {
@@ -36,7 +51,7 @@ export async function uploadImagesToS3(
       `${API_BASE_URL}/images/presigned-urls`,
       {
         images: pendingImages.map((image) => {
-          return { contentType: image.file!.type }
+          return { contentType: uploadFiles.get(image.id)!.type }
         }),
       },
       {
@@ -67,7 +82,7 @@ export async function uploadImagesToS3(
     const upload = presignedUploads[uploadIndex]
     uploadIndex += 1
 
-    await axios.put(upload.uploadUrl, image.file, {
+    await axios.put(upload.uploadUrl, uploadFiles.get(image.id)!, {
       headers: upload.requiredHeaders,
     })
 
