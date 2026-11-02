@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/item/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/item/ItemRegisterForm'
+import { uploadItemThumbnail } from '@/utils/itemThumbnail'
 import { uploadImagesToS3 } from '@/utils/itemImageUpload'
 import type { ItemRegisterFormValues } from '@/types/item'
 import styles from './page.module.css'
@@ -99,6 +100,12 @@ function ItemRegisterContent() {
         throw new Error(ITEM_ERRORS.MODERATION_ID_MISSING)
       }
 
+      const thumbnailObjectKey = await uploadItemThumbnail(
+        images[0],
+        setImages,
+        accessToken,
+      )
+
       // 검수를 통과한 경우에만 물품 등록을 요청합니다.
       await axios.post(
         `${API_BASE_URL}/items`,
@@ -112,6 +119,7 @@ function ItemRegisterContent() {
           valueGapToleranceScore: Number((values.condition / 100).toFixed(2)),
           groupIds: values.groupIds,
           objectKeys,
+          thumbnailObjectKey,
         },
         {
           headers: {

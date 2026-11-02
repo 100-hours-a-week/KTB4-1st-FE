@@ -187,9 +187,12 @@ it('당겨서 재조회에 실패하면 기존 목록을 유지하고 오류를 
   expect(screen.getByText('물품 20')).toBeDefined()
 })
 
-it('뒤에서 세 번째 카드가 보이면 커서로 한 번 요청하고 다음 물품을 추가한다', async () => {
+it('뒤에서 일곱 번째 카드가 보이면 한 번 요청하고 하단 스켈레톤 하나를 표시한 뒤 물품으로 교체한다', async () => {
   const get = await showList()
-  expect(observers[0].observe.mock.calls[0][0].textContent).toBe('물품 18')
+  expect(
+    screen.queryByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toBeNull()
+  expect(observers[0].observe.mock.calls[0][0].textContent).toBe('물품 14')
   act(() => intersect(0, false))
   expect(get).toHaveBeenCalledTimes(2)
   let resolvePage!: (value: ReturnType<typeof page>) => void
@@ -204,13 +207,21 @@ it('뒤에서 세 번째 카드가 보이면 커서로 한 번 요청하고 다�
     intersect(0)
   })
   expect(get).toHaveBeenCalledTimes(3)
+  expect(screen.queryByText('물품을 더 불러오는 중...')).toBeNull()
+  await screen.findByRole('status', { name: '다음 물품 불러오는 중' })
+  expect(
+    screen.getAllByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toHaveLength(1)
   expect(get.mock.calls[2][1]).toMatchObject({ params: { cursor: 'page-2' } })
   await act(async () => resolvePage(page(makeItems(21, 20), 'page-3')))
   await screen.findByText('물품 40')
+  expect(
+    screen.queryByRole('status', { name: '다음 물품 불러오는 중' }),
+  ).toBeNull()
   expect(screen.getByText('물품 1')).toBeDefined()
   await waitFor(() =>
     expect(observers.at(-1)?.observe.mock.calls[0][0].textContent).toBe(
-      '물품 38',
+      '물품 34',
     ),
   )
 })

@@ -103,8 +103,8 @@
 }
 
 .completed {
-  color: var(--ui-ink, #3d5146);
-  background: var(--ui-border, #d1d8d3);
+  color: #fff;
+  background: #a07fe1;
 }
 
 @media (max-width: 390px) {

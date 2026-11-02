@@ -1,6 +1,7 @@
 'use client'
 
 import Navbar from '@/components/common/navbar/Navbar'
+import Image from 'next/image'
 import styles from './page.module.css'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
@@ -146,18 +147,7 @@ export default function GroupListPage() {
 
   return (
     <section className={styles.page}>
-      <header className={styles.header}>
-        <button
-          className={styles.backButton}
-          type="button"
-          aria-label="뒤로가기"
-          onClick={() => router.back()}
-        >
-          {/* 뒤로가기 아이콘 */}
-          <svg viewBox="0 0 24 24">
-            <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8 12h12" />
-          </svg>
-        </button>
+      <header className={`${styles.header} ${styles.listHeader}`}>
         <h1 className={styles.title}>그룹</h1>
         <div className={styles.headerActions}>
           {hasJoinedGroups && (
@@ -227,6 +217,23 @@ export default function GroupListPage() {
             />
           ))
         ))}
+
+      <div className={styles.winterFriends} aria-hidden="true">
+        <Image
+          src="/images/winter/winter-fox-snowman.png"
+          alt=""
+          width={1280}
+          height={1280}
+          sizes="(max-width: 679px) 45vw, 260px"
+        />
+        <Image
+          src="/images/winter/winter-crane-snowball.png"
+          alt=""
+          width={1280}
+          height={1280}
+          sizes="(max-width: 679px) 45vw, 260px"
+        />
+      </div>
 
       <GroupJoinModal
         group={joinTarget}

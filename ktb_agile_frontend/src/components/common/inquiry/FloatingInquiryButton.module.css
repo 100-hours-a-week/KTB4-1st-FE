@@ -19,8 +19,8 @@
   padding: 10px 16px;
   border: 0;
   border-radius: 12px;
-  color: var(--ui-accent, #aeebcb);
-  background: var(--ui-ink, #3d5146);
+  color: #ffffff;
+  background: var(--ui-button, var(--ui-ink, #3d5146));
   box-shadow: 0 4px 16px rgba(17, 17, 17, 0.16);
   font: inherit;
   font-size: 14px;
@@ -182,8 +182,8 @@
   min-height: 48px;
   border: 0;
   border-radius: 12px;
-  color: var(--ui-accent, #aeebcb);
-  background: var(--ui-ink, #3d5146);
+  color: #ffffff;
+  background: var(--ui-button, var(--ui-ink, #3d5146));
   font: inherit;
   font-size: 16px;
   font-weight: 700;

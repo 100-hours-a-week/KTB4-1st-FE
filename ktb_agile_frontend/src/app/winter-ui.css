@@ -1,0 +1,47 @@
+/* Shared winter palette: snow white, sky blue, mint and coral. */
+:root[data-theme='winter'] {
+  color-scheme: light;
+  --halloween-decoration-display: none;
+  --halloween-shelf-display: none;
+  --halloween-intro-inset: 0px;
+  --like-heart-display: block;
+  --like-pumpkin-display: none;
+  --ui-ink: #3d5146;
+  --ui-muted: #637b83;
+  --ui-subtle: #71878e;
+  --ui-surface: #ffffff;
+  --ui-soft: #edf8fd;
+  --ui-accent: #b9e4f6;
+  --ui-accent-hover: #9bd5ee;
+  --ui-primary: #277a9f;
+  --ui-button: #7790c5;
+  --ui-button-hover: #667fb4;
+  --ui-border: #dcebf1;
+  --ui-peach: #ffcbbe;
+  --ui-orange: #b84f38;
+  --ui-mint: #aeebcb;
+  --ui-mint-soft: #e6f7ef;
+  --ui-cream: #fffbf6;
+  --ui-coral: #ff8f70;
+  --ui-ink-rgb: 61 81 70;
+  --ui-accent-rgb: 185 228 246;
+  --ui-soft-rgb: 237 248 253;
+  --ui-ink-rgb-comma: 61, 81, 70;
+  --ui-accent-rgb-comma: 185, 228, 246;
+  --ui-glass: rgb(255 255 255 / 96%);
+  --outer-background: #f2f8fb;
+  --surface-background: #ffffff;
+  --foreground: #3d5146;
+  --app-background: #ffffff;
+}
+
+:root[data-theme='winter']
+  :where(button, a, input, textarea, select):focus-visible {
+  outline: 3px solid var(--ui-primary);
+  outline-offset: 4px;
+}
+
+:root[data-theme='winter'] ::selection {
+  color: var(--ui-ink);
+  background: var(--ui-accent);
+}

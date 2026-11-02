@@ -1,3 +1,7 @@
+:global(html):has(.page) {
+  overscroll-behavior-y: none;
+}
+
 .page {
   width: 100%;
   min-width: 0;
@@ -32,6 +36,8 @@
   text-underline-offset: 3px;
 }
 .listSection {
+  position: relative;
+  min-height: 140px;
   margin-top: 24px;
 }
 .heading {
@@ -71,4 +77,14 @@
 }
 .listEnd {
   height: 1px;
+}
+
+.pullIndicator {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  display: grid;
+  height: 64px;
+  align-items: center;
+  pointer-events: none;
 }

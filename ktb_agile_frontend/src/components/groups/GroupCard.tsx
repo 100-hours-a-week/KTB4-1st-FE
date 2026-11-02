@@ -12,7 +12,6 @@ type GroupCardAction = {
   label: string
   tone: 'primary' | 'secondary'
   onClick?: () => void
-  disabled?: boolean
 }
 
 export type GroupCardProps = {
@@ -21,7 +20,6 @@ export type GroupCardProps = {
   onJoin?: () => void
   onSelect?: () => void
   onLeave?: () => void
-  onShare?: () => void
 }
 
 export default function GroupCard({
@@ -29,7 +27,6 @@ export default function GroupCard({
   onJoin,
   onSelect,
   onLeave,
-  onShare,
 }: GroupCardProps) {
   const {
     groupName,
@@ -46,22 +43,8 @@ export default function GroupCard({
     ? [
         { label: '참여 중', tone: 'primary', onClick: onSelect },
         { label: '그룹 탈퇴', tone: 'secondary', onClick: onLeave },
-        {
-          label: '공유 (개발 중)',
-          tone: 'secondary',
-          onClick: onShare,
-          disabled: true,
-        },
       ]
-    : [
-        { label: '참여하기', tone: 'primary', onClick: onJoin },
-        {
-          label: '공유 (개발 중)',
-          tone: 'secondary',
-          onClick: onShare,
-          disabled: true,
-        },
-      ]
+    : [{ label: '참여하기', tone: 'primary', onClick: onJoin }]
 
   return (
     <div className={styles.groupList}>
@@ -107,7 +90,7 @@ export default function GroupCard({
 
             <div
                 className={`${styles.actions} ${
-                isJoined ? styles.actionsThree : styles.actionsTwo
+                isJoined ? styles.actionsTwo : ''
                 }`}
             >
                 {actions.map((action) => (
@@ -120,7 +103,6 @@ export default function GroupCard({
                     type="button"
                     key={action.label}
                     onClick={action.onClick}
-                    disabled={action.disabled}
                 >
                     {action.label}
                 </button>
