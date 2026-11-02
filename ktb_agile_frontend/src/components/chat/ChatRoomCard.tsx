@@ -61,6 +61,7 @@ export default function ChatRoomCard({
     <li>
       <button
         type="button"
+        data-elastic-pull
         onClick={onClick}
         className={styles.room}
         aria-label={`${statusMessage || `${room.otherUser.nickname}님`}과 ${room.targetItem.title} ↔ ${offeredItem?.title || '제시 물품 정보 없음'}${additionalOfferedItemCount > 0 ? ` 외 ${additionalOfferedItemCount}개` : ''} 채팅방 열기`}
