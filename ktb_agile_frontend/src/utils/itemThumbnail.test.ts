@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import axios from 'axios'
 import { createItemThumbnail, uploadItemThumbnail } from './itemThumbnail'
+import { createThumbnail } from './thumbnail'
 import type { SelectedImage } from '@/types/item'
 
 const bitmap = { width: 4000, height: 3000, close: vi.fn() }
@@ -55,6 +56,53 @@ it('작은 이미지를 확대하지 않는다', async () => {
   await createItemThumbnail(new Blob())
   expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 80, 120)
 })
+it('공통 함수에 최대 크기와 품질, 파일명을 지정해 썸네일을 만든다', async () => {
+  bitmap.width = 3000
+  bitmap.height = 4000
+  const result = await createThumbnail(new Blob(), {
+    maxSize: 512,
+    quality: 0.6,
+    fileName: 'profile-thumbnail.webp',
+  })
+  expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 384, 512)
+  expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalledWith(
+    expect.any(Function),
+    'image/webp',
+    0.6,
+  )
+  expect(result.name).toBe('profile-thumbnail.webp')
+})
+it('물품용 기본 설정도 필요한 옵션만 덮어쓸 수 있다', async () => {
+  const result = await createItemThumbnail(new Blob(), {
+    maxSize: 400,
+    quality: 0.4,
+  })
+  expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 400, 300)
+  expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalledWith(
+    expect.any(Function),
+    'image/webp',
+    0.4,
+  )
+  expect(result.name).toBe('item-thumbnail.webp')
+})
+it.each([0, -1, 1.5, NaN, Infinity])(
+  '잘못된 최대 크기(%s)는 이미지 처리 전에 거부한다',
+  async (maxSize) => {
+    await expect(createThumbnail(new Blob(), { maxSize })).rejects.toThrow(
+      '최대 크기',
+    )
+    expect(createImageBitmap).not.toHaveBeenCalled()
+  },
+)
+it.each([-0.1, 1.1, NaN, Infinity])(
+  '잘못된 품질(%s)은 이미지 처리 전에 거부한다',
+  async (quality) => {
+    await expect(
+      createThumbnail(new Blob(), { maxSize: 224, quality }),
+    ).rejects.toThrow('품질')
+    expect(createImageBitmap).not.toHaveBeenCalled()
+  },
+)
 it('변환 실패 시 비트맵을 해제한다', async () => {
   vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
     (callback) => callback(null),

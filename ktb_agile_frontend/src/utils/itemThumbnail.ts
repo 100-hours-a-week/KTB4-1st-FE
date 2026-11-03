@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { convertImageToWebp } from './imageWebp'
+import { createThumbnail, type ThumbnailOptions } from './thumbnail'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import type { SelectedImage } from '@/types/item'
@@ -7,12 +7,16 @@ import type { SelectedImage } from '@/types/item'
 // 목록의 112px 이미지에 2배 밀도를 확보하고 원본 비율을 유지합니다.
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
 
-export async function createItemThumbnail(source: Blob): Promise<File> {
-  return convertImageToWebp(source, {
+export async function createItemThumbnail(
+  source: Blob,
+  options: Partial<ThumbnailOptions> = {},
+): Promise<File> {
+  return createThumbnail(source, {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
     quality: 0.8,
     fileName: 'item-thumbnail.webp',
     background: '#fff',
+    ...options,
   })
 }
 
