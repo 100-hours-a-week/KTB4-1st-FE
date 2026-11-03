@@ -11,7 +11,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import ItemDetailsPage from './[itemId]/page'
 import ItemEditPage from './[itemId]/edit/page'
 import ItemRegister from './register/page'
-import { uploadItemThumbnail } from '@/utils/itemThumbnail'
+import {
+  uploadItemDetailThumbnail,
+  uploadItemThumbnail,
+} from '@/utils/itemThumbnail'
 import type { SelectedImage } from '@/types/item'
 
 const router = vi.hoisted(() => ({
@@ -29,8 +32,14 @@ const formState = vi.hoisted(() => ({
 }))
 vi.mock('@/utils/itemThumbnail', () => ({
   uploadItemThumbnail: vi.fn().mockResolvedValue('images/1/thumb.jpg'),
+  uploadItemDetailThumbnail: vi.fn(
+    async (image: SelectedImage) => `images/1/detail-${image.id}.webp`,
+  ),
 }))
-vi.mock('@/utils/itemImageUpload', () => ({ uploadImagesToS3: async () => [] }))
+vi.mock('@/utils/itemImageUpload', () => ({
+  uploadImagesToS3: async (images: SelectedImage[]) =>
+    images.map((image) => `images/1/original-${image.id}.webp`),
+}))
 vi.mock('@/components/item/ItemRegisterForm', () => ({
   default: ({
     onSubmit,
@@ -179,6 +188,63 @@ it('등록 시 첫 사진의 별도 썸네일 키를 전송한다', async () => 
     expect.anything(),
   )
 })
+it('등록 시 모든 사진의 상세용 썸네일 키를 원본 업로드 결과에 연결해 전송한다', async () => {
+  // 업로드 직후 현재 렌더의 이미지에는 아직 원본 objectKey가 없습니다.
+  formState.images = ['third', 'first', 'second'].map((id) => ({
+    id,
+    preview: id,
+  }))
+  vi.spyOn(axios, 'post')
+    .mockResolvedValueOnce({
+      data: { data: { isAppropriate: true, checkId: 'check' } },
+    })
+    .mockResolvedValueOnce({ status: 201 })
+  render(
+    <QueryClientProvider client={client}>
+      <ItemRegister />
+    </QueryClientProvider>,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: '테스트 저장' }))
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pages/items'))
+  expect(uploadItemDetailThumbnail).toHaveBeenCalledTimes(3)
+  expect(axios.post).toHaveBeenLastCalledWith(
+    expect.stringContaining('/items'),
+    expect.objectContaining({
+      objectKeys: [
+        'images/1/original-third.webp',
+        'images/1/original-first.webp',
+        'images/1/original-second.webp',
+      ],
+      thumbnailObjectKey: 'images/1/thumb.jpg',
+      imageDetailThumbnails: ['third', 'first', 'second'].map((id) => ({
+        objectKey: `images/1/original-${id}.webp`,
+        detailThumbnailObjectKey: `images/1/detail-${id}.webp`,
+      })),
+    }),
+    expect.anything(),
+  )
+})
+
+it('상세용 썸네일 업로드에 실패하면 물품 등록 요청을 보내지 않는다', async () => {
+  vi.mocked(uploadItemDetailThumbnail).mockRejectedValueOnce(
+    new Error('upload failed'),
+  )
+  vi.spyOn(console, 'error').mockImplementation(() => {})
+  const post = vi.spyOn(axios, 'post').mockResolvedValueOnce({
+    data: { data: { isAppropriate: true, checkId: 'check' } },
+  })
+  render(
+    <QueryClientProvider client={client}>
+      <ItemRegister />
+    </QueryClientProvider>,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: '테스트 저장' }))
+  await waitFor(() => expect(uploadItemDetailThumbnail).toHaveBeenCalledOnce())
+  await waitFor(() => expect(console.error).toHaveBeenCalled())
+  expect(post).toHaveBeenCalledTimes(1)
+  expect(router.push).not.toHaveBeenCalled()
+})
+
 it('대표 사진이 그대로면 수정 시 썸네일 업로드를 생략한다', async () => {
   vi.spyOn(axios, 'put').mockResolvedValue({ status: 200 })
   render(

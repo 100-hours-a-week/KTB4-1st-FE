@@ -18,7 +18,13 @@ export type SelectedImage = {
   imageId?: number
   preview: string
   thumbnailObjectKey?: string
+  detailThumbnailObjectKey?: string
   objectKey?: string
+}
+
+export type ItemDetailThumbnailInput = {
+  objectKey: string
+  detailThumbnailObjectKey: string
 }
 
 export type ItemListItem = {
