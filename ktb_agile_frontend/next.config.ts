@@ -2,6 +2,9 @@ import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
+  reactCompiler: {
+    compilationMode: 'annotation',
+  },
   devIndicators: false,
   distDir: process.env.NEXT_PUBLIC_API_MOCKING === 'enabled' ? '.next-mock' : '.next',
   output: 'standalone',

@@ -1,8 +1,14 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    babel({
+      presets: [reactCompilerPreset({ compilationMode: 'annotation' })],
+    }),
+  ],
   resolve: { tsconfigPaths: true },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
