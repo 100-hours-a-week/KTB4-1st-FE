@@ -1,0 +1,35 @@
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.helper {
+  margin: 20px 16px;
+  color: var(--ui-muted, #666);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.error {
+  color: #b42318;
+}
+
+.more {
+  display: block;
+  margin: 20px auto;
+  padding: 10px 20px;
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 8px;
+  background: var(--ui-surface, #fff);
+  color: var(--ui-ink, #111);
+  font: inherit;
+  cursor: pointer;
+}
+
+.more:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}

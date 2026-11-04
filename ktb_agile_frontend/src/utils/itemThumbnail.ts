@@ -1,18 +1,23 @@
 import axios from 'axios'
-import { convertImageToWebp } from './imageWebp'
+import { createThumbnail, type ThumbnailOptions } from './thumbnail'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import type { SelectedImage } from '@/types/item'
 
 // 목록의 112px 이미지에 2배 밀도를 확보하고 원본 비율을 유지합니다.
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
+export const ITEM_DETAIL_THUMBNAIL_MAX_SIZE = 1280
 
-export async function createItemThumbnail(source: Blob): Promise<File> {
-  return convertImageToWebp(source, {
+export async function createItemThumbnail(
+  source: Blob,
+  options: Partial<ThumbnailOptions> = {},
+): Promise<File> {
+  return createThumbnail(source, {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
     quality: 0.8,
     fileName: 'item-thumbnail.webp',
     background: '#fff',
+    ...options,
   })
 }
 
@@ -21,7 +26,38 @@ export async function uploadItemThumbnail(
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
   accessToken: string,
 ): Promise<string> {
-  if (image.thumbnailObjectKey) return image.thumbnailObjectKey
+  return uploadThumbnail(image, setImages, accessToken, 'thumbnailObjectKey', {
+    maxSize: ITEM_THUMBNAIL_MAX_SIZE,
+    fileName: 'item-thumbnail.webp',
+  })
+}
+
+export async function uploadItemDetailThumbnail(
+  image: SelectedImage,
+  setImages: Dispatch<SetStateAction<SelectedImage[]>>,
+  accessToken: string,
+): Promise<string> {
+  return uploadThumbnail(
+    image,
+    setImages,
+    accessToken,
+    'detailThumbnailObjectKey',
+    {
+      maxSize: ITEM_DETAIL_THUMBNAIL_MAX_SIZE,
+      fileName: 'item-detail-thumbnail.webp',
+    },
+  )
+}
+
+async function uploadThumbnail(
+  image: SelectedImage,
+  setImages: Dispatch<SetStateAction<SelectedImage[]>>,
+  accessToken: string,
+  keyField: 'thumbnailObjectKey' | 'detailThumbnailObjectKey',
+  options: ThumbnailOptions,
+): Promise<string> {
+  const existingKey = image[keyField]
+  if (existingKey) return existingKey
   let source: Blob
   if (image.file) {
     source = image.file
@@ -32,7 +68,7 @@ export async function uploadItemThumbnail(
       throw new Error('썸네일용 원본 이미지를 불러오지 못했습니다.')
     source = await response.blob()
   }
-  const thumbnail = await createItemThumbnail(source)
+  const thumbnail = await createItemThumbnail(source, options)
   const response = await axios.post<{
     data: {
       uploadUrl: string
@@ -58,11 +94,11 @@ export async function uploadItemThumbnail(
   await axios.put(upload.uploadUrl, thumbnail, {
     headers: upload.requiredHeaders,
   })
-  // 등록/수정 요청이 실패해도 같은 대표 사진의 썸네일은 재업로드하지 않습니다.
+  // 등록 요청이 실패해도 업로드에 성공한 썸네일은 재사용합니다.
   setImages((current) =>
     current.map((entry) =>
       entry.id === image.id
-        ? { ...entry, thumbnailObjectKey: upload.objectKey }
+        ? { ...entry, [keyField]: upload.objectKey }
         : entry,
     ),
   )

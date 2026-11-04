@@ -26,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
         <div className="app-shell">
           <main className="app-content">
             <QueryProvider>
-              <AuthExpiredModal>{children}</AuthExpiredModal>
+              { <AuthExpiredModal>{children}</AuthExpiredModal> }
             </QueryProvider>
           </main>
         </div>
