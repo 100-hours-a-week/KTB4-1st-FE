@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { ItemDetail } from '@/types/item'
 import ItemImageCarousel from './ItemImageCarousel'
 import ImageDetailsModal from './ImageDetailsModal'
@@ -20,14 +20,33 @@ export default function ItemDetailImageContainer({
   onBack,
 }: ItemDetailImageContainerProps) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null)
+  const [settledThumbnailUrls, setSettledThumbnailUrls] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const detailImages = useMemo(
+    () =>
+      images?.map((image) => ({
+        ...image,
+        imageUrl: image.detailThumbnailUrl || image.imageUrl,
+      })),
+    [images],
+  )
+  const canPreloadOriginals =
+    !!detailImages?.length &&
+    detailImages.every((image) => settledThumbnailUrls.has(image.imageUrl))
 
   return (
     <>
       <div className={styles.imageArea}>
         <ItemImageCarousel
-          images={images}
+          images={detailImages}
           title={title}
           onActivate={setExpandedImageId}
+          onImageSettled={(url) => {
+            setSettledThumbnailUrls((urls) =>
+              urls.has(url) ? urls : new Set(urls).add(url),
+            )
+          }}
         />
         <button className={styles.backButton} type="button" onClick={onBack}>
           ‹
@@ -40,6 +59,22 @@ export default function ItemDetailImageContainer({
           </svg>
         )}
       </div>
+      {canPreloadOriginals && (
+        <div hidden aria-hidden="true">
+          {images?.map((image) => (
+            // 썸네일 요청이 모두 끝난 뒤 원본을 브라우저 캐시에 준비합니다.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={image.imageId}
+              src={image.imageUrl}
+              alt=""
+              loading="eager"
+              fetchPriority="low"
+              decoding="async"
+            />
+          ))}
+        </div>
+      )}
       {expandedImageId !== null && (
         <ImageDetailsModal
           images={images}

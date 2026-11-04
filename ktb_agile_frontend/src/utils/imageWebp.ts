@@ -1,4 +1,4 @@
-type WebpOptions = {
+export type WebpOptions = {
   quality?: number
   maxSize?: number
   fileName?: string
