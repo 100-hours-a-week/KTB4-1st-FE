@@ -88,6 +88,7 @@ export type ItemDetail = {
   images: {
     imageId: number
     imageUrl: string
+    detailThumbnailUrl?: string | null
     displayOrder: number
   }[]
   likeCount: number

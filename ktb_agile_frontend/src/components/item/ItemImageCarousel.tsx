@@ -10,6 +10,7 @@ type ItemImageCarouselProps = {
   initialImageId?: number
   className?: string
   onActivate?: (imageId: number) => void
+  onImageSettled?: (imageUrl: string) => void
 }
 
 export default function ItemImageCarousel({
@@ -18,6 +19,7 @@ export default function ItemImageCarousel({
   initialImageId,
   className,
   onActivate,
+  onImageSettled,
 }: ItemImageCarouselProps) {
   const sortedImages = useMemo(
     () =>
@@ -203,9 +205,11 @@ export default function ItemImageCarousel({
               fetchPriority={index === activeIndex ? 'high' : 'low'}
               onLoad={() => {
                 if (image === initialImage) setSettledInitialUrl(image.imageUrl)
+                onImageSettled?.(image.imageUrl)
               }}
               onError={() => {
                 if (image === initialImage) setSettledInitialUrl(image.imageUrl)
+                onImageSettled?.(image.imageUrl)
               }}
               draggable={false}
             />
