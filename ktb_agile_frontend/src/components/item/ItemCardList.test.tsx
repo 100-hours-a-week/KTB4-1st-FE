@@ -91,7 +91,13 @@ it('수정된 물품의 제목·사진·좋아요는 갱신하고 변경 없는 
   ).toBe('true')
   expect(within(card).getByText('9')).toBeDefined()
   expect(screen.queryByRole('heading', { name: '물품 1' })).toBeNull()
+  // 등록 시간이 같으면 Compiler가 시간 표시 계산도 재사용합니다.
+  expect(dateUtils.formatLastTime).toHaveBeenCalledTimes(2)
+
+  const changedCreatedAt = '2026-10-30T00:00:00Z'
+  rerender(list([{ ...items[0], createdAt: changedCreatedAt }, items[1]]))
   expect(dateUtils.formatLastTime).toHaveBeenCalledTimes(3)
+  expect(dateUtils.formatLastTime).toHaveBeenLastCalledWith(changedCreatedAt)
 })
 
 it('카드 JSX를 재사용하는 중에도 좋아요 버튼의 자체 상태는 정상적으로 갱신된다', async () => {

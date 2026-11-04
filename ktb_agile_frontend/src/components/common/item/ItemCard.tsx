@@ -1,4 +1,3 @@
-import { memo } from 'react'
 import type { ItemListItem } from '@/types/item'
 import { getItemStateLabel } from '@/utils/item'
 import { formatLastTime } from '@/utils/date'
@@ -11,6 +10,8 @@ type ItemCardProps = {
 }
 
 function ItemCard({ item }: ItemCardProps) {
+  'use memo'
+
   const isAvailable = item.itemState === 'AVAILABLE'
 
   return (
@@ -57,5 +58,4 @@ function ItemCard({ item }: ItemCardProps) {
   )
 }
 
-// 다음 페이지가 추가되어도 같은 물품 객체를 받는 기존 카드는 재계산하지 않습니다.
-export default memo(ItemCard)
+export default ItemCard
