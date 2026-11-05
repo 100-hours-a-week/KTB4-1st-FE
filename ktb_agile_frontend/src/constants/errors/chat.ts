@@ -12,6 +12,7 @@ export const CHAT_ERRORS = {
   MESSAGE_LOAD_FAILED: '메시지를 불러오지 못했습니다.',
   OLDER_MESSAGE_LOAD_FAILED: '이전 메시지를 불러오지 못했습니다.',
   LEAVE_FAILED: '채팅방을 나가지 못했습니다. 잠시 후 다시 시도해 주세요.',
+  READ_CURSOR_FAILED: '메시지 읽음 처리에 실패했습니다. 다시 시도해 주세요.',
   EXCHANGE_ACTION_FAILED: (action: string) =>
     `교환 제안을 ${action}하지 못했습니다.`,
 } as const
