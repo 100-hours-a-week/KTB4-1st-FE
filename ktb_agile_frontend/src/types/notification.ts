@@ -2,6 +2,7 @@ export type Notification = {
   notificationId: number
   text: string
   createdAt: string
+  thumbnailImageUrl?: string | null
 }
 
 export type NotificationPageResponse = {

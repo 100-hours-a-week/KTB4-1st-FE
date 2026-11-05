@@ -1,10 +1,26 @@
 .container {
   display: flex;
   min-width: 0;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
   padding: 20px 16px;
   border-bottom: 1px solid var(--ui-border, #ddd);
+}
+
+.content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.thumbnail {
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .text {
