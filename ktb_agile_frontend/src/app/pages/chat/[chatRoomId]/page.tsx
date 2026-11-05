@@ -116,6 +116,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [messageError, setMessageError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isReturning, setIsReturning] = useState(false)
+  const exitPendingRef = useRef(false)
   const [isClosedByEvent, setIsClosedByEvent] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
   const [roomDetail, setRoomDetail] = useState<ChatRoomDetail | null>(null)
@@ -246,7 +248,12 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   })
 
   const canSendMessage =
-    !isChatClosed && !isLeaving && isConnected && !isLoading && isHistoryLoaded
+    !isChatClosed &&
+    !isLeaving &&
+    !isReturning &&
+    isConnected &&
+    !isLoading &&
+    isHistoryLoaded
 
   function handleSendMessage(value: string) {
     if (!canSendMessage) return
@@ -375,8 +382,40 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     )
   }
 
+  async function markMessagesRead(token: string) {
+    let messageId = lastMessageIdRef.current
+    while (messageId !== null) {
+      await axios.put(
+        `${API_BASE_URL}/chat/rooms/${chatRoomId}/read-cursor`,
+        { messageId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      // 응답을 기다리는 동안 화면에 추가된 메시지도 읽음 처리합니다.
+      const latestMessageId = lastMessageIdRef.current
+      if (latestMessageId === null || latestMessageId <= messageId) return
+      messageId = latestMessageId
+    }
+  }
+
+  async function returnToChatList() {
+    if (exitPendingRef.current) return
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
+    exitPendingRef.current = true
+    setIsReturning(true)
+    setActionError(null)
+    try {
+      await markMessagesRead(token)
+      router.push('/pages/chat')
+    } catch {
+      setActionError(CHAT_ERRORS.READ_CURSOR_FAILED)
+      exitPendingRef.current = false
+      setIsReturning(false)
+    }
+  }
+
   async function leaveChatRoom() {
-    if (isLeaving) return
+    if (exitPendingRef.current) return
     if (
       !window.confirm(
         `채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 ${isSeller ? '거절' : '취소'}됩니다.`,
@@ -385,10 +424,12 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       return
     const token = getAccessTokenOrRedirect(router)
     if (!token) return
+    exitPendingRef.current = true
     setIsLeaving(true)
     setActionError(null)
     try {
       if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
+      await markMessagesRead(token)
       if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
         const status = isSeller
           ? EXCHANGE_STATUS.REJECTED
@@ -434,6 +475,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       router.replace('/pages/chat')
     } catch {
       setActionError(CHAT_ERRORS.LEAVE_FAILED)
+      exitPendingRef.current = false
       setIsLeaving(false)
     }
   }
@@ -496,7 +538,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           <button
             className={styles.iconButton}
             type="button"
-            onClick={() => router.push('/pages/chat')}
+            onClick={() => void returnToChatList()}
+            disabled={isReturning || isLeaving || isUpdatingExchange}
             aria-label="채팅 목록으로 돌아가기"
           >
             <img src="/figma/chat/back.svg" alt="" width="24" height="24" />
@@ -506,7 +549,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             className={styles.leaveButton}
             type="button"
             onClick={() => void leaveChatRoom()}
-            disabled={isLeaving || isUpdatingExchange}
+            disabled={isReturning || isLeaving || isUpdatingExchange}
           >
             {isLeaving ? '나가는 중...' : '채팅방 나가기'}
           </button>

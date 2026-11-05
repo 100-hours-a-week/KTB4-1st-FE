@@ -636,7 +636,7 @@ it('교환 취소 응답을 받은 뒤에만 채팅방 나가기를 요청한다
   render(<ChatRoomPage />)
   await screen.findByText('상품명: 캠핑 의자')
   clickLeaveRoom()
-  expect(remove).toHaveBeenCalledTimes(1)
+  await waitFor(() => expect(remove).toHaveBeenCalledTimes(1))
   expect(remove).toHaveBeenNthCalledWith(
     1,
     '/api/exchange-requests/50',
@@ -717,6 +717,7 @@ it('물품 보유자는 교환 거절 응답을 받은 뒤에만 방을 나간�
   expect(confirm).toHaveBeenCalledWith(
     '채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 거절됩니다.',
   )
+  await waitFor(() => expect(patch).toHaveBeenCalledTimes(1))
   expect(patch).toHaveBeenCalledWith(
     '/api/exchange-requests/50/status',
     { status: 'REJECTED' },
@@ -813,4 +814,90 @@ it('취소 후 나가기만 실패하면 안내하고 재시도 시 나가기만
     '/api/chat-rooms/22/members/me',
     expect.anything(),
   )
+})
+
+function clickBack() {
+  fireEvent.click(
+    screen.getByRole('button', { name: '채팅 목록으로 돌아가기' }),
+  )
+}
+
+it('뒤로가기는 가장 큰 메시지 ID의 읽음 응답을 기다리고 중복 요청을 막는다', async () => {
+  mockResponses(detail())
+  let resolveRead!: (value: object) => void
+  const put = vi.spyOn(axios, 'put').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveRead = resolve
+      }),
+  )
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  receive(historyMessage(104, '최신 메시지'))
+  receive(historyMessage(101, '이전 메시지'))
+  clickBack()
+  clickBack()
+  expect(put).toHaveBeenCalledExactlyOnceWith(
+    '/api/chat/rooms/22/read-cursor',
+    { messageId: 104 },
+    { headers: { Authorization: 'Bearer access-token' } },
+  )
+  expect(router.push).not.toHaveBeenCalled()
+  await act(async () => resolveRead({ status: 204 }))
+  expect(router.push).toHaveBeenCalledExactlyOnceWith('/pages/chat')
+})
+
+it('읽음 요청 중 새 메시지를 표시하면 추가 읽음 응답까지 기다린다', async () => {
+  mockResponses(detail())
+  const pending: Array<(value: object) => void> = []
+  const put = vi.spyOn(axios, 'put').mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        pending.push(resolve)
+      }),
+  )
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  receive(historyMessage(101, '기존 메시지'))
+  clickBack()
+  receive(historyMessage(102, '새 메시지'))
+  await act(async () => pending[0]({ status: 204 }))
+  expect(put).toHaveBeenNthCalledWith(
+    2,
+    '/api/chat/rooms/22/read-cursor',
+    { messageId: 102 },
+    expect.anything(),
+  )
+  expect(router.push).not.toHaveBeenCalled()
+  await act(async () => pending[1]({ status: 204 }))
+  expect(router.push).toHaveBeenCalledWith('/pages/chat')
+})
+
+it('읽음 요청 실패 시 방을 유지하고 뒤로가기를 다시 시도할 수 있다', async () => {
+  mockResponses(detail())
+  const put = vi
+    .spyOn(axios, 'put')
+    .mockRejectedValueOnce(new Error('읽음 실패'))
+    .mockResolvedValueOnce({ status: 204 })
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  receive(historyMessage(101, '메시지'))
+  clickBack()
+  await screen.findByText(
+    '메시지 읽음 처리에 실패했습니다. 다시 시도해 주세요.',
+  )
+  expect(router.push).not.toHaveBeenCalled()
+  clickBack()
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pages/chat'))
+  expect(put).toHaveBeenCalledTimes(2)
+})
+
+it('표시된 메시지가 없으면 읽음 요청 없이 목록으로 돌아간다', async () => {
+  mockResponses(detail())
+  const put = vi.spyOn(axios, 'put').mockResolvedValue({ status: 204 })
+  render(<ChatRoomPage />)
+  await screen.findByText('상품명: 캠핑 의자')
+  clickBack()
+  await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pages/chat'))
+  expect(put).not.toHaveBeenCalled()
 })
