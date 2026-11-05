@@ -9,10 +9,23 @@ export default function NotificationContainer({
 }) {
   return (
     <li className={styles.container}>
-      <p className={styles.text}>{notification.text}</p>
-      <time className={styles.time} dateTime={notification.createdAt}>
-        {formatLastTime(notification.createdAt)}
-      </time>
+      <div className={styles.content}>
+        <p className={styles.text}>{notification.text}</p>
+        <time className={styles.time} dateTime={notification.createdAt}>
+          {formatLastTime(notification.createdAt)}
+        </time>
+      </div>
+      {notification.thumbnailImageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element -- Use the thumbnail URL supplied by the backend directly.
+        <img
+          className={styles.thumbnail}
+          src={notification.thumbnailImageUrl}
+          alt="알림 관련 물품 사진"
+          width={80}
+          height={80}
+          decoding="async"
+        />
+      )}
     </li>
   )
 }
