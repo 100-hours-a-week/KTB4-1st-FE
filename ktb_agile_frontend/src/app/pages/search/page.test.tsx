@@ -16,7 +16,9 @@ vi.mock('next/navigation', () => ({
   useRouter: () => router,
   useSearchParams: () => new URLSearchParams({ groups, groupId: '12' }),
 }))
-vi.mock('@/config/api', () => ({}))
+vi.mock('@/config/api', () => ({ API_BASE_URL: '/api' }))
+
+const SEARCH_URL = '/api/items'
 vi.mock('@/components/common/navbar/Navbar', () => ({ default: () => null }))
 
 beforeEach(() => {
@@ -74,7 +76,7 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
     finishSearch = resolve
   })
   const get = vi.spyOn(axios, 'get').mockImplementation((url) => {
-    if (url === '/bff/search')
+    if (url === SEARCH_URL)
       return searchResponse as ReturnType<typeof axios.get>
     return Promise.resolve({
       data: {
@@ -92,7 +94,7 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
   fireEvent.click(screen.getByText('검색'))
 
   await waitFor(() =>
-    expect(get.mock.calls.some(([url]) => url === '/bff/search')).toBe(true),
+    expect(get.mock.calls.some(([url]) => url === SEARCH_URL)).toBe(true),
   )
   expect(post).not.toHaveBeenCalled()
 
@@ -109,7 +111,7 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
 
 it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 변경 시 첫 페이지를 다시 조회한다', async () => {
   const get = vi.spyOn(axios, 'get').mockImplementation((url) => {
-    if (url === '/bff/search') {
+    if (url === SEARCH_URL) {
       return Promise.resolve({
         data: {
           data: { items: [], nextCursor: 'next', hasNext: true },
@@ -135,7 +137,7 @@ it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 �
   fireEvent.click(screen.getByText('검색'))
 
   await screen.findByText('검색 결과가 없습니다.')
-  let searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+  let searchCalls = get.mock.calls.filter(([url]) => url === SEARCH_URL)
   expect(searchCalls[0][1]?.params).toEqual({
     groupId: 12,
     keyword: '충전기',
@@ -144,7 +146,7 @@ it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 �
 
   fireEvent.click(screen.getByText('더 보기'))
   await waitFor(() => {
-    searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+    searchCalls = get.mock.calls.filter(([url]) => url === SEARCH_URL)
     expect(searchCalls).toHaveLength(2)
   })
   expect(searchCalls[1][1]?.params).toEqual({
@@ -158,7 +160,7 @@ it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 �
     screen.getByRole('checkbox', { name: '거래 완료된 물품 제외' }),
   )
   await waitFor(() => {
-    searchCalls = get.mock.calls.filter(([url]) => url === '/bff/search')
+    searchCalls = get.mock.calls.filter(([url]) => url === SEARCH_URL)
     expect(searchCalls).toHaveLength(3)
   })
   expect(searchCalls[2][1]?.params).toEqual({
