@@ -50,6 +50,7 @@
   background: transparent;
   font-size: 25px;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .sectionHeading {
@@ -64,8 +65,11 @@
   font-size: 16px;
   font-weight: 700;
 }
-.sectionHeading a {
+.sectionHeading button {
   flex: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
   padding: 7px 11px;
   border-radius: 10px;
   color: var(--ui-ink, #2e5a43);

@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
@@ -40,7 +39,10 @@ export default function AiSmartSearchResult() {
       <section className={styles.conditions}>
         <div className={styles.sectionHeading}>
           <h2>검색 조건</h2>
-          <Link href={SEARCH_PATH}>수정하기</Link>
+          {/* 결과 화면은 항상 스마트 검색 화면에서 push로 들어오므로, 새 기록을 쌓지 않고 되돌아간다. */}
+          <button type="button" onClick={() => router.back()}>
+            수정하기
+          </button>
         </div>
         <h3>선택한 내 물품</h3>
         <p className={styles.muted}>
