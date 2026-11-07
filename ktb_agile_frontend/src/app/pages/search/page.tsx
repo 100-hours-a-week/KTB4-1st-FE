@@ -4,7 +4,7 @@ import axios from 'axios'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
-import '@/config/api'
+import { API_BASE_URL } from '@/config/api'
 import { setCurrentGroupId } from '@/utils/currentGroup'
 import ModalDefault from '@/components/common/modal/Default'
 import Navbar from '@/components/common/navbar/Navbar'
@@ -152,7 +152,7 @@ function SearchPageContent() {
       if (!token) return
 
       try {
-        const response = await axios.get<ItemListResponse>('/bff/search', {
+        const response = await axios.get<ItemListResponse>(`${API_BASE_URL}/items`, {
           params: {
             groupId: criteria.groupId,
             keyword: criteria.keyword,

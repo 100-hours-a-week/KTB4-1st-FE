@@ -28,7 +28,14 @@ export default function ItemSearchBar({
   onSearch,
 }: ItemSearchBarProps) {
   return (
-    <div className={styles.searchArea}>
+    <form
+      role="search"
+      className={styles.searchArea}
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSearch()
+      }}
+    >
       <div className={styles.searchControls}>
         <div className={styles.groupField}>
           <select
@@ -58,9 +65,8 @@ export default function ItemSearchBar({
           />
         </div>
         <button
-          type="button"
+          type="submit"
           className={styles.searchButton}
-          onClick={onSearch}
           disabled={
             disabled || groups.length === 0 || keyword.trim().length === 0
           }
@@ -79,6 +85,6 @@ export default function ItemSearchBar({
         </label>
         <HalloweenDecoration kind="candy" />
       </div>
-    </div>
+    </form>
   )
 }
