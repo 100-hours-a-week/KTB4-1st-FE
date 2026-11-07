@@ -109,6 +109,54 @@ it('검색 버튼은 검색 GET만 호출한다', async () => {
   expect(post).not.toHaveBeenCalled()
 })
 
+it('검색 폼을 제출하면(Enter) 검색 버튼과 같이 검색한다', async () => {
+  const get = vi.spyOn(axios, 'get').mockImplementation((url) => {
+    if (url === SEARCH_URL) {
+      return Promise.resolve({
+        data: {
+          data: { items: [], nextCursor: null, hasNext: false },
+          error: null,
+        },
+      })
+    }
+    return Promise.resolve({
+      data: {
+        data: { searchHistories: [], nextCursor: null, hasNext: false },
+        error: null,
+      },
+    })
+  })
+
+  render(<SearchPage />)
+  fireEvent.change(screen.getByPlaceholderText('물품 검색'), {
+    target: { value: '충전기' },
+  })
+  fireEvent.submit(screen.getByRole('search'))
+
+  await screen.findByText('검색 결과가 없습니다.')
+  const searchCalls = get.mock.calls.filter(([url]) => url === SEARCH_URL)
+  expect(searchCalls).toHaveLength(1)
+  expect(searchCalls[0][1]?.params).toEqual({ groupId: 12, keyword: '충전기' })
+})
+
+it('검색어가 비어 있으면 검색 폼을 제출해도 검색하지 않는다', async () => {
+  const get = vi.spyOn(axios, 'get').mockResolvedValue({
+    data: {
+      data: { searchHistories: [], nextCursor: null, hasNext: false },
+      error: null,
+    },
+  })
+
+  render(<SearchPage />)
+  fireEvent.change(screen.getByPlaceholderText('물품 검색'), {
+    target: { value: '   ' },
+  })
+  fireEvent.submit(screen.getByRole('search'))
+
+  await waitFor(() => expect(get).toHaveBeenCalled())
+  expect(get.mock.calls.some(([url]) => url === SEARCH_URL)).toBe(false)
+})
+
 it('거래 완료 제외 조건을 검색과 다음 페이지에 적용하고 변경 시 첫 페이지를 다시 조회한다', async () => {
   const get = vi.spyOn(axios, 'get').mockImplementation((url) => {
     if (url === SEARCH_URL) {
