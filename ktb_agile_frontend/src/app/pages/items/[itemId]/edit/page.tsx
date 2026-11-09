@@ -181,7 +181,13 @@ export default function ItemEditPage() {
       {modalMessage && (
         <ModalDefault
           message={modalMessage}
-          onConfirm={() => setModalMessage(null)}
+          onConfirm={() => {
+            if (!initialValues) {
+              router.replace('/pages/items')
+              return
+            }
+            setModalMessage(null)
+          }}
         />
       )}
     </section>

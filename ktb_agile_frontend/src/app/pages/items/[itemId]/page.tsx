@@ -204,7 +204,13 @@ export default function ItemDetailsPage() {
       {errorMessage && (
         <ModalDefault
           message={errorMessage}
-          onConfirm={() => setErrorMessage(null)}
+          onConfirm={() => {
+            if (!item) {
+              router.replace('/pages/items')
+              return
+            }
+            setErrorMessage(null)
+          }}
         />
       )}
       {isDeleteModalOpen && !errorMessage && (
