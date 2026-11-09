@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   cleanup,
   fireEvent,
@@ -48,7 +49,11 @@ afterEach(() => {
 })
 
 async function confirmLeave() {
-  render(<GroupListPage />)
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <GroupListPage />
+    </QueryClientProvider>,
+  )
   fireEvent.click(await screen.findByRole('button', { name: /우리 동네/ }))
   fireEvent.click(screen.getByRole('button', { name: '그룹 탈퇴' }))
   fireEvent.click(screen.getByRole('button', { name: '탈퇴하기' }))

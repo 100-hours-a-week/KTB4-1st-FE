@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { joinedGroupKeys } from '@/queries/joinedGroups'
 import ModalDefault from '@/components/common/modal/Default'
 import { API_BASE_URL } from '@/config/api'
 import { GROUP_ERRORS } from '@/constants/errors/group'
@@ -59,6 +61,7 @@ export default function GroupJoinModal({
   onJoined,
 }: GroupJoinModalProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isJoining, setIsJoining] = useState(false)
   const [joinError, setJoinError] = useState<{
     message: string
@@ -124,6 +127,7 @@ export default function GroupJoinModal({
         undefined,
         config,
       )
+      void queryClient.invalidateQueries({ queryKey: joinedGroupKeys.all })
       onJoined({ ...group, isJoined: true, memberCount: group.memberCount + 1 })
     } catch (error) {
       console.error(error)
