@@ -67,6 +67,7 @@
   line-height: 1.65;
   letter-spacing: -0.02em;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .details {
