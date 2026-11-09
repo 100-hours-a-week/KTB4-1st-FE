@@ -14,6 +14,8 @@ import ChatMessageBubble, {
   type ChatMessage,
 } from '@/components/chat/ChatMessageBubble/ChatMessageBubble'
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
+import RefineButton from '@/components/chat/RefineButton/RefineButton'
+import RefineResult from '@/components/chat/RefineButton/RefineResult'
 import EventApplyButton from '@/components/event/EventApplyButton'
 import { API_BASE_URL } from '@/config/api'
 import {
@@ -21,6 +23,7 @@ import {
   getAccessTokenOrRedirect,
 } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
+import { useMessageRefine } from '@/hooks/useMessageRefine'
 import type {
   ChatRoom,
   ChatRoomDetail,
@@ -116,6 +119,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [messageError, setMessageError] = useState<string | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [isReturning, setIsReturning] = useState(false)
+  const exitPendingRef = useRef(false)
   const [isClosedByEvent, setIsClosedByEvent] = useState(false)
   const [isUpdatingExchange, setIsUpdatingExchange] = useState(false)
   const [roomDetail, setRoomDetail] = useState<ChatRoomDetail | null>(null)
@@ -158,6 +163,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [actionError, setActionError] = useState<string | null>(null)
   const [messageInput, setMessageInput] = useState('')
   const isComposingRef = useRef(false)
+  const messageRefine = useMessageRefine(messageInput)
   const [socketError, setSocketError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -246,7 +252,12 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   })
 
   const canSendMessage =
-    !isChatClosed && !isLeaving && isConnected && !isLoading && isHistoryLoaded
+    !isChatClosed &&
+    !isLeaving &&
+    !isReturning &&
+    isConnected &&
+    !isLoading &&
+    isHistoryLoaded
 
   function handleSendMessage(value: string) {
     if (!canSendMessage) return
@@ -375,8 +386,40 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     )
   }
 
+  async function markMessagesRead(token: string) {
+    let messageId = lastMessageIdRef.current
+    while (messageId !== null) {
+      await axios.put(
+        `${API_BASE_URL}/chat/rooms/${chatRoomId}/read-cursor`,
+        { messageId },
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      // 응답을 기다리는 동안 화면에 추가된 메시지도 읽음 처리합니다.
+      const latestMessageId = lastMessageIdRef.current
+      if (latestMessageId === null || latestMessageId <= messageId) return
+      messageId = latestMessageId
+    }
+  }
+
+  async function returnToChatList() {
+    if (exitPendingRef.current) return
+    const token = getAccessTokenOrRedirect(router)
+    if (!token) return
+    exitPendingRef.current = true
+    setIsReturning(true)
+    setActionError(null)
+    try {
+      await markMessagesRead(token)
+      router.push('/pages/chat')
+    } catch {
+      setActionError(CHAT_ERRORS.READ_CURSOR_FAILED)
+      exitPendingRef.current = false
+      setIsReturning(false)
+    }
+  }
+
   async function leaveChatRoom() {
-    if (isLeaving) return
+    if (exitPendingRef.current) return
     if (
       !window.confirm(
         `채팅방을 나가시겠습니까? 진행 중인 교환은 자동으로 ${isSeller ? '거절' : '취소'}됩니다.`,
@@ -385,10 +428,12 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       return
     const token = getAccessTokenOrRedirect(router)
     if (!token) return
+    exitPendingRef.current = true
     setIsLeaving(true)
     setActionError(null)
     try {
       if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
+      await markMessagesRead(token)
       if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
         const status = isSeller
           ? EXCHANGE_STATUS.REJECTED
@@ -434,6 +479,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       router.replace('/pages/chat')
     } catch {
       setActionError(CHAT_ERRORS.LEAVE_FAILED)
+      exitPendingRef.current = false
       setIsLeaving(false)
     }
   }
@@ -496,7 +542,8 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           <button
             className={styles.iconButton}
             type="button"
-            onClick={() => router.push('/pages/chat')}
+            onClick={() => void returnToChatList()}
+            disabled={isReturning || isLeaving || isUpdatingExchange}
             aria-label="채팅 목록으로 돌아가기"
           >
             <img src="/figma/chat/back.svg" alt="" width="24" height="24" />
@@ -506,7 +553,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             className={styles.leaveButton}
             type="button"
             onClick={() => void leaveChatRoom()}
-            disabled={isLeaving || isUpdatingExchange}
+            disabled={isReturning || isLeaving || isUpdatingExchange}
           >
             {isLeaving ? '나가는 중...' : '채팅방 나가기'}
           </button>
@@ -609,45 +656,60 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
 
         {!isChatClosed && (
           <div className={styles.composer}>
-            <label className={styles.visuallyHidden} htmlFor="chat-message">
-              메시지
-            </label>
-            <input
-              id="chat-message"
-              placeholder={
-                isLoading
-                  ? '메시지를 불러오는 중입니다.'
-                  : !isHistoryLoaded
-                    ? '메시지 이력을 불러오지 못했습니다.'
-                    : isConnected
-                      ? '메시지를 입력하세요'
-                      : '채팅 서버 연결 중...'
-              }
-              value={messageInput}
-              maxLength={2000}
-              disabled={!canSendMessage}
-              onChange={(event) => setMessageInput(event.target.value)}
-              onCompositionStart={() => {
-                isComposingRef.current = true
-              }}
-              onCompositionEnd={() => {
-                isComposingRef.current = false
-              }}
-              onKeyUp={(event) => {
-                if (event.key !== 'Enter' || event.shiftKey) return
-                if (isComposingRef.current || event.nativeEvent.isComposing)
-                  return
-                handleSendMessage(event.currentTarget.value)
+            <div className={styles.composerRow}>
+              <label className={styles.visuallyHidden} htmlFor="chat-message">
+                메시지
+              </label>
+              <input
+                id="chat-message"
+                placeholder={
+                  isLoading
+                    ? '메시지를 불러오는 중입니다.'
+                    : !isHistoryLoaded
+                      ? '메시지 이력을 불러오지 못했습니다.'
+                      : isConnected
+                        ? '메시지를 입력하세요'
+                        : '채팅 서버 연결 중...'
+                }
+                value={messageInput}
+                maxLength={2000}
+                disabled={!canSendMessage}
+                onChange={(event) => setMessageInput(event.target.value)}
+                onCompositionStart={() => {
+                  isComposingRef.current = true
+                }}
+                onCompositionEnd={() => {
+                  isComposingRef.current = false
+                }}
+                onKeyUp={(event) => {
+                  if (event.key !== 'Enter' || event.shiftKey) return
+                  if (isComposingRef.current || event.nativeEvent.isComposing)
+                    return
+                  handleSendMessage(event.currentTarget.value)
+                }}
+              />
+              <RefineButton
+                disabled={!canSendMessage || !messageInput.trim()}
+                isLoading={messageRefine.state.status === 'loading'}
+                onClick={() => void messageRefine.refine()}
+              />
+              <button
+                className={styles.sendButton}
+                type="button"
+                aria-label="메시지 보내기"
+                disabled={!canSendMessage || !messageInput.trim()}
+                onClick={() => handleSendMessage(messageInput)}
+              >
+                <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
+              </button>
+            </div>
+            <RefineResult
+              state={messageRefine.state}
+              onApply={(refined) => {
+                messageRefine.reset()
+                setMessageInput(refined)
               }}
             />
-            <button
-              type="button"
-              aria-label="메시지 보내기"
-              disabled={!canSendMessage || !messageInput.trim()}
-              onClick={() => handleSendMessage(messageInput)}
-            >
-              <img src="/figma/chat/send.svg" alt="" width="20" height="20" />
-            </button>
           </div>
         )}
       </section>
