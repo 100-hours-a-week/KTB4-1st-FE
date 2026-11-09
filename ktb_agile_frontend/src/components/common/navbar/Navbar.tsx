@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, type ReactNode } from 'react'
 import RegisterIcon from '@/components/common/icons/RegisterIcon'
+import { useHasJoinedGroup } from '@/queries/joinedGroups'
 import styles from './Navbar.module.css'
 
 type NavItemId = 'home' | 'group' | 'register' | 'chat' | 'my'
@@ -80,6 +81,9 @@ const navItems: NavItem[] = [
   },
 ]
 
+//그룹에 가입해야 쓸 수 있는 메뉴
+const groupRequiredItemIds: NavItemId[] = ['register', 'chat']
+
 const getNavItemFromPathname = (pathname: string) =>
   navItems.find((item) => item.isCurrentPath(pathname))
 
@@ -90,11 +94,15 @@ export default function Navbar() {
     () => pathNavItem?.id ?? 'home',
   )
   const activeItemId = pathNavItem?.id ?? selectedItemId
+  const { hasJoinedGroup } = useHasJoinedGroup()
+  const visibleNavItems = hasJoinedGroup
+    ? navItems
+    : navItems.filter((item) => !groupRequiredItemIds.includes(item.id))
 
   return (
     <nav className={styles.navbar}>
       <ul className={styles.navList}>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = activeItemId === item.id
 
           return (
