@@ -3,7 +3,7 @@
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
-import { itemListKeys } from '@/queries/itemList'
+import { findCachedListThumbnail, itemListKeys } from '@/queries/itemList'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
@@ -29,6 +29,10 @@ export default function ItemDetailsPage() {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  // 목록에서 들어온 경우 이미 받은 목록 썸네일을 상세 응답 전부터 보여 줍니다.
+  const [listThumbnailUrl] = useState(() =>
+    findCachedListThumbnail(queryClient, Number(itemId)),
+  )
 
   useEffect(() => {
     let isMounted = true
@@ -122,6 +126,8 @@ export default function ItemDetailsPage() {
           images={item?.images}
           title={item?.title}
           isLoading={isLoading}
+          placeholderImageUrl={listThumbnailUrl}
+          thumbnailImageId={item?.thumbnailImageId}
           onBack={() => router.back()}
         />
 

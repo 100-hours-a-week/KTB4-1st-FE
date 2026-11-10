@@ -11,6 +11,10 @@ type ItemDetailImageContainerProps = {
   title?: string
   isLoading: boolean
   onBack: () => void
+  /** 목록에서 이미 받은 대표 사진 썸네일. 첫 상세 사진이 뜰 때까지 대신 보여 줍니다. */
+  placeholderImageUrl?: string | null
+  /** 목록 썸네일이 가리키는 대표 사진 ID. 첫 사진과 다르면 자리 표시를 숨깁니다. */
+  thumbnailImageId?: number | null
 }
 
 export default function ItemDetailImageContainer({
@@ -18,6 +22,8 @@ export default function ItemDetailImageContainer({
   title,
   isLoading,
   onBack,
+  placeholderImageUrl,
+  thumbnailImageId,
 }: ItemDetailImageContainerProps) {
   const [expandedImageId, setExpandedImageId] = useState<number | null>(null)
   const [settledThumbnailUrls, setSettledThumbnailUrls] = useState<Set<string>>(
@@ -34,10 +40,34 @@ export default function ItemDetailImageContainer({
   const canPreloadOriginals =
     !!detailImages?.length &&
     detailImages.every((image) => settledThumbnailUrls.has(image.imageUrl))
+  const firstImage = detailImages?.toSorted(
+    (first, second) => first.displayOrder - second.displayOrder,
+  )[0]
+  // 대표 사진이 첫 사진과 다르면 다른 사진이 비치지 않도록 자리 표시를 쓰지 않습니다.
+  const isPlaceholderSameImage =
+    !firstImage ||
+    thumbnailImageId == null ||
+    thumbnailImageId === firstImage.imageId
+  const showPlaceholder =
+    !!placeholderImageUrl &&
+    (isLoading || !!firstImage) &&
+    isPlaceholderSameImage &&
+    !(firstImage && settledThumbnailUrls.has(firstImage.imageUrl))
 
   return (
     <>
       <div className={styles.imageArea}>
+        {showPlaceholder && (
+          // 브라우저 캐시에 있는 목록 썸네일이라 클릭 직후 바로 표시됩니다.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            className={styles.placeholderImage}
+            src={placeholderImageUrl}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
+        )}
         <ItemImageCarousel
           images={detailImages}
           title={title}
