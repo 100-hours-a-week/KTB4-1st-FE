@@ -117,6 +117,7 @@ export default function Page() {
           <textarea
             placeholder="예) 과자 물 칫솔 등과 바꾸고 싶어"
             value={preferenceText}
+            maxLength={255}
             onChange={(event) => setPreferenceText(event.target.value)}
           />
           {items.length > 0 && (
