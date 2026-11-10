@@ -58,6 +58,14 @@ export type MyItemListItem = Omit<ItemListItem, 'owner' | 'viewCount'> & {
   groups: { groupId: number; groupName: string }[]
 }
 
+/** 교환 요청에 내 물품으로 내놓을 수 있는 물품 정보 */
+export type OfferableItem = Pick<
+  ItemListItem,
+  'itemId' | 'title' | 'thumbnailImageUrl' | 'quantity' | 'itemState'
+> & {
+  groups: { groupId: number; groupName: string }[]
+}
+
 export type MyItemListResponse = {
   data: {
     items: MyItemListItem[]
