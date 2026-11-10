@@ -7,6 +7,9 @@ import type { SelectedImage } from '@/types/item'
 // 목록의 112px 이미지에 2배 밀도를 확보하고 원본 비율을 유지합니다.
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
 export const ITEM_DETAIL_THUMBNAIL_MAX_SIZE = 1280
+// 이미지 최적화를 위해 용도별로 WebP 압축 품질을 나눕니다.
+export const ITEM_THUMBNAIL_QUALITY = 0.5
+export const ITEM_DETAIL_THUMBNAIL_QUALITY = 0.6
 
 export async function createItemThumbnail(
   source: Blob,
@@ -14,7 +17,7 @@ export async function createItemThumbnail(
 ): Promise<File> {
   return createThumbnail(source, {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
-    quality: 0.8,
+    quality: ITEM_THUMBNAIL_QUALITY,
     fileName: 'item-thumbnail.webp',
     background: '#fff',
     ...options,
@@ -28,6 +31,7 @@ export async function uploadItemThumbnail(
 ): Promise<string> {
   return uploadThumbnail(image, setImages, accessToken, 'thumbnailObjectKey', {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
+    quality: ITEM_THUMBNAIL_QUALITY,
     fileName: 'item-thumbnail.webp',
   })
 }
@@ -44,6 +48,7 @@ export async function uploadItemDetailThumbnail(
     'detailThumbnailObjectKey',
     {
       maxSize: ITEM_DETAIL_THUMBNAIL_MAX_SIZE,
+      quality: ITEM_DETAIL_THUMBNAIL_QUALITY,
       fileName: 'item-detail-thumbnail.webp',
     },
   )
