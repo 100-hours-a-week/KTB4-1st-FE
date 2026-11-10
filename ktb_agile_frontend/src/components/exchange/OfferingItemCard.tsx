@@ -1,12 +1,13 @@
 'use client'
 
-import type { ItemListItem } from '@/types/item'
+import type { OfferableItem } from '@/types/item'
+import { isItemAvailable } from '@/utils/item'
 import ItemImage from './ItemImage'
 import QuantityControl from '../common/exchange/QuantityControl'
 import styles from './ExchangeForm.module.css'
 
 type OfferingItemCardProps = {
-  item: Omit<ItemListItem, 'owner'>
+  item: OfferableItem
   selected: boolean
   quantity: number
   disabled?: boolean
@@ -24,7 +25,7 @@ export default function OfferingItemCard({
   onSelectionChange,
   onQuantityChange,
 }: OfferingItemCardProps) {
-  const unavailable = item.itemState !== 'AVAILABLE' || item.quantity < 1
+  const unavailable = !isItemAvailable(item)
 
   return (
     <div className={styles.offerCard}>

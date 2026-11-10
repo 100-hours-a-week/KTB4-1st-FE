@@ -1,15 +1,11 @@
 'use client'
 
-import axios from 'axios'
 import { useCallback, useState } from 'react'
-import '@/config/api'
-import { useCursorPagination } from '@/hooks/useCursorPagination'
-import type { MyItemListItem, MyItemListResponse } from '@/types/item'
+import { useMyGroupItems } from '@/hooks/useMyGroupItems'
+import type { MyItemListItem } from '@/types/item'
 import AiSmartSearchMyItem from './AiSmartSearchMyItem'
 import { useSmartSearch } from './SmartSearchProvider'
 import styles from './AiSmartSearchMyItemList.module.css'
-
-const getItemKey = (item: MyItemListItem) => item.itemId
 
 export default function AiSmartSearchMyItemList({
   groupId,
@@ -24,36 +20,13 @@ export default function AiSmartSearchMyItemList({
   const [draftQuantities, setDraftQuantities] = useState<
     Record<number, number>
   >({})
-  const fetchMyItems = useCallback(
-    async (cursor: string | null, signal: AbortSignal) => {
-      const response = await axios.get<MyItemListResponse>('/bff/my-items', {
-        params: { groupId, ...(cursor ? { cursor } : {}) },
-        headers: { Accept: 'application/json' },
-        signal,
-      })
-      const page = response.data.data
-      if (!page || response.data.error) {
-        throw new Error(
-          response.data.error?.message || '내 물품을 불러오지 못했습니다.',
-        )
-      }
-      if (!signal.aborted) {
-        setItemTitles((current) => ({
-          ...current,
-          ...Object.fromEntries(
-            page.items.map((item) => [item.itemId, item.title]),
-          ),
-        }))
-      }
-      return page
-    },
-    [groupId, setItemTitles],
-  )
-  const isSelectable = useCallback(
-    (item: MyItemListItem) =>
-      item.itemState === 'AVAILABLE' &&
-      item.groups.some((group) => group.groupId === groupId),
-    [groupId],
+  const rememberTitles = useCallback(
+    (items: MyItemListItem[]) =>
+      setItemTitles((current) => ({
+        ...current,
+        ...Object.fromEntries(items.map((item) => [item.itemId, item.title])),
+      })),
+    [setItemTitles],
   )
   const {
     filteredItems: groupItems,
@@ -61,25 +34,17 @@ export default function AiSmartSearchMyItemList({
     pageIndex,
     hasNext,
     isLoading,
-    error,
+    errorMessage,
     canGoPrevious,
     canGoNext,
     goToPreviousPage,
     goToNextPage,
     retry,
-  } = useCursorPagination({
-    fetchPage: fetchMyItems,
-    getKey: getItemKey,
-    filter: isSelectable,
-    cursorErrorMessage: '내 물품을 불러오지 못했습니다.',
+  } = useMyGroupItems({
+    groupId,
+    availableOnly: true,
+    onPageLoaded: rememberTitles,
   })
-  const errorMessage = error
-    ? axios.isAxiosError<MyItemListResponse>(error)
-      ? error.response?.data.error?.message || '내 물품을 불러오지 못했습니다.'
-      : error instanceof Error
-        ? error.message
-        : '내 물품을 불러오지 못했습니다.'
-    : null
 
   function getQuantity(item: MyItemListItem) {
     const selected = selectedItems.find(({ itemId }) => itemId === item.itemId)
