@@ -32,10 +32,15 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-it('원본을 유지하며 긴 변 224px, 원본 비율의 WebP를 만든다', async () => {
+it('원본을 유지하며 긴 변 224px, 화질 0.5, 원본 비율의 WebP를 만든다', async () => {
   const source = new File(['original'], 'original.png', { type: 'image/png' })
   const result = await createItemThumbnail(source)
   expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 224, 168)
+  expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalledWith(
+    expect.any(Function),
+    'image/webp',
+    0.5,
+  )
   expect(result.type).toBe('image/webp')
   expect(result.name).toBe('item-thumbnail.webp')
   expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalledOnce()
@@ -188,7 +193,7 @@ it('기존 대표 이미지로 바뀌면 URL에서 원본을 읽어 썸네일을
   expect(createImageBitmap).toHaveBeenCalledWith(original)
 })
 
-it('모든 사진의 상세용 썸네일을 1280px로 생성하고 목록용 키와 별도로 기억한다', async () => {
+it('모든 사진의 상세용 썸네일을 1280px, 화질 0.6으로 생성하고 목록용 키와 별도로 기억한다', async () => {
   let images: SelectedImage[] = ['first', 'second', 'third'].map((id) => ({
     id,
     preview: id,
@@ -222,7 +227,7 @@ it('모든 사진의 상세용 썸네일을 1280px로 생성하고 목록용 키
   expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalledWith(
     expect.any(Function),
     'image/webp',
-    0.8,
+    0.6,
   )
   expect(put).toHaveBeenCalledWith(
     'https://s3.example/detail-1',
