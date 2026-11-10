@@ -15,6 +15,8 @@ import styles from './ChatbotButton.module.css'
 
 const MAX_HISTORY_LENGTH = 10
 const SESSION_STORAGE_KEY = 'chatbot-session'
+const MAX_MESSAGE_LENGTH = 500
+const LENGTH_TOAST_DURATION = 2000
 const GREETING = '안녕하세요! 바꾸까 AI예요. 궁금한 점을 편하게 물어보세요.'
 
 type DisplayMessage = ChatbotMessage & {
@@ -57,7 +59,7 @@ function readSession(): ChatSession {
             ? entry.decision
             : undefined,
       }))
-    return { history, draft: value.draft.slice(0, 300) }
+    return { history, draft: value.draft.slice(0, MAX_MESSAGE_LENGTH) }
   } catch {
     return { history: [], draft: '' }
   }
@@ -74,8 +76,25 @@ export default function ChatbotButton() {
   const sessionRef = useRef<ChatSession>({ history: [], draft: '' })
   const restoredRef = useRef(false)
   const requestRef = useRef<AbortController | null>(null)
+  const [showLengthToast, setShowLengthToast] = useState(false)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => () => requestRef.current?.abort(), [])
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    },
+    [],
+  )
+
+  function notifyLengthLimit() {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    setShowLengthToast(true)
+    toastTimerRef.current = setTimeout(
+      () => setShowLengthToast(false),
+      LENGTH_TOAST_DURATION,
+    )
+  }
 
   function saveSession(session: ChatSession) {
     sessionRef.current = session
@@ -223,6 +242,13 @@ export default function ChatbotButton() {
                 ×
               </button>
             </header>
+            <div className={styles.toastAnchor}>
+              {showLengthToast && (
+                <p className={styles.toast} role="status">
+                  {`메시지는 ${MAX_MESSAGE_LENGTH}자까지만 입력할 수 있어요.`}
+                </p>
+              )}
+            </div>
             <div
               className={styles.messages}
               ref={listRef}
@@ -295,12 +321,16 @@ export default function ChatbotButton() {
               <input
                 className={styles.input}
                 value={draft}
-                maxLength={300}
                 placeholder="메시지를 입력하세요"
                 aria-label="메시지 입력"
                 disabled={isSending}
                 onChange={(event) => {
-                  const nextDraft = event.target.value
+                  let nextDraft = event.target.value
+                  // maxLength 속성은 초과 입력을 조용히 버리므로 직접 잘라내고 안내한다.
+                  if (nextDraft.length > MAX_MESSAGE_LENGTH) {
+                    nextDraft = nextDraft.slice(0, MAX_MESSAGE_LENGTH)
+                    notifyLengthLimit()
+                  }
                   setDraft(nextDraft)
                   saveSession({ ...sessionRef.current, draft: nextDraft })
                 }}
