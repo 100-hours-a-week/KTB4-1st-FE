@@ -27,7 +27,7 @@ function renderPage() {
 
 const router = { back: vi.fn(), push: vi.fn(), replace: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
-vi.mock('@/config/api', () => ({}))
+vi.mock('@/config/api', () => ({ API_BASE_URL: 'http://api.test' }))
 
 const item = {
   itemId: 101,
@@ -388,7 +388,7 @@ it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다'
 
   await waitFor(() => expect(post).toHaveBeenCalledTimes(1))
   expect(post).toHaveBeenCalledWith(
-    '/bff/smart-search',
+    'http://api.test/search/rank-candidates',
     {
       groupId: 1,
       items: [{ itemId: 101, quantity: 2 }],
@@ -396,6 +396,7 @@ it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다'
     },
     {
       headers: {
+        Authorization: 'Bearer access-token',
         Accept: 'application/json',
       },
     },
@@ -497,7 +498,7 @@ it('인증 오류는 검색 오류 모달로 표시하지 않는다', async () =
   expect(screen.queryByRole('button', { name: '확인' })).toBeNull()
 })
 
-it('검색 직전에 토큰이 없어져도 BFF 요청의 401 처리에 맡긴다', async () => {
+it('검색 직전에 토큰이 없어지면 요청하지 않고 로그인 화면으로 보낸다', async () => {
   mockLists()
   const post = vi.spyOn(axios, 'post').mockResolvedValue({
     data: { data: { items: [] }, error: null },
@@ -511,11 +512,8 @@ it('검색 직전에 토큰이 없어져도 BFF 요청의 401 처리에 맡긴�
   window.sessionStorage.removeItem('accessToken')
   fireEvent.click(screen.getByRole('button', { name: '검색하기' }))
 
-  await waitFor(() => expect(post).toHaveBeenCalledTimes(1))
-  expect(post.mock.calls[0][2]).toEqual({
-    headers: { Accept: 'application/json' },
-  })
-  expect(router.replace).not.toHaveBeenCalled()
+  expect(router.replace).toHaveBeenCalledWith('/')
+  expect(post).not.toHaveBeenCalled()
 })
 
 it('말풍선 아래 드롭다운에서 선택한 그룹 ID로 검색한다', async () => {

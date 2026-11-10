@@ -3,7 +3,7 @@
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import '@/config/api'
+import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import AiSmartSearchGroupDropdown from '@/components/smart-search/AiSmartSearchGroupDropdown'
 import AiSmartSearchMyItemList from '@/components/smart-search/AiSmartSearchMyItemList'
@@ -12,6 +12,7 @@ import type {
   SmartSearchRequest,
   SmartSearchResponse,
 } from '@/types/smartSearch'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 import styles from './page.module.css'
 
 const SEARCH_RESULT_PATH = '/pages/search/ai-smart-search/result'
@@ -33,6 +34,9 @@ export default function Page() {
   async function search() {
     if (isSearching || items.length === 0 || !groupId) return
 
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
+
     setIsSearching(true)
     setSearchError(null)
 
@@ -44,10 +48,11 @@ export default function Page() {
 
     try {
       const response = await axios.post<SmartSearchResponse>(
-        '/bff/smart-search',
+        `${API_BASE_URL}/search/rank-candidates`,
         request,
         {
           headers: {
+            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
         },
