@@ -4,12 +4,13 @@ import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { CHATBOT_ROUTE, CHATBOT_SCREEN_LABEL } from '@/constants/chatbot'
 import { useEffect, useRef, useState } from 'react'
-import '@/config/api'
+import { API_BASE_URL } from '@/config/api'
 import type {
   ChatbotAction,
   ChatbotAskResponse,
   ChatbotMessage,
 } from '@/types/chatbot'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 import SparkleIcon from './SparkleIcon'
 import styles from './ChatbotButton.module.css'
 
@@ -145,6 +146,9 @@ export default function ChatbotButton() {
     const message = draft.trim()
     if (!message || requestRef.current) return
 
+    const accessToken = getAccessTokenOrRedirect(router)
+    if (!accessToken) return
+
     const controller = new AbortController()
     requestRef.current = controller
     const previousHistory = history
@@ -159,9 +163,15 @@ export default function ChatbotButton() {
 
     try {
       const response = await axios.post<ChatbotAskResponse>(
-        '/bff/chatbot',
+        `${API_BASE_URL}/chatbot/ask`,
         { message, history: previousHistory },
-        { headers: { Accept: 'application/json' }, signal: controller.signal },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        },
       )
       const answer = response.data.data?.answer
       if (!answer) throw new Error(response.data.error?.message)
