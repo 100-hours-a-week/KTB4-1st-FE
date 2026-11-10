@@ -26,8 +26,6 @@ function isBffRequest(request: InternalAxiosRequestConfig) {
       '/bff/preferences',
       '/bff/liked-items',
       '/bff/exchanged-items',
-      '/bff/smart-search',
-      '/bff/chatbot',
       '/bff/search-histories',
       '/bff/users/me',
       '/bff/events/applications',
