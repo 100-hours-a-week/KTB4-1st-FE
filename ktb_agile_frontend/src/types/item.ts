@@ -38,6 +38,8 @@ export type ItemListItem = {
   }
   itemState: ItemState
   thumbnailImageUrl: string | null
+  /** 상세 화면 첫 사진의 상세용 썸네일 주소. 상세 썸네일이 없으면 원본 주소입니다. */
+  detailThumbnailImageUrl?: string | null
   likeCount: number
   viewCount: number
   exchangeRequestCount: number
