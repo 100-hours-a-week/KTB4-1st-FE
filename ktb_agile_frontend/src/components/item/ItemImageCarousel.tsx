@@ -11,6 +11,10 @@ type ItemImageCarouselProps = {
   className?: string
   onActivate?: (imageId: number) => void
   onImageSettled?: (imageUrl: string) => void
+  /** 사진이 실제로 로드된 경우에만 호출합니다. */
+  onImageLoad?: (imageUrl: string) => void
+  /** 사진 로딩이 실패한 경우에만 호출합니다. 성공과 구분해 복구할 때 사용합니다. */
+  onImageError?: (imageUrl: string) => void
 }
 
 export default function ItemImageCarousel({
@@ -20,6 +24,8 @@ export default function ItemImageCarousel({
   className,
   onActivate,
   onImageSettled,
+  onImageLoad,
+  onImageError,
 }: ItemImageCarouselProps) {
   const sortedImages = useMemo(
     () =>
@@ -206,10 +212,12 @@ export default function ItemImageCarousel({
               onLoad={() => {
                 if (image === initialImage) setSettledInitialUrl(image.imageUrl)
                 onImageSettled?.(image.imageUrl)
+                onImageLoad?.(image.imageUrl)
               }}
               onError={() => {
                 if (image === initialImage) setSettledInitialUrl(image.imageUrl)
                 onImageSettled?.(image.imageUrl)
+                onImageError?.(image.imageUrl)
               }}
               draggable={false}
             />
