@@ -12,14 +12,11 @@ import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/item/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/item/ItemRegisterForm'
 import {
-  uploadItemDetailThumbnail,
+  uploadItemDetailThumbnails,
   uploadItemThumbnail,
 } from '@/utils/itemThumbnail'
 import { uploadImagesToS3 } from '@/utils/itemImageUpload'
-import type {
-  ItemDetailThumbnailInput,
-  ItemRegisterFormValues,
-} from '@/types/item'
+import type { ItemRegisterFormValues } from '@/types/item'
 import styles from './page.module.css'
 import type { JoinedGroupOption } from '@/types/group'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
@@ -112,20 +109,12 @@ function ItemRegisterContent() {
         accessToken,
       )
 
-      // 원본 업로드 결과는 현재 렌더의 images에 아직 반영되지 않을 수 있습니다.
-      // 반환된 objectKeys를 사용해 같은 순서의 사진과 상세용 썸네일을 연결합니다.
-      const imageDetailThumbnails: ItemDetailThumbnailInput[] = []
-      for (const [index, image] of images.entries()) {
-        const detailThumbnailObjectKey = await uploadItemDetailThumbnail(
-          image,
-          setImages,
-          accessToken,
-        )
-        imageDetailThumbnails.push({
-          objectKey: objectKeys[index],
-          detailThumbnailObjectKey,
-        })
-      }
+      const imageDetailThumbnails = await uploadItemDetailThumbnails(
+        images,
+        objectKeys,
+        setImages,
+        accessToken,
+      )
 
       // 검수를 통과한 경우에만 물품 등록을 요청합니다.
       await axios.post(

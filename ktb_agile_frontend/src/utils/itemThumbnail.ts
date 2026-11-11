@@ -2,7 +2,7 @@ import axios from 'axios'
 import { createThumbnail, type ThumbnailOptions } from './thumbnail'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
-import type { SelectedImage } from '@/types/item'
+import type { ItemDetailThumbnailInput, SelectedImage } from '@/types/item'
 
 // 목록의 112px 이미지에 2배 밀도를 확보하고 원본 비율을 유지합니다.
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
@@ -52,6 +52,29 @@ export async function uploadItemDetailThumbnail(
       fileName: 'item-detail-thumbnail.webp',
     },
   )
+}
+
+// 원본 업로드 결과는 현재 렌더의 images에 아직 반영되지 않을 수 있습니다.
+// 같은 순서로 받은 objectKeys를 사용해 사진과 상세용 썸네일을 연결합니다.
+export async function uploadItemDetailThumbnails(
+  images: SelectedImage[],
+  objectKeys: string[],
+  setImages: Dispatch<SetStateAction<SelectedImage[]>>,
+  accessToken: string,
+): Promise<ItemDetailThumbnailInput[]> {
+  const imageDetailThumbnails: ItemDetailThumbnailInput[] = []
+  for (const [index, image] of images.entries()) {
+    const detailThumbnailObjectKey = await uploadItemDetailThumbnail(
+      image,
+      setImages,
+      accessToken,
+    )
+    imageDetailThumbnails.push({
+      objectKey: objectKeys[index],
+      detailThumbnailObjectKey,
+    })
+  }
+  return imageDetailThumbnails
 }
 
 async function uploadThumbnail(
