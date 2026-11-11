@@ -100,8 +100,10 @@ test('목록에서 클릭하면 상세 응답 전에 목록 썸네일을 먼저 
     `img[aria-hidden="true"][src="${listThumbnail}"]`,
   )
   await expect(placeholder).toBeVisible()
-  // 상세 응답 전이므로 상세 사진은 아직 없고 로딩 문구가 보인다.
-  await expect(page.getByText('물품 정보를 불러오는 중입니다.')).toBeVisible()
+  // 상세 응답 전이므로 상세 사진은 아직 없고 정보 영역은 스켈레톤이다.
+  await expect(
+    page.getByRole('status', { name: '물품 정보를 불러오는 중' }),
+  ).toBeVisible()
   await expect(page.getByRole('img', { name: '목록 썸네일 확인' })).toHaveCount(
     0,
   )

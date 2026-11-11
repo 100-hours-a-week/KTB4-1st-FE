@@ -204,11 +204,33 @@ export default function ItemDetailsPage() {
               )}
             </div>
           </main>
-        ) : (
-          <p className={styles.loadingMessage}>
-            {isLoading ? '물품 정보를 불러오는 중입니다.' : ''}
-          </p>
-        )}
+        ) : isLoading ? (
+          <main
+            className={styles.content}
+            role="status"
+            aria-busy="true"
+            aria-label="물품 정보를 불러오는 중"
+          >
+            <div className={styles.skeletonTitle} aria-hidden="true" />
+            <div className={styles.skeletonMeta} aria-hidden="true" />
+            <div className={styles.informationCard} aria-hidden="true">
+              <div className={styles.skeletonHeading} />
+              <div className={styles.skeletonLine} />
+              <div className={styles.skeletonShortLine} />
+            </div>
+            <div className={styles.informationCard} aria-hidden="true">
+              <div className={styles.skeletonHeading} />
+              <div className={styles.skeletonLine} />
+              <div className={styles.skeletonLine} />
+            </div>
+            <div className={styles.actions}>
+              {/* 정보가 준비되면 제안하기 또는 수정·삭제 버튼으로 바뀝니다. */}
+              <button className={styles.primaryButton} type="button" disabled>
+                불러오는 중
+              </button>
+            </div>
+          </main>
+        ) : null}
       </div>
 
       {errorMessage && (
