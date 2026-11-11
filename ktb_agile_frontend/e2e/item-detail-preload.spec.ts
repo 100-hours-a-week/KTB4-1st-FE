@@ -17,7 +17,18 @@ function gate() {
   return { open, opened }
 }
 
-async function prepare(page: Page, { holdDetailImage = false } = {}) {
+async function prepare(
+  page: Page,
+  {
+    holdDetailImage = false,
+    direct = false,
+    detailStatus = 200,
+  }: {
+    holdDetailImage?: boolean
+    direct?: boolean
+    detailStatus?: number
+  } = {},
+) {
   const imageRequests: string[] = []
   page.on('request', (request) => {
     if (request.url().includes('/crane.webp')) imageRequests.push(request.url())
@@ -74,6 +85,13 @@ async function prepare(page: Page, { holdDetailImage = false } = {}) {
   await page.route(`**/items/${itemId}`, async (route) => {
     if (route.request().isNavigationRequest()) return route.continue()
     await detailResponse.opened
+    if (detailStatus !== 200) {
+      return route.fulfill({
+        status: detailStatus,
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        json: { data: null, error: { code: 'ERROR' } },
+      })
+    }
     await route.fulfill({
       headers: { 'Access-Control-Allow-Origin': '*' },
       json: {
@@ -107,6 +125,11 @@ async function prepare(page: Page, { holdDetailImage = false } = {}) {
       },
     })
   })
+
+  if (direct) {
+    await page.goto(`/pages/items/${itemId}`)
+    return { imageRequests, detailResponse, detailImage }
+  }
 
   await page.goto('/pages/items?groupId=1')
   // 목록 썸네일이 실제로 그려진 뒤에 클릭한다.
@@ -188,4 +211,51 @@ test('상세 썸네일을 받는 동안 목록 썸네일을 보여 주고, 정�
   expect(imageRequests.some((url) => url.includes('signature=detail'))).toBe(
     false,
   )
+})
+
+test('주소로 바로 들어오면 미리 받은 사진 없이 스켈레톤을 보여 주고, 응답 후 상세 응답의 사진을 표시한다', async ({
+  page,
+}) => {
+  const { imageRequests, detailResponse } = await prepare(page, {
+    direct: true,
+  })
+
+  await expect(
+    page.getByRole('status', { name: '물품 정보를 불러오는 중' }),
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: '불러오는 중' })).toBeDisabled()
+  await expect(page.locator('img[aria-hidden="true"]')).toHaveCount(0)
+  expect(imageRequests).toEqual([])
+
+  detailResponse.open()
+
+  const firstPhoto = page.getByRole('img', { name: title })
+  await expect(firstPhoto).toHaveAttribute('src', apiDetailThumbnail)
+  await expect.poll(() => firstPhoto.evaluate(isRendered)).toBe(true)
+  await expect(page.getByRole('button', { name: '제안하기' })).toBeEnabled()
+  expect(imageRequests.some((url) => url.includes('signature=list'))).toBe(
+    false,
+  )
+})
+
+test('상세 조회에 실패하면 스켈레톤을 지우고 오류를 알린 뒤 목록으로 돌아간다', async ({
+  page,
+}) => {
+  const { detailResponse } = await prepare(page, { detailStatus: 500 })
+
+  await expect(
+    page.getByRole('status', { name: '물품 정보를 불러오는 중' }),
+  ).toBeVisible()
+  detailResponse.open()
+
+  await expect(
+    page.getByText('물품 정보를 불러오지 못했습니다', { exact: false }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('status', { name: '물품 정보를 불러오는 중' }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('button', { name: '불러오는 중' })).toHaveCount(0)
+
+  await page.getByRole('button', { name: '확인' }).click()
+  await expect(page).toHaveURL(/\/pages\/items$/)
 })
