@@ -16,6 +16,7 @@ import {
   getAccessTokenOrRedirect,
 } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
+import { getItemDetailImage } from '@/utils/itemDetailPreview'
 import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
 
@@ -33,6 +34,8 @@ export default function ItemDetailsPage() {
   const [listThumbnailUrl] = useState(() =>
     findCachedListThumbnail(queryClient, Number(itemId)),
   )
+  // 목록에서 클릭과 동시에 요청한 첫 사진을 상세 응답 전에 바로 그립니다.
+  const [initialImageUrl] = useState(() => getItemDetailImage(Number(itemId)))
 
   useEffect(() => {
     let isMounted = true
@@ -128,6 +131,7 @@ export default function ItemDetailsPage() {
           isLoading={isLoading}
           placeholderImageUrl={listThumbnailUrl}
           thumbnailImageId={item?.thumbnailImageId}
+          initialImageUrl={initialImageUrl}
           onBack={() => router.back()}
         />
 
