@@ -15,7 +15,12 @@ import {
   uploadItemDetailThumbnail,
   uploadItemThumbnail,
 } from '@/utils/itemThumbnail'
-import type { SelectedImage } from '@/types/item'
+import type { ItemListItem, SelectedImage } from '@/types/item'
+import { findCachedListThumbnail } from '@/queries/itemList'
+import {
+  getItemDetailImage,
+  startItemDetailImage,
+} from '@/utils/itemDetailPreview'
 
 const router = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -146,6 +151,58 @@ it('수정 성공 시 기존 및 새 그룹의 목록 캐시를 무효화한다'
     expect(router.replace).toHaveBeenCalledWith('/pages/items/1'),
   )
   expectInvalidated()
+})
+
+it('수정 성공 시 상세 화면이 수정 전 사진을 먼저 보여 주지 않도록 기억한 사진 주소를 지운다', async () => {
+  vi.spyOn(HTMLImageElement.prototype, 'src', 'set').mockImplementation(
+    () => {},
+  )
+  startItemDetailImage(1, '/old-detail.webp')
+  client.setQueryData(['items', 3, 1, 'latest'], {
+    pages: [
+      {
+        items: [
+          {
+            itemId: 1,
+            thumbnailImageUrl: '/old-list.webp',
+            detailThumbnailImageUrl: '/old-detail.webp',
+          } as ItemListItem,
+        ],
+      },
+    ],
+    pageParams: [''],
+  })
+  vi.spyOn(axios, 'put').mockResolvedValueOnce({ status: 204 })
+  render(
+    <QueryClientProvider client={client}>
+      <ItemEditPage />
+    </QueryClientProvider>,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: '테스트 저장' }))
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/items/1'),
+  )
+  expect(getItemDetailImage(1)).toBeNull()
+  expect(findCachedListThumbnail(client, 1)).toBeNull()
+})
+
+it('삭제 성공 시 기억한 사진 주소를 지운다', async () => {
+  vi.spyOn(HTMLImageElement.prototype, 'src', 'set').mockImplementation(
+    () => {},
+  )
+  startItemDetailImage(1, '/old-detail.webp')
+  vi.spyOn(axios, 'delete').mockResolvedValueOnce({ status: 204 })
+  render(
+    <QueryClientProvider client={client}>
+      <ItemDetailsPage />
+    </QueryClientProvider>,
+  )
+  fireEvent.click(await screen.findByRole('button', { name: '삭제하기' }))
+  fireEvent.click(screen.getAllByRole('button', { name: '삭제하기' }).at(-1)!)
+  await waitFor(() =>
+    expect(router.replace).toHaveBeenCalledWith('/pages/items'),
+  )
+  expect(getItemDetailImage(1)).toBeNull()
 })
 
 it('등록 성공 시 목록 캐시를 무효화하고 목록으로 이동한다', async () => {

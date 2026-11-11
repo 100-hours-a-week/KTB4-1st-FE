@@ -16,7 +16,10 @@ import {
   getAccessTokenOrRedirect,
 } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
-import { getItemDetailImage } from '@/utils/itemDetailPreview'
+import {
+  forgetItemDetailImage,
+  getItemDetailImage,
+} from '@/utils/itemDetailPreview'
 import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
 
@@ -106,6 +109,7 @@ export default function ItemDetailsPage() {
         },
       })
 
+      forgetItemDetailImage(item.itemId)
       void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       setIsDeleteModalOpen(false)
       router.replace('/pages/items')
