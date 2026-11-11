@@ -3,7 +3,8 @@
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
-import { itemListKeys } from '@/queries/itemList'
+import { forgetCachedListThumbnail, itemListKeys } from '@/queries/itemList'
+import { forgetItemDetailImage } from '@/utils/itemDetailPreview'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
@@ -137,6 +138,9 @@ export default function ItemEditPage() {
           },
         },
       )
+      // 상세 화면이 응답 전에 수정 전 사진을 보여 주지 않도록 기억한 사진 주소를 지웁니다.
+      forgetItemDetailImage(Number(itemId))
+      forgetCachedListThumbnail(queryClient, Number(itemId))
       void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       router.replace(`/pages/items/${itemId}`)
     } catch (error) {

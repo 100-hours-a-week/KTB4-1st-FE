@@ -38,6 +38,12 @@ export function getItemDetailImage(itemId: number): string | null {
   return previewUrls.get(itemId) ?? null
 }
 
+/** 물품을 수정·삭제한 뒤 예전 사진을 보여 주지 않도록 기억한 주소를 지웁니다. */
+export function forgetItemDetailImage(itemId: number) {
+  previewUrls.delete(itemId)
+  pendingImages.delete(itemId)
+}
+
 /** 쿼리 문자열(서명 값)을 제외한 경로가 같으면 같은 이미지로 봅니다. */
 export function isSameImagePath(first: string, second: string) {
   const toPath = (url: string) => {

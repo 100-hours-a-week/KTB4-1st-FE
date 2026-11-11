@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest'
 import {
+  forgetItemDetailImage,
   getItemDetailImage,
   isSameImagePath,
   startItemDetailImage,
@@ -47,6 +48,19 @@ it('최근 20개 물품까지만 기억한다', () => {
   expect(getItemDetailImage(200)).toBeNull()
   expect(getItemDetailImage(201)).toBe('/detail-201.webp')
   expect(getItemDetailImage(220)).toBe('/detail-220.webp')
+})
+
+it('수정·삭제 후에는 기억한 주소를 지운다', () => {
+  vi.spyOn(HTMLImageElement.prototype, 'src', 'set').mockImplementation(
+    () => {},
+  )
+  startItemDetailImage(301, '/detail-301.webp')
+  startItemDetailImage(302, '/detail-302.webp')
+
+  forgetItemDetailImage(301)
+
+  expect(getItemDetailImage(301)).toBeNull()
+  expect(getItemDetailImage(302)).toBe('/detail-302.webp')
 })
 
 it('서명 값만 다른 주소는 같은 이미지로, 경로가 다르면 다른 이미지로 본다', () => {

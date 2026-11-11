@@ -41,6 +41,41 @@ export function findCachedListThumbnail(
   return null
 }
 
+/**
+ * 물품을 수정한 뒤 목록 캐시에 남은 예전 사진 주소를 지웁니다.
+ * 무효화만으로는 다시 받기 전까지 예전 값이 남아, 상세 화면이 예전 사진을 자리 표시로 보여 줄 수 있습니다.
+ */
+export function forgetCachedListThumbnail(
+  queryClient: QueryClient,
+  itemId: number,
+) {
+  queryClient.setQueriesData<InfiniteData<{ items?: ItemListItem[] }>>(
+    { queryKey: itemListKeys.all },
+    (data) =>
+      data?.pages
+        ? {
+            ...data,
+            pages: data.pages.map((page) =>
+              page?.items?.some((entry) => entry.itemId === itemId)
+                ? {
+                    ...page,
+                    items: page.items.map((entry) =>
+                      entry.itemId === itemId
+                        ? {
+                            ...entry,
+                            thumbnailImageUrl: null,
+                            detailThumbnailImageUrl: null,
+                          }
+                        : entry,
+                    ),
+                  }
+                : page,
+            ),
+          }
+        : data,
+  )
+}
+
 export function useItemList(
   groupId: number | null,
   router: { replace(href: string): void },
