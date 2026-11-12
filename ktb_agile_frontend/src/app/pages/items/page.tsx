@@ -16,6 +16,7 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import ItemAvailableFilterButton from '@/components/item/ItemAvailableFilterButton'
 import ItemSortDropdown from '@/components/item/ItemSortDropdown'
 import Loading from '@/components/common/Loading'
 import NotificationModal from '@/components/common/modal/NotificationModal'
@@ -90,6 +91,7 @@ export default function ItemList() {
   const [refreshError, setRefreshError] = useState(false)
   const [isGroupMenuOpen, setGroupMenuOpen] = useState(false)
   const [isSortMenuOpen, setSortMenuOpen] = useState(false)
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false)
   const [isNotificationModalOpen, setNotificationModalOpen] = useState(false)
   const [sort, setSort] = useState<ItemSort>(
     () => readLastItemListSession()?.sort ?? 'latest',
@@ -401,29 +403,35 @@ export default function ItemList() {
         </div>
       </header>
       <div ref={pullContentRef} className={styles.pullContent}>
-        <ItemSortDropdown
-          isOpen={isSortMenuOpen}
-          onOpenChange={setSortMenuOpen}
-          value={sort}
-          onChange={(nextSort) => {
-            if (nextSort === sort) return
-            clearItemListSession()
-            snapshotRef.current = null
-            restoringRef.current = true
-            // 무효화만 하면 누적된 모든 페이지가 재조회되므로 대상 캐시를 비웁니다.
-            queryClient.removeQueries({
-              queryKey: itemListKeys.list(
-                selectedGroupId,
-                queryKey[2],
-                nextSort,
-              ),
-              exact: true,
-            })
-            window.scrollTo({ top: 0, behavior: 'instant' })
-            setRefreshError(false)
-            setSort(nextSort)
-          }}
-        />
+        <div className={styles.listToolbar}>
+          <ItemAvailableFilterButton
+            pressed={showAvailableOnly}
+            onToggle={setShowAvailableOnly}
+          />
+          <ItemSortDropdown
+            isOpen={isSortMenuOpen}
+            onOpenChange={setSortMenuOpen}
+            value={sort}
+            onChange={(nextSort) => {
+              if (nextSort === sort) return
+              clearItemListSession()
+              snapshotRef.current = null
+              restoringRef.current = true
+              // 무효화만 하면 누적된 모든 페이지가 재조회되므로 대상 캐시를 비웁니다.
+              queryClient.removeQueries({
+                queryKey: itemListKeys.list(
+                  selectedGroupId,
+                  queryKey[2],
+                  nextSort,
+                ),
+                exact: true,
+              })
+              window.scrollTo({ top: 0, behavior: 'instant' })
+              setRefreshError(false)
+              setSort(nextSort)
+            }}
+          />
+        </div>
         {(pullProgress > 0 || isRefreshing) && (
           <div className={styles.pullIndicator}>
             <Loading progress={isRefreshing ? undefined : pullProgress} />

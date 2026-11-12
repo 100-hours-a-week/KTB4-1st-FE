@@ -1,0 +1,31 @@
+.button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 0;
+  color: var(--ui-muted, #637b83);
+  background: transparent;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.button svg {
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+}
+
+.button[aria-pressed='true'] {
+  color: var(--ui-ink, #3d5146);
+  font-weight: 600;
+}
+
+.button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
