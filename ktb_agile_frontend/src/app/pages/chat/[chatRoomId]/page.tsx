@@ -16,7 +16,6 @@ import ChatMessageBubble, {
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import RefineButton from '@/components/chat/RefineButton/RefineButton'
 import RefineResult from '@/components/chat/RefineButton/RefineResult'
-import EventApplyButton from '@/components/event/EventApplyButton'
 import { API_BASE_URL } from '@/config/api'
 import {
   getUserIdFromAccessToken,
@@ -597,22 +596,6 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           ) : (
             <p className={styles.state}>교환 요청 정보를 불러오는 중입니다.</p>
           )}
-
-          {exchangeStatus === CHAT_EXCHANGE_STATUS.COMPLETED &&
-            exchangeRequest && (
-              <EventApplyButton
-                chatRoomId={Number(chatRoomId)}
-                exchangeRequestId={exchangeRequest.exchangeRequestId}
-                isSeller={isSeller}
-                otherUser={otherUser}
-                requestedItemTitle={exchangeRequest.requestedItem.title}
-                offeredItemTitles={
-                  exchangeRequest.offeredItems
-                    .map((item) => item.title)
-                    .join(', ') || '제공 물품 없음'
-                }
-              />
-            )}
 
           {actionError && <p className={styles.error}>{actionError}</p>}
           {socketError && <p className={styles.error}>{socketError}</p>}
