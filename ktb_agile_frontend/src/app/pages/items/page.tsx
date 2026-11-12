@@ -108,6 +108,7 @@ export default function ItemList() {
     data,
     queryKey,
     isPending,
+    isPlaceholderData,
     isFetching,
     isFetchingNextPage,
     isFetchNextPageError,
@@ -456,7 +457,7 @@ export default function ItemList() {
             <Loading progress={isRefreshing ? undefined : pullProgress} />
           </div>
         )}
-        {isError && !data && (
+        {isError && (!data || isPlaceholderData) && (
           <button type="button" onClick={() => void refetch()}>
             목록 다시 불러오기
           </button>

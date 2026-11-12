@@ -740,3 +740,25 @@ it('필터 캐시가 없으면 필터만 복원하고 이전 스크롤 대신 �
   })
   expect(window.scrollY).toBe(0)
 })
+
+it('필터를 바꾸는 동안 로딩 문구 대신 이전 목록을 유지하다가 새 목록으로 한 번에 바꾼다', async () => {
+  const get = await showList(null)
+  let resolvePage!: (value: ReturnType<typeof page>) => void
+  get.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolvePage = resolve
+      }),
+  )
+  fireEvent.click(
+    screen.getByRole('button', { name: '거래 가능한 상품만 보기' }),
+  )
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(3))
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
+  expect(screen.getByText('물품 1')).toBeDefined()
+  expect(screen.getByText('물품 20')).toBeDefined()
+  await act(async () => resolvePage(page(makeItems(101, 2), null)))
+  await screen.findByText('물품 101')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
+})

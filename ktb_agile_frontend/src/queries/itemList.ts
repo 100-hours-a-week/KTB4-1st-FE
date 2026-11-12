@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import {
+  keepPreviousData,
   useInfiniteQuery,
   type InfiniteData,
   type QueryClient,
@@ -118,6 +119,8 @@ export function useItemList(
     },
     getNextPageParam: (lastPage) =>
       lastPage.hasNext && lastPage.nextCursor ? lastPage.nextCursor : undefined,
+    // 정렬·필터를 바꿔 키가 달라져도 새 목록이 올 때까지 이전 목록을 그대로 보여 줍니다.
+    placeholderData: keepPreviousData,
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
     refetchOnMount: 'always',
