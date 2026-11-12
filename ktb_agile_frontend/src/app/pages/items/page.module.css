@@ -26,8 +26,8 @@
 .listToolbar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 8px;
   margin-bottom: 8px;
 }
 
