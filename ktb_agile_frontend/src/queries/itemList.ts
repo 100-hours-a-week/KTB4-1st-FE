@@ -1,11 +1,12 @@
 import { useMemo } from 'react'
 import {
+  keepPreviousData,
   useInfiniteQuery,
   type InfiniteData,
   type QueryClient,
 } from '@tanstack/react-query'
 import { fetchItems } from '@/api/items'
-import type { ItemListItem, ItemSort } from '@/types/item'
+import type { ItemListItem, ItemSort, ItemState } from '@/types/item'
 import {
   getAccessTokenOrRedirect,
   getUserIdFromAccessToken,
@@ -14,11 +15,19 @@ import {
 export const itemListKeys = {
   all: ['items'] as const,
   group: (groupId: number | null) => ['items', groupId] as const,
+  /**
+   * 거래 상태 필터가 없는 목록은 기존 키를 그대로 쓰고,
+   * 필터가 있으면 상태를 덧붙여 필터별로 따로 캐시합니다.
+   */
   list: (
     groupId: number | null,
     userId: number | string | null,
     sort: ItemSort,
-  ) => ['items', groupId, userId, sort] as const,
+    itemState: ItemState | null = null,
+  ) =>
+    itemState
+      ? (['items', groupId, userId, sort, itemState] as const)
+      : (['items', groupId, userId, sort] as const),
 }
 
 /**
@@ -80,6 +89,7 @@ export function useItemList(
   groupId: number | null,
   router: { replace(href: string): void },
   sort: ItemSort = 'latest',
+  itemState: ItemState | null = null,
 ) {
   const token =
     typeof window === 'undefined'
@@ -87,8 +97,8 @@ export function useItemList(
       : window.sessionStorage.getItem('accessToken')
   const userId = token ? (getUserIdFromAccessToken(token) ?? token) : null
   const queryKey = useMemo(
-    () => itemListKeys.list(groupId, userId, sort),
-    [groupId, userId, sort],
+    () => itemListKeys.list(groupId, userId, sort, itemState),
+    [groupId, userId, sort, itemState],
   )
   const query = useInfiniteQuery({
     queryKey,
@@ -101,6 +111,7 @@ export function useItemList(
       return fetchItems({
         groupId,
         sort,
+        itemState,
         cursor: pageParam,
         accessToken,
         signal,
@@ -108,6 +119,8 @@ export function useItemList(
     },
     getNextPageParam: (lastPage) =>
       lastPage.hasNext && lastPage.nextCursor ? lastPage.nextCursor : undefined,
+    // 정렬·필터를 바꿔 키가 달라져도 새 목록이 올 때까지 이전 목록을 그대로 보여 줍니다.
+    placeholderData: keepPreviousData,
     staleTime: 0,
     gcTime: 30 * 60 * 1000,
     refetchOnMount: 'always',
