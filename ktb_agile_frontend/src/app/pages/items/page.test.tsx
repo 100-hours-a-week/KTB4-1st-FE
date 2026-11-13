@@ -609,3 +609,156 @@ it('정렬 정보가 없는 기존 위치는 최신순으로 복원한다', asyn
     behavior: 'instant',
   })
 })
+
+it('거래 가능한 상품만 보기를 누르면 itemState=AVAILABLE로 첫 페이지부터 다시 조회하고 다시 누르면 해제한다', async () => {
+  const get = await showList(null)
+  const filter = screen.getByRole('button', { name: '거래 가능한 상품만 보기' })
+  expect(filter.getAttribute('aria-pressed')).toBe('false')
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'available-cursor'))
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 800 })
+  fireEvent.scroll(window)
+  fireEvent.click(filter)
+  await screen.findByText('물품 101')
+  expect(filter.getAttribute('aria-pressed')).toBe('true')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(window.scrollY).toBe(0)
+  const [url, options] = get.mock.calls[2]
+  expect(String(url)).toMatch(/\/groups\/1\/items$/)
+  expect(options?.params).toEqual({ itemState: 'AVAILABLE', size: 20 })
+  get.mockResolvedValueOnce(page(makeItems(104, 2), null))
+  await waitFor(() => expect(observers.length).toBeGreaterThan(0))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 105')
+  expect(get.mock.calls[3][1]?.params).toEqual({
+    itemState: 'AVAILABLE',
+    size: 20,
+    cursor: 'available-cursor',
+  })
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'latest', 'AVAILABLE']),
+  ).toBeDefined()
+  expect(
+    client.getQueryData(['items', 1, 'test-token', 'latest']),
+  ).toBeDefined()
+
+  get.mockResolvedValueOnce(page(makeItems(201, 3), null))
+  fireEvent.click(filter)
+  await screen.findByText('물품 201')
+  expect(filter.getAttribute('aria-pressed')).toBe('false')
+  expect(screen.queryByText('물품 101')).toBeNull()
+  expect(get.mock.calls[4][1]?.params).toEqual({ size: 20 })
+})
+
+it('필터를 켠 채 인기순으로 바꾸면 추천 API에도 itemState를 함께 보낸다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), null))
+  fireEvent.click(
+    screen.getByRole('button', { name: '거래 가능한 상품만 보기' }),
+  )
+  await screen.findByText('물품 101')
+  get.mockResolvedValueOnce(page(makeItems(201, 3), null))
+  fireEvent.click(screen.getByRole('button', { name: '정렬 방법: 최신순' }))
+  fireEvent.click(screen.getByRole('button', { name: '인기순' }))
+  await screen.findByText('물품 201')
+  expect(String(get.mock.calls[3][0])).toMatch(/\/items\/recommendations$/)
+  expect(get.mock.calls[3][1]?.params).toEqual({
+    groupId: 1,
+    itemState: 'AVAILABLE',
+    size: 20,
+  })
+  expect(
+    screen
+      .getByRole('button', { name: '거래 가능한 상품만 보기' })
+      .getAttribute('aria-pressed'),
+  ).toBe('true')
+})
+
+it('필터를 켠 상세에서 돌아오면 필터와 누적 목록, 스크롤을 함께 복원한다', async () => {
+  const get = await showList(null)
+  get.mockResolvedValueOnce(page(makeItems(101, 3), 'available-next'))
+  fireEvent.click(
+    screen.getByRole('button', { name: '거래 가능한 상품만 보기' }),
+  )
+  await screen.findByText('물품 101')
+  get.mockResolvedValueOnce(page(makeItems(104, 3), null))
+  await waitFor(() => expect(observers.length).toBeGreaterThan(0))
+  await act(async () => intersect(observers.length - 1))
+  await screen.findByText('물품 106')
+  Object.defineProperty(window, 'scrollY', { configurable: true, value: 700 })
+  fireEvent.scroll(window)
+  fireEvent.click(screen.getByText('물품 104'))
+  expect(readItemListSession(1, 'latest', 'AVAILABLE')).toEqual({
+    groupId: 1,
+    sort: 'latest',
+    itemState: 'AVAILABLE',
+    scrollY: 700,
+  })
+  expect(readItemListSession(1, 'latest')).toBeNull()
+  cleanup()
+  vi.mocked(window.scrollTo).mockClear()
+  get
+    .mockClear()
+    .mockImplementation((url) =>
+      url === '/bff/me/groups'
+        ? Promise.resolve(groups())
+        : new Promise(() => {}),
+    )
+  render(<ItemList />)
+  expect(
+    screen
+      .getByRole('button', { name: '거래 가능한 상품만 보기' })
+      .getAttribute('aria-pressed'),
+  ).toBe('true')
+  expect(screen.getByText('물품 106')).toBeDefined()
+  expect(window.scrollTo).toHaveBeenCalledWith({
+    top: 700,
+    behavior: 'instant',
+  })
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(2))
+  expect(get.mock.calls[0][1]?.params).toEqual({
+    itemState: 'AVAILABLE',
+    size: 20,
+  })
+})
+
+it('필터 캐시가 없으면 필터만 복원하고 이전 스크롤 대신 첫 페이지를 표시한다', async () => {
+  saveItemListSession({
+    groupId: 1,
+    sort: 'latest',
+    itemState: 'AVAILABLE',
+    scrollY: 1200,
+  })
+  const get = await showList(null)
+  expect(
+    screen
+      .getByRole('button', { name: '거래 가능한 상품만 보기' })
+      .getAttribute('aria-pressed'),
+  ).toBe('true')
+  expect(get.mock.calls[1][1]?.params).toEqual({
+    itemState: 'AVAILABLE',
+    size: 20,
+  })
+  expect(window.scrollY).toBe(0)
+})
+
+it('필터를 바꾸는 동안 로딩 문구 대신 이전 목록을 유지하다가 새 목록으로 한 번에 바꾼다', async () => {
+  const get = await showList(null)
+  let resolvePage!: (value: ReturnType<typeof page>) => void
+  get.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolvePage = resolve
+      }),
+  )
+  fireEvent.click(
+    screen.getByRole('button', { name: '거래 가능한 상품만 보기' }),
+  )
+  await waitFor(() => expect(get).toHaveBeenCalledTimes(3))
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
+  expect(screen.getByText('물품 1')).toBeDefined()
+  expect(screen.getByText('물품 20')).toBeDefined()
+  await act(async () => resolvePage(page(makeItems(101, 2), null)))
+  await screen.findByText('물품 101')
+  expect(screen.queryByText('물품 1')).toBeNull()
+  expect(screen.queryByText('로딩 중 ...')).toBeNull()
+})

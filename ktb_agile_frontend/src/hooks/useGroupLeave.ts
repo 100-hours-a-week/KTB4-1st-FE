@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { joinedGroupKeys } from '@/queries/joinedGroups'
 import { API_BASE_URL } from '@/config/api'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import type { GroupCardData } from '@/types/group'
@@ -14,6 +16,7 @@ type UseGroupLeaveOptions = {
 
 export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [leaveTarget, setLeaveTarget] = useState<GroupCardData | null>(null)
   const [leaveModalStep, setLeaveModalStep] = useState<1 | 2 | null>(null)
   const [isLeaving, setIsLeaving] = useState(false)
@@ -56,6 +59,7 @@ export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
           },
         },
       )
+      void queryClient.invalidateQueries({ queryKey: joinedGroupKeys.all })
       setLeaveModalStep(null)
       setLeaveTarget(null)
     } catch (error) {

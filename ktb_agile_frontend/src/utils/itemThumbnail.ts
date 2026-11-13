@@ -2,11 +2,14 @@ import axios from 'axios'
 import { createThumbnail, type ThumbnailOptions } from './thumbnail'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
-import type { SelectedImage } from '@/types/item'
+import type { ItemDetailThumbnailInput, SelectedImage } from '@/types/item'
 
 // 목록의 112px 이미지에 2배 밀도를 확보하고 원본 비율을 유지합니다.
 export const ITEM_THUMBNAIL_MAX_SIZE = 224
 export const ITEM_DETAIL_THUMBNAIL_MAX_SIZE = 1280
+// 이미지 최적화를 위해 용도별로 WebP 압축 품질을 나눕니다.
+export const ITEM_THUMBNAIL_QUALITY = 0.5
+export const ITEM_DETAIL_THUMBNAIL_QUALITY = 0.6
 
 export async function createItemThumbnail(
   source: Blob,
@@ -14,7 +17,7 @@ export async function createItemThumbnail(
 ): Promise<File> {
   return createThumbnail(source, {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
-    quality: 0.8,
+    quality: ITEM_THUMBNAIL_QUALITY,
     fileName: 'item-thumbnail.webp',
     background: '#fff',
     ...options,
@@ -28,6 +31,7 @@ export async function uploadItemThumbnail(
 ): Promise<string> {
   return uploadThumbnail(image, setImages, accessToken, 'thumbnailObjectKey', {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
+    quality: ITEM_THUMBNAIL_QUALITY,
     fileName: 'item-thumbnail.webp',
   })
 }
@@ -44,9 +48,33 @@ export async function uploadItemDetailThumbnail(
     'detailThumbnailObjectKey',
     {
       maxSize: ITEM_DETAIL_THUMBNAIL_MAX_SIZE,
+      quality: ITEM_DETAIL_THUMBNAIL_QUALITY,
       fileName: 'item-detail-thumbnail.webp',
     },
   )
+}
+
+// 원본 업로드 결과는 현재 렌더의 images에 아직 반영되지 않을 수 있습니다.
+// 같은 순서로 받은 objectKeys를 사용해 사진과 상세용 썸네일을 연결합니다.
+export async function uploadItemDetailThumbnails(
+  images: SelectedImage[],
+  objectKeys: string[],
+  setImages: Dispatch<SetStateAction<SelectedImage[]>>,
+  accessToken: string,
+): Promise<ItemDetailThumbnailInput[]> {
+  const imageDetailThumbnails: ItemDetailThumbnailInput[] = []
+  for (const [index, image] of images.entries()) {
+    const detailThumbnailObjectKey = await uploadItemDetailThumbnail(
+      image,
+      setImages,
+      accessToken,
+    )
+    imageDetailThumbnails.push({
+      objectKey: objectKeys[index],
+      detailThumbnailObjectKey,
+    })
+  }
+  return imageDetailThumbnails
 }
 
 async function uploadThumbnail(

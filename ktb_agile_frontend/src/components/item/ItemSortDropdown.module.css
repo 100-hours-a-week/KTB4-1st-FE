@@ -1,7 +1,5 @@
 .dropdown {
   position: relative;
-  align-self: flex-end;
-  margin-bottom: 8px;
 }
 
 .trigger,

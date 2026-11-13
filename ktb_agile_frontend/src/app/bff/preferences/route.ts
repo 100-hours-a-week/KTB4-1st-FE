@@ -49,12 +49,20 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  return savePreferences(request, 'POST')
+}
+
+export async function PUT(request: Request) {
+  return savePreferences(request, 'PUT')
+}
+
+async function savePreferences(request: Request, method: 'POST' | 'PUT') {
   const authorization = request.headers.get('Authorization')
   if (!authorization?.startsWith('Bearer ')) return unauthorized()
 
   try {
     const response = await fetch(`${BACKEND_URL}/users/preferences`, {
-      method: 'POST',
+      method,
       headers: {
         Authorization: authorization,
         Accept: 'application/json',

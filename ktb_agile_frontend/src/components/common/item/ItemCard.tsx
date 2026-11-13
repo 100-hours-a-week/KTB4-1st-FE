@@ -5,6 +5,7 @@ import { formatLastTime } from '@/utils/date'
 import styles from './ItemCard.module.css'
 import Link from 'next/link'
 import LikeButton from '@/components/item/like/LikeButton'
+import { startItemDetailImage } from '@/utils/itemDetailPreview'
 
 type ItemCardProps = {
   item: ItemListItem
@@ -15,7 +16,14 @@ function ItemCard({ item }: ItemCardProps) {
 
   return (
     <article className={styles.card}>
-      <Link className={styles.link} href={`/pages/items/${item.itemId}`}>
+      <Link
+        className={styles.link}
+        href={`/pages/items/${item.itemId}`}
+        // 페이지 이동과 동시에 상세 화면 첫 사진을 받기 시작합니다.
+        onClick={() =>
+          startItemDetailImage(item.itemId, item.detailThumbnailImageUrl)
+        }
+      >
         <div className={styles.thumbnail}>
           {item.thumbnailImageUrl && (
             // 서버 이미지 URL의 허용 도메인이 고정되지 않아 일반 img를 사용합니다.

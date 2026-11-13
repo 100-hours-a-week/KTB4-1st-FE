@@ -15,6 +15,8 @@ type CursorPaginationOptions<T> = {
   ) => Promise<CursorPage<T>>
   getKey: (item: T) => string | number
   filter?: (item: T) => boolean
+  /** 지정하면 정렬 순서가 페이지마다 바뀌지 않도록 모든 페이지를 먼저 불러옵니다. */
+  sort?: (a: T, b: T) => number
   pageSize?: number
   cursorErrorMessage?: string
 }
@@ -22,13 +24,14 @@ type CursorPaginationOptions<T> = {
 const acceptAll = () => true
 
 /** 요청 크기와 관계없이 pageSize개씩 표시하고 마지막 페이지에서 미리 조회합니다.
- * fetchPage, getKey, filter는 모듈 함수 또는 useCallback으로 참조를 유지해주세요.
+ * fetchPage, getKey, filter, sort는 모듈 함수 또는 useCallback으로 참조를 유지해주세요.
  * 조회 조건이 바뀌면 사용하는 컴포넌트의 key를 바꿔 캐시와 페이지를 초기화합니다.
  */
 export function useCursorPagination<T>({
   fetchPage,
   getKey,
   filter = acceptAll,
+  sort,
   pageSize = 5,
   cursorErrorMessage = '다음 페이지를 불러오지 못했습니다.',
 }: CursorPaginationOptions<T>) {
@@ -58,7 +61,8 @@ export function useCursorPagination<T>({
         while (
           !cache.current.initialized ||
           (cache.current.hasNext &&
-            cache.current.items.filter(filter).length <= requiredCount)
+            (sort !== undefined ||
+              cache.current.items.filter(filter).length <= requiredCount))
         ) {
           const page = await fetchPage(
             cache.current.nextCursor,
@@ -102,13 +106,16 @@ export function useCursorPagination<T>({
     fetchPage,
     getKey,
     filter,
+    sort,
     pageSize,
     cursorErrorMessage,
     pageIndex,
     retryCount,
   ])
 
-  const filteredItems = items.filter(filter)
+  const filteredItems = sort
+    ? items.filter(filter).toSorted(sort)
+    : items.filter(filter)
   const pageCount = Math.max(1, Math.ceil(filteredItems.length / pageSize))
   const canGoPrevious = pageIndex > 0
   const canGoNext = pageIndex + 1 < pageCount

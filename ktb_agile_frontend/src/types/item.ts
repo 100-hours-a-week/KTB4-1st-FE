@@ -38,6 +38,8 @@ export type ItemListItem = {
   }
   itemState: ItemState
   thumbnailImageUrl: string | null
+  /** 상세 화면 첫 사진의 상세용 썸네일 주소. 상세 썸네일이 없으면 원본 주소입니다. */
+  detailThumbnailImageUrl?: string | null
   likeCount: number
   viewCount: number
   exchangeRequestCount: number
@@ -55,6 +57,14 @@ export type ItemListResponse = {
 }
 
 export type MyItemListItem = Omit<ItemListItem, 'owner' | 'viewCount'> & {
+  groups: { groupId: number; groupName: string }[]
+}
+
+/** 교환 요청에 내 물품으로 내놓을 수 있는 물품 정보 */
+export type OfferableItem = Pick<
+  ItemListItem,
+  'itemId' | 'title' | 'thumbnailImageUrl' | 'quantity' | 'itemState'
+> & {
   groups: { groupId: number; groupName: string }[]
 }
 

@@ -5,6 +5,9 @@ import type { Dispatch, SetStateAction } from 'react'
 import type { SelectedImage } from '@/types/item'
 import { convertImageToWebp } from './imageWebp'
 
+// 원본은 화질을 최대한 유지하면서 WebP로 용량을 줄입니다.
+export const ITEM_ORIGINAL_IMAGE_QUALITY = 0.9
+
 type PresignedUpload = {
   uploadUrl: string
   objectKey: string
@@ -32,7 +35,9 @@ export async function uploadImagesToS3(
 
   // 업로드 직전에만 변환하고, 실패 후 재시도에서도 변환 결과를 재사용합니다.
   for (const image of pendingImages) {
-    const webpFile = image.webpFile ?? (await convertImageToWebp(image.file!))
+    const webpFile = image.webpFile ?? (await convertImageToWebp(image.file!, {
+        quality: ITEM_ORIGINAL_IMAGE_QUALITY,
+      }))
     uploadFiles.set(image.id, webpFile)
     if (!image.webpFile) {
       setImages((currentImages) =>

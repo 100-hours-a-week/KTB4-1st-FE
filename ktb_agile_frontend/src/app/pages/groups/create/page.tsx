@@ -9,6 +9,8 @@ import Navbar from '@/components/common/navbar/Navbar'
 import AddressModal from '@/components/groups/address/AddressModal'
 import styles from './creategroup.module.css'
 import axios from 'axios'
+import { useQueryClient } from '@tanstack/react-query'
+import { joinedGroupKeys } from '@/queries/joinedGroups'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import ModalGroupCreate from '@/components/common/modal/GroupCreate'
@@ -18,6 +20,7 @@ const GROUP_NAME_MAX_LENGTH = 30
 const GROUP_DESCRIPTION_MAX_LENGTH = 300
 export default function CreateGroup() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [isSheetMounted, setIsSheetMounted] = useState(false)
   const [groupAddressInfo, setGroupAddressInfo] = useState<GroupAddressResult | null>(null)
   const [groupName, setGroupName] = useState('')
@@ -71,6 +74,7 @@ export default function CreateGroup() {
         },
       )
       
+      void queryClient.invalidateQueries({ queryKey: joinedGroupKeys.all })
       router.push('/pages/groups')
     }catch(error:unknown){
       console.error(error)

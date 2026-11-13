@@ -9,6 +9,7 @@ const myPageLinks = [
   { title: '내가 올린 상품 보기', href: '/pages/my/myItem' },
   { title: '교환한 물품 내역 보기', href: '/pages/my/exchangeItems' },
   { title: '관심 있어 한 물품 보기', href: '/pages/my/likedItem' },
+  { title: '거래 취향 수정하기', href: '/pages/favor' },
 ] as const
 
 export default function MyPage() {
@@ -18,7 +19,10 @@ export default function MyPage() {
         <AccountCard />
         <section className={styles.content}>
           <div className={styles.intro}>
-            <HalloweenDecoration kind="pumpkin" className={styles.introPumpkin} />
+            <HalloweenDecoration
+              kind="pumpkin"
+              className={styles.introPumpkin}
+            />
             <h1 id="my-page-heading">나의 활동</h1>
             <p>내 활동을 한곳에서 둘러보세요.</p>
           </div>

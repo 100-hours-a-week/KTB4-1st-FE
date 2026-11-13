@@ -3,13 +3,18 @@
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
-import { itemListKeys } from '@/queries/itemList'
+import { forgetCachedListThumbnail, itemListKeys } from '@/queries/itemList'
+import { forgetItemDetailImage } from '@/utils/itemDetailPreview'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import ModalDefault from '@/components/common/modal/Default'
 import ItemRegisterForm from '@/components/item/ItemRegisterForm'
 import type { ItemRegisterSubmitContext } from '@/components/item/ItemRegisterForm'
-import { uploadItemThumbnail } from '@/utils/itemThumbnail'
+import {
+  uploadItemDetailThumbnails,
+  uploadItemThumbnail,
+} from '@/utils/itemThumbnail'
+import { uploadImagesToS3 } from '@/utils/itemImageUpload'
 import { API_BASE_URL } from '@/config/api'
 import type {
   ItemDetailResponse,
@@ -103,10 +108,24 @@ export default function ItemEditPage() {
 
     setIsSubmitting(true)
     try {
-      const imageIds = context.images.map((image) => image.imageId)
-      if (imageIds.some((imageId) => imageId === undefined)) {
-        throw new Error(ITEM_ERRORS.NEW_IMAGE_ON_EDIT_UNSUPPORTED)
+      // 기존 사진은 imageIds로, 새로 추가한 사진은 업로드 후 objectKeys로 보냅니다.
+      // 백엔드는 새 사진을 기존 사진 뒤에 붙이는데, 화면도 새 사진을 항상 뒤에 추가하므로 순서가 같습니다.
+      const imageIds: number[] = []
+      const newImages: SelectedImage[] = []
+      for (const image of context.images) {
+        if (image.imageId === undefined) newImages.push(image)
+        else imageIds.push(image.imageId)
       }
+      const objectKeys =
+        newImages.length > 0
+          ? await uploadImagesToS3(newImages, context.setImages, accessToken)
+          : []
+      const imageDetailThumbnails = await uploadItemDetailThumbnails(
+        newImages,
+        objectKeys,
+        context.setImages,
+        accessToken,
+      )
       const firstImage = context.images[0]
       const thumbnailObjectKey =
         firstImage && firstImage.id !== initialImages[0]?.id
@@ -127,6 +146,8 @@ export default function ItemEditPage() {
           valueGapToleranceScore: Number((values.condition / 100).toFixed(2)),
           groupIds: values.groupIds,
           imageIds,
+          objectKeys,
+          imageDetailThumbnails,
           ...(thumbnailObjectKey ? { thumbnailObjectKey } : {}),
         },
         {
@@ -137,11 +158,17 @@ export default function ItemEditPage() {
           },
         },
       )
+      // 상세 화면이 응답 전에 수정 전 사진을 보여 주지 않도록 기억한 사진 주소를 지웁니다.
+      forgetItemDetailImage(Number(itemId))
+      forgetCachedListThumbnail(queryClient, Number(itemId))
       void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
       router.replace(`/pages/items/${itemId}`)
     } catch (error) {
+      // 서버·업로드 요청 오류는 axios 영문 메시지 대신 공통 안내를 보여 줍니다.
       setModalMessage(
-        error instanceof Error ? error.message : ITEM_ERRORS.UPDATE_FAILED,
+        error instanceof Error && !axios.isAxiosError(error)
+          ? error.message
+          : ITEM_ERRORS.UPDATE_FAILED,
       )
     } finally {
       setIsSubmitting(false)
@@ -181,7 +208,13 @@ export default function ItemEditPage() {
       {modalMessage && (
         <ModalDefault
           message={modalMessage}
-          onConfirm={() => setModalMessage(null)}
+          onConfirm={() => {
+            if (!initialValues) {
+              router.replace('/pages/items')
+              return
+            }
+            setModalMessage(null)
+          }}
         />
       )}
     </section>

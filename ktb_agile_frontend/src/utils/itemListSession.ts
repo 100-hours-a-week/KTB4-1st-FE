@@ -1,8 +1,10 @@
-import type { ItemSort } from '@/types/item'
+import type { ItemSort, ItemState } from '@/types/item'
 
 export type ItemListSnapshot = {
   groupId: number
   sort: ItemSort
+  /** 거래 상태 필터. 없으면 모든 상태의 목록 위치입니다. */
+  itemState?: ItemState
   scrollY: number
 }
 const SNAPSHOT_KEY = 'item-list:v3:position'
@@ -25,9 +27,14 @@ export function removeLegacySnapshots() {
 export function readItemListSession(
   groupId: number,
   sort: ItemSort = 'latest',
+  itemState: ItemState | null = null,
 ): ItemListSnapshot | null {
   const saved = readLastItemListSession()
-  return saved?.groupId === groupId && saved.sort === sort ? saved : null
+  return saved?.groupId === groupId &&
+    saved.sort === sort &&
+    (saved.itemState ?? null) === itemState
+    ? saved
+    : null
 }
 export function readLastItemListSession(): ItemListSnapshot | null {
   try {
@@ -41,6 +48,9 @@ export function readLastItemListSession(): ItemListSnapshot | null {
       (value.sort === undefined ||
         value.sort === 'latest' ||
         value.sort === 'recommended') &&
+      (value.itemState === undefined ||
+        value.itemState === 'AVAILABLE' ||
+        value.itemState === 'UNAVAILABLE') &&
       Number.isFinite(value.scrollY) &&
       value.scrollY >= 0
     ) {
@@ -48,6 +58,7 @@ export function readLastItemListSession(): ItemListSnapshot | null {
       return {
         groupId: value.groupId,
         sort: value.sort ?? 'latest',
+        ...(value.itemState ? { itemState: value.itemState } : {}),
         scrollY: value.scrollY,
       }
     }
@@ -59,12 +70,18 @@ export function readLastItemListSession(): ItemListSnapshot | null {
 export function saveItemListSession({
   groupId,
   sort,
+  itemState,
   scrollY,
 }: ItemListSnapshot) {
   try {
     window.sessionStorage.setItem(
       SNAPSHOT_KEY,
-      JSON.stringify({ groupId, sort, scrollY }),
+      JSON.stringify({
+        groupId,
+        sort,
+        ...(itemState ? { itemState } : {}),
+        scrollY,
+      }),
     )
   } catch {
     /* 페이지 이동은 계속합니다. */

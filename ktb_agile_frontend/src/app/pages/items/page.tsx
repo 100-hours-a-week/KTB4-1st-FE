@@ -16,13 +16,14 @@ import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
 import ItemCardList from '@/components/item/ItemCardList'
+import ItemAvailableFilterButton from '@/components/item/ItemAvailableFilterButton'
 import ItemSortDropdown from '@/components/item/ItemSortDropdown'
 import Loading from '@/components/common/Loading'
 import NotificationModal from '@/components/common/modal/NotificationModal'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
-import type { ItemSort } from '@/types/item'
+import type { ItemSort, ItemState } from '@/types/item'
 import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
@@ -94,6 +95,10 @@ export default function ItemList() {
   const [sort, setSort] = useState<ItemSort>(
     () => readLastItemListSession()?.sort ?? 'latest',
   )
+  // 거래 가능한 물품만 보기 필터. 정렬처럼 돌아왔을 때 복원됩니다.
+  const [itemState, setItemState] = useState<ItemState | null>(
+    () => readLastItemListSession()?.itemState ?? null,
+  )
 
   const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -103,6 +108,7 @@ export default function ItemList() {
     data,
     queryKey,
     isPending,
+    isPlaceholderData,
     isFetching,
     isFetchingNextPage,
     isFetchNextPageError,
@@ -110,7 +116,7 @@ export default function ItemList() {
     hasNextPage,
     fetchNextPage,
     refetch,
-  } = useItemList(selectedGroupId, router, sort)
+  } = useItemList(selectedGroupId, router, sort, itemState)
   const items = useMemo(
     () => data?.pages.flatMap((page) => page.items) ?? [],
     [data],
@@ -155,21 +161,28 @@ export default function ItemList() {
     const saved = readLastItemListSession()
     const cached = queryClient.getQueryData(queryKey)
     const canRestore = Boolean(
-      cached && saved?.groupId === selectedGroupId && saved.sort === sort,
+      cached &&
+      saved?.groupId === selectedGroupId &&
+      saved.sort === sort &&
+      (saved.itemState ?? null) === itemState,
     )
     return {
       groupId: selectedGroupId,
       sort,
+      itemState,
       scrollY: canRestore && saved ? saved.scrollY : 0,
       discardSaved: Boolean(saved && !canRestore),
     }
-  }, [selectedGroupId, queryClient, queryKey, sort])
+  }, [selectedGroupId, queryClient, queryKey, sort, itemState])
   useLayoutEffect(() => {
     if (initialPosition.groupId === null) return
     if (initialPosition.discardSaved) clearItemListSession()
     snapshotRef.current = {
       groupId: initialPosition.groupId,
       sort: initialPosition.sort,
+      ...(initialPosition.itemState
+        ? { itemState: initialPosition.itemState }
+        : {}),
       scrollY: initialPosition.scrollY,
     }
     restoringRef.current = true
@@ -288,6 +301,27 @@ export default function ItemList() {
     }
   }, [selectedGroupId, router])
 
+  // 정렬이나 필터를 바꾸면 저장된 위치를 버리고 해당 목록의 첫 페이지부터 다시 조회합니다.
+  const changeList = (nextSort: ItemSort, nextItemState: ItemState | null) => {
+    clearItemListSession()
+    snapshotRef.current = null
+    restoringRef.current = true
+    // 무효화만 하면 누적된 모든 페이지가 재조회되므로 대상 캐시를 비웁니다.
+    queryClient.removeQueries({
+      queryKey: itemListKeys.list(
+        selectedGroupId,
+        queryKey[2],
+        nextSort,
+        nextItemState,
+      ),
+      exact: true,
+    })
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    setRefreshError(false)
+    setSort(nextSort)
+    setItemState(nextItemState)
+  }
+
   const loadMore = useCallback(() => {
     if (
       restoringRef.current ||
@@ -401,35 +435,29 @@ export default function ItemList() {
         </div>
       </header>
       <div ref={pullContentRef} className={styles.pullContent}>
-        <ItemSortDropdown
-          isOpen={isSortMenuOpen}
-          onOpenChange={setSortMenuOpen}
-          value={sort}
-          onChange={(nextSort) => {
-            if (nextSort === sort) return
-            clearItemListSession()
-            snapshotRef.current = null
-            restoringRef.current = true
-            // 무효화만 하면 누적된 모든 페이지가 재조회되므로 대상 캐시를 비웁니다.
-            queryClient.removeQueries({
-              queryKey: itemListKeys.list(
-                selectedGroupId,
-                queryKey[2],
-                nextSort,
-              ),
-              exact: true,
-            })
-            window.scrollTo({ top: 0, behavior: 'instant' })
-            setRefreshError(false)
-            setSort(nextSort)
-          }}
-        />
+        <div className={styles.listToolbar}>
+          <ItemAvailableFilterButton
+            pressed={itemState === 'AVAILABLE'}
+            onToggle={(pressed) =>
+              changeList(sort, pressed ? 'AVAILABLE' : null)
+            }
+          />
+          <ItemSortDropdown
+            isOpen={isSortMenuOpen}
+            onOpenChange={setSortMenuOpen}
+            value={sort}
+            onChange={(nextSort) => {
+              if (nextSort === sort) return
+              changeList(nextSort, itemState)
+            }}
+          />
+        </div>
         {(pullProgress > 0 || isRefreshing) && (
           <div className={styles.pullIndicator}>
             <Loading progress={isRefreshing ? undefined : pullProgress} />
           </div>
         )}
-        {isError && !data && (
+        {isError && (!data || isPlaceholderData) && (
           <button type="button" onClick={() => void refetch()}>
             목록 다시 불러오기
           </button>

@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   cleanup,
   fireEvent,
@@ -35,7 +36,9 @@ const verifiedResponse = {
 
 function openModal() {
   render(
-    <GroupJoinModal group={group} onJoined={onJoined} onCancel={onCancel} />,
+    <QueryClientProvider client={new QueryClient()}>
+      <GroupJoinModal group={group} onJoined={onJoined} onCancel={onCancel} />
+    </QueryClientProvider>,
   )
 }
 
