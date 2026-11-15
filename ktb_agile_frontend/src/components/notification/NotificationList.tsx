@@ -4,26 +4,18 @@ import axios from 'axios'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { fetchNotifications } from '@/api/notification'
-import {
-  getAccessTokenOrRedirect,
-  getUserIdFromAccessToken,
-} from '@/utils/auth'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 import { NOTIFICATION_ERRORS } from '@/constants/errors/notification'
 import type { NotificationPageResponse } from '@/types/notification'
 import NotificationContainer from './NotificationContainer'
 import styles from './NotificationList.module.css'
+import { getAccessToken, getCurrentUserId } from '@/utils/tokenStore'
 
 export default function NotificationList() {
   const router = useRouter()
-  const token =
-    typeof window === 'undefined'
-      ? null
-      : window.sessionStorage.getItem('accessToken')
+  const token = getAccessToken()
   const query = useInfiniteQuery({
-    queryKey: [
-      'notifications',
-      token ? (getUserIdFromAccessToken(token) ?? token) : null,
-    ],
+    queryKey: ['notifications', getCurrentUserId() ?? token],
     enabled: Boolean(token),
     initialPageParam: '',
     queryFn: async ({ pageParam, signal }) => {

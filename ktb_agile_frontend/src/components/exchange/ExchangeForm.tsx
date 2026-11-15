@@ -11,12 +11,13 @@ import type {
   ItemDetailResponse,
   OfferableItem,
 } from '@/types/item'
-import { getUserIdFromAccessToken, redirectToLogin } from '@/utils/auth'
+import { redirectToLogin } from '@/utils/auth'
 import { getItemStateLabel, isItemAvailable } from '@/utils/item'
 import ExchangeMyItemList from './ExchangeMyItemList'
 import QuantityControl from '../common/exchange/QuantityControl'
 import ItemImage from './ItemImage'
 import styles from './ExchangeForm.module.css'
+import { getAccessToken, getCurrentUserId } from '@/utils/tokenStore'
 
 function getErrorMessage(cause: unknown, fallback: string) {
   if (axios.isAxiosError<{ error?: { message?: string } }>(cause)) {
@@ -91,9 +92,9 @@ function ExchangeFormContent({
     const controller = new AbortController()
 
     async function loadTarget() {
-      const accessToken = sessionStorage.getItem('accessToken')
-      const userId = accessToken ? getUserIdFromAccessToken(accessToken) : null
-      if (!userId) {
+      const accessToken = getAccessToken()
+      const userId = getCurrentUserId()
+      if (!accessToken || !userId) {
         redirectToLogin(router)
         return
       }
@@ -172,8 +173,8 @@ function ExchangeFormContent({
   async function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!canRequest || !item || submitting.current) return
-    const accessToken = sessionStorage.getItem('accessToken')
-    if (!accessToken || !getUserIdFromAccessToken(accessToken)) {
+    const accessToken = getAccessToken()
+    if (!accessToken || !getCurrentUserId()) {
       redirectToLogin(router)
       return
     }

@@ -17,10 +17,7 @@ import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import RefineButton from '@/components/chat/RefineButton/RefineButton'
 import RefineResult from '@/components/chat/RefineButton/RefineResult'
 import { API_BASE_URL } from '@/config/api'
-import {
-  getUserIdFromAccessToken,
-  getAccessTokenOrRedirect,
-} from '@/utils/auth'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 import { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import { useMessageRefine } from '@/hooks/useMessageRefine'
 import type {
@@ -31,6 +28,7 @@ import type {
 } from '@/types/chatRoom'
 import type { ChatMessageDto, ChatMessageResponse } from '@/types/chatMessage'
 import styles from './page.module.css'
+import { getCurrentUserId } from '@/utils/tokenStore'
 
 const timeFormatter = new Intl.DateTimeFormat('ko-KR', {
   timeZone: 'Asia/Seoul',
@@ -238,12 +236,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         setIsClosedByEvent(true)
         setMessageInput('')
       }
-      const token = window.sessionStorage.getItem('accessToken')
-      const incomingMessage = toMessage(
-        incoming,
-        token ? getUserIdFromAccessToken(token) : null,
-        otherUser,
-      )
+      const incomingMessage = toMessage(incoming, getCurrentUserId(), otherUser)
       setMessages((current) => mergeMessages(current, [incomingMessage]))
       setSocketError(null)
     },
@@ -305,7 +298,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         if (controller.signal.aborted) return
         const page = response.data.data
         const history = page.messages.map((message) =>
-          toMessage(message, getUserIdFromAccessToken(token!), otherUser),
+          toMessage(message, getCurrentUserId(), otherUser),
         )
         setMessages((current) => mergeMessages(current, history))
         setIsHistoryLoaded(true)
@@ -354,7 +347,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
       }
       const page = response.data.data
       const older = page.messages.map((message) =>
-        toMessage(message, getUserIdFromAccessToken(token), otherUser),
+        toMessage(message, getCurrentUserId(), otherUser),
       )
       setMessages((current) => mergeMessages(current, older))
       setNextCursor(page.nextCursor)

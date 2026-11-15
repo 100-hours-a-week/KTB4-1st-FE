@@ -24,7 +24,6 @@ import { useElasticPull } from '@/hooks/useElasticPull'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys, useItemList } from '@/queries/itemList'
 import type { ItemSort, ItemState } from '@/types/item'
-import { getUserIdFromAccessToken } from '@/utils/auth'
 import { getCurrentGroupId, setCurrentGroupId } from '@/utils/currentGroup'
 import {
   clearItemListSession,
@@ -34,6 +33,7 @@ import {
   type ItemListSnapshot,
 } from '@/utils/itemListSession'
 import styles from './page.module.css'
+import { getAccessToken, getCurrentUserId } from '@/utils/tokenStore'
 
 type JoinedGroup = {
   groupId: number
@@ -47,14 +47,7 @@ type GroupListResponse = {
 }
 
 function getJoinedGroupCacheKey() {
-  const token =
-    typeof window === 'undefined'
-      ? null
-      : window.sessionStorage.getItem('accessToken')
-  return [
-    'joined-groups',
-    token ? (getUserIdFromAccessToken(token) ?? token) : null,
-  ] as const
+  return ['joined-groups', getCurrentUserId() ?? getAccessToken()] as const
 }
 
 function chooseGroupId(groups: JoinedGroup[]) {
