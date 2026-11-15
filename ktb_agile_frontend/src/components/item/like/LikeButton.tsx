@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys } from '@/queries/itemList'
 import ModalDefault from '@/components/common/modal/Default'
 import styles from './LikeButton.module.css'
+import { getAccessToken } from '@/utils/tokenStore'
 
 type LikeButtonProps = {
   itemId: number
@@ -45,7 +46,7 @@ export default function LikeButton({
   async function toggleLike() {
     if (isPending) return
 
-    const accessToken = window.sessionStorage.getItem('accessToken')
+    const accessToken = getAccessToken()
     if (!accessToken) {
       window.dispatchEvent(new Event('auth-expired'))
       return

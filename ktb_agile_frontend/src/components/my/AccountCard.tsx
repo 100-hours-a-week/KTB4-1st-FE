@@ -8,6 +8,7 @@ import ModalDefault from '@/components/common/modal/Default'
 import { setCurrentGroupId } from '@/utils/currentGroup'
 import styles from './AccountCard.module.css'
 import { redirectToLogin } from '@/utils/auth'
+import { clearAccessToken, getAccessToken } from '@/utils/tokenStore'
 
 export default function AccountCard() {
   const router = useRouter()
@@ -28,7 +29,7 @@ export default function AccountCard() {
 
     async function loadProfile() {
       try {
-        const accessToken = window.sessionStorage.getItem('accessToken')
+        const accessToken = getAccessToken()
         if (!accessToken) throw new Error('Access token is missing')
 
         const response = await axios.get('/bff/users/me', {
@@ -72,7 +73,7 @@ export default function AccountCard() {
   }, [profile, profileImageUrl, isImageNoticeVisible])
 
   function returnToLogin() {
-    window.sessionStorage.removeItem('accessToken')
+    clearAccessToken()
     setCurrentGroupId(0)
     redirectToLogin(router)
   }
@@ -83,7 +84,7 @@ export default function AccountCard() {
     setIsLogoutConfirmOpen(false)
     setIsLoggingOut(true)
     try {
-      const accessToken = window.sessionStorage.getItem('accessToken')
+      const accessToken = getAccessToken()
       if (!accessToken) throw new Error('재로그인이 필요합니니다.')
 
       const response = await axios.post('/bff/auth/logout', undefined, {
@@ -96,7 +97,7 @@ export default function AccountCard() {
 
       if (response.status !== 204) throw new Error('로그아웃에 실패했습니다.')
 
-      window.sessionStorage.removeItem('accessToken')
+      clearAccessToken()
       router.replace('/')
     } catch {
       setIsLogoutErrorOpen(true)

@@ -6,6 +6,7 @@ import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
 import axios from 'axios'
 import '@/config/api'
+import { getAccessToken } from '@/utils/tokenStore'
 
 export default function AddressModal({
   onClose,
@@ -74,7 +75,7 @@ export default function AddressModal({
   }
 
   async function getAddress(keyword: string): Promise<GroupAddressResponse> {
-    const accessToken = window.sessionStorage.getItem('accessToken')
+    const accessToken = getAccessToken()
     const response = await axios.get<GroupAddressResponse>(
       `/bff/group?query=${encodeURIComponent(keyword)}`,
       {

@@ -11,10 +11,7 @@ import LikeButton from '@/components/item/like/LikeButton'
 import ItemDetailImageContainer from '@/components/item/ItemDetailImageContainer'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemDetail, ItemDetailResponse } from '@/types/item'
-import {
-  getUserIdFromAccessToken,
-  getAccessTokenOrRedirect,
-} from '@/utils/auth'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
 import { getItemStateLabel } from '@/utils/item'
 import {
   forgetItemDetailImage,
@@ -22,6 +19,7 @@ import {
 } from '@/utils/itemDetailPreview'
 import { formatLastTime } from '@/utils/date'
 import styles from './page.module.css'
+import { getCurrentUserId } from '@/utils/tokenStore'
 
 export default function ItemDetailsPage() {
   const { itemId } = useParams<{ itemId: string }>()
@@ -65,9 +63,7 @@ export default function ItemDetailsPage() {
 
         if (isMounted) {
           setItem(itemDetails)
-          setIsOwner(
-            itemDetails.owner.userId === getUserIdFromAccessToken(accessToken),
-          )
+          setIsOwner(itemDetails.owner.userId === getCurrentUserId())
         }
       } catch (error) {
         if (!isMounted) return

@@ -4,6 +4,7 @@ import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import axios from 'axios'
+import { getAccessToken } from '@/utils/tokenStore'
 
 type ChatRoomSocketMessage = Pick<
   ChatMessageDto,
@@ -56,7 +57,7 @@ export function useChatRoomSocket({
   useEffect(() => {
     if (!enabled) return
 
-    const token = window.sessionStorage.getItem('accessToken')
+    const token = getAccessToken()
     const roomId = Number(chatRoomId)
     if (!token || !Number.isSafeInteger(roomId) || roomId < 1) return
 
@@ -68,7 +69,7 @@ export function useChatRoomSocket({
           await axios.get('/bff/me/groups', {
             headers: { Accept: 'application/json' },
           })
-          const latestToken = window.sessionStorage.getItem('accessToken')
+          const latestToken = getAccessToken()
           if (!latestToken) {
             await client.deactivate()
             return
