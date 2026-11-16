@@ -8,6 +8,27 @@ import { API_BASE_URL } from '@/config/api'
 import { useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
 
+const CONTACT_EMAIL = 'founder@bakkucca.com'
+
+const USAGE_STEPS = [
+  {
+    title: '그룹 참여하기',
+    description: '내 동네나 관심사가 맞는 그룹을 찾아 참여해요.',
+  },
+  {
+    title: '물건 등록하기',
+    description: '쓰지 않는 물건의 사진과 설명을 올려요.',
+  },
+  {
+    title: '교환 요청하기',
+    description: '그룹에서 마음에 드는 물건을 찾아 채팅으로 교환을 제안해요.',
+  },
+  {
+    title: '만나서 교환하기',
+    description: '약속을 잡고 만나 서로의 물건을 바꿔요.',
+  },
+]
+
 export default function Login() {
   const [modalMessage, setModalMessage] = useState<string | null>(null)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
@@ -71,6 +92,7 @@ export default function Login() {
             preload
           />
         </h1>
+        <p className={styles.tagline}>쓰지 않는 물건을, 필요한 물건으로</p>
         <div className={styles.loginArea}>
           <button
             className={styles.kakaoLoginButton}
@@ -92,6 +114,46 @@ export default function Login() {
             <span className={styles.loginLabel}>카카오 로그인</span>
           </button>
         </div>
+
+        <section
+          className={`${styles.introSection} ${styles.introDivided}`}
+          aria-labelledby="intro-title"
+        >
+          <h2 id="intro-title" className={styles.sectionTitle}>
+            바꾸까는 어떤 서비스인가요?
+          </h2>
+          <p className={styles.introText}>
+            바꾸까는 같은 지역이나 관심사로 모인 그룹에서 물건을 교환하는
+            서비스입니다.
+          </p>
+        </section>
+
+        <section className={styles.introSection} aria-labelledby="howto-title">
+          <h2 id="howto-title" className={styles.sectionTitle}>
+            이용 방법
+          </h2>
+          <ol className={styles.stepList}>
+            {USAGE_STEPS.map((step, index) => (
+              <li key={step.title} className={styles.stepItem}>
+                <span className={styles.stepNumber} aria-hidden="true">
+                  {index + 1}
+                </span>
+                <div>
+                  <h3 className={styles.stepTitle}>{step.title}</h3>
+                  <p className={styles.stepText}>{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <footer className={styles.footer}>
+          <p className={styles.footerLabel}>문의</p>
+          <a className={styles.footerLink} href={`mailto:${CONTACT_EMAIL}`}>
+            {CONTACT_EMAIL}
+          </a>
+          <p className={styles.copyright}>© 바꾸까</p>
+        </footer>
       </section>
 
       {modalMessage !== null && (
