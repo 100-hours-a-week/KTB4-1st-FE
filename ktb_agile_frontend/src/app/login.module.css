@@ -198,36 +198,22 @@
 }
 
 .repoList {
-  display: grid;
-  margin: 16px 0 0;
+  display: flex;
+  margin: 16px -12px 0;
   padding: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex-wrap: nowrap;
+  justify-content: center;
   gap: 8px;
   list-style: none;
-}
-
-.repoItem {
-  display: flex;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgb(var(--ui-accent-rgb) / 30%);
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.repoLabel {
-  color: var(--ui-ink);
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .repoLink {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--ui-ink);
-  font-size: 13px;
+  gap: 3px;
+  color: var(--ui-muted);
+  font-size: 12px;
+  white-space: nowrap;
   text-decoration: none;
 }
 
@@ -236,8 +222,8 @@
 }
 
 .githubLogo {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   fill: currentColor;
 }
 
