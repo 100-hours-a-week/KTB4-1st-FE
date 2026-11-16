@@ -197,6 +197,50 @@
   text-underline-offset: 2px;
 }
 
+.repoList {
+  display: grid;
+  margin: 16px 0 0;
+  padding: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+}
+
+.repoItem {
+  display: flex;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgb(var(--ui-accent-rgb) / 30%);
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.repoLabel {
+  color: var(--ui-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.repoLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ui-ink);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.repoLink:hover {
+  text-decoration: underline;
+}
+
+.githubLogo {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
 .copyright {
   margin: 12px 0 0;
 }
