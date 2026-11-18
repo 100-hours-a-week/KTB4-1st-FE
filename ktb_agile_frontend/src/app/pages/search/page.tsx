@@ -7,6 +7,8 @@ import { Suspense, useEffect, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
 import { setCurrentGroupId } from '@/utils/currentGroup'
 import ModalDefault from '@/components/common/modal/Default'
+import AiFeatureNoticeModal from '@/components/common/modal/AiFeatureNoticeModal'
+import { AI_FEATURES_ENABLED } from '@/constants/aiFeature'
 import Navbar from '@/components/common/navbar/Navbar'
 import ItemCard from '@/components/common/item/ItemCard'
 import ItemSearchBar from '@/components/search/ItemSearchBar'
@@ -90,6 +92,7 @@ function SearchPageContent() {
     string | null
   >(null)
   const [isDeletingAllHistories, setIsDeletingAllHistories] = useState(false)
+  const [isAiNoticeOpen, setIsAiNoticeOpen] = useState(false)
   const [deleteErrorMessage, setDeleteErrorMessage] = useState<string | null>(
     null,
   )
@@ -152,19 +155,22 @@ function SearchPageContent() {
       if (!token) return
 
       try {
-        const response = await axios.get<ItemListResponse>(`${API_BASE_URL}/items`, {
-          params: {
-            groupId: criteria.groupId,
-            keyword: criteria.keyword,
-            ...(criteria.itemState ? { itemState: criteria.itemState } : {}),
-            ...(cursor ? { cursor } : {}),
+        const response = await axios.get<ItemListResponse>(
+          `${API_BASE_URL}/items`,
+          {
+            params: {
+              groupId: criteria.groupId,
+              keyword: criteria.keyword,
+              ...(criteria.itemState ? { itemState: criteria.itemState } : {}),
+              ...(cursor ? { cursor } : {}),
+            },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-          signal: controller.signal,
-        })
+        )
         if (controller.signal.aborted) return
         const page = response.data.data
         setCurrentGroupId(criteria.groupId)
@@ -456,6 +462,11 @@ function SearchPageContent() {
       <Link
         href="/pages/search/ai-smart-search"
         className={styles.smartSearchLink}
+        onClick={(event) => {
+          if (AI_FEATURES_ENABLED) return
+          event.preventDefault()
+          setIsAiNoticeOpen(true)
+        }}
       >
         <span className={styles.sparkle}>✦</span>
         AI 스마트 검색
@@ -493,6 +504,9 @@ function SearchPageContent() {
           message={deleteErrorMessage}
           onConfirm={() => setDeleteErrorMessage(null)}
         />
+      )}
+      {isAiNoticeOpen && (
+        <AiFeatureNoticeModal onClose={() => setIsAiNoticeOpen(false)} />
       )}
       <Navbar />
     </section>

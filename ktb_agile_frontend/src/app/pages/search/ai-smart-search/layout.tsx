@@ -1,6 +1,11 @@
 import type { ReactNode } from 'react'
+import AiFeatureGuard from '@/components/common/AiFeatureGuard'
 import SmartSearchProvider from '@/components/smart-search/SmartSearchProvider'
 
 export default function Layout({ children }: { children: ReactNode }) {
-  return <SmartSearchProvider>{children}</SmartSearchProvider>
+  return (
+    <AiFeatureGuard>
+      <SmartSearchProvider>{children}</SmartSearchProvider>
+    </AiFeatureGuard>
+  )
 }
