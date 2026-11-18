@@ -16,6 +16,8 @@ import ChatMessageBubble, {
 import ChatRoomInfo from '@/components/chat/ChatRoomInfo/ChatRoomInfo'
 import RefineButton from '@/components/chat/RefineButton/RefineButton'
 import RefineResult from '@/components/chat/RefineButton/RefineResult'
+import AiFeatureNoticeModal from '@/components/common/modal/AiFeatureNoticeModal'
+import { AI_FEATURES_ENABLED } from '@/constants/aiFeature'
 import { API_BASE_URL } from '@/config/api'
 import {
   getUserIdFromAccessToken,
@@ -163,6 +165,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
   const [messageInput, setMessageInput] = useState('')
   const isComposingRef = useRef(false)
   const messageRefine = useMessageRefine(messageInput)
+  const [isAiNoticeOpen, setIsAiNoticeOpen] = useState(false)
   const [socketError, setSocketError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -672,9 +675,18 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
                 }}
               />
               <RefineButton
-                disabled={!canSendMessage || !messageInput.trim()}
+                disabled={
+                  AI_FEATURES_ENABLED &&
+                  (!canSendMessage || !messageInput.trim())
+                }
                 isLoading={messageRefine.state.status === 'loading'}
-                onClick={() => void messageRefine.refine()}
+                onClick={() => {
+                  if (!AI_FEATURES_ENABLED) {
+                    setIsAiNoticeOpen(true)
+                    return
+                  }
+                  void messageRefine.refine()
+                }}
               />
               <button
                 className={styles.sendButton}
@@ -696,6 +708,9 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
           </div>
         )}
       </section>
+      {isAiNoticeOpen && (
+        <AiFeatureNoticeModal onClose={() => setIsAiNoticeOpen(false)} />
+      )}
     </>
   )
 }
