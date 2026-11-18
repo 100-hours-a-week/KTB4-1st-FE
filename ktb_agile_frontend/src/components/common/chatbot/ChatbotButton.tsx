@@ -11,6 +11,8 @@ import type {
   ChatbotMessage,
 } from '@/types/chatbot'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
+import AiFeatureNoticeModal from '@/components/common/modal/AiFeatureNoticeModal'
+import { AI_FEATURES_ENABLED } from '@/constants/aiFeature'
 import SparkleIcon from './SparkleIcon'
 import styles from './ChatbotButton.module.css'
 
@@ -78,6 +80,7 @@ export default function ChatbotButton() {
   const restoredRef = useRef(false)
   const requestRef = useRef<AbortController | null>(null)
   const [showLengthToast, setShowLengthToast] = useState(false)
+  const [isAiNoticeOpen, setIsAiNoticeOpen] = useState(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => () => requestRef.current?.abort(), [])
@@ -363,12 +366,22 @@ export default function ChatbotButton() {
           type="button"
           aria-label={isOpen ? '챗봇 닫기' : '챗봇 열기'}
           aria-expanded={isOpen}
-          onClick={() => (isOpen ? setIsOpen(false) : openPanel())}
+          onClick={() => {
+            if (!AI_FEATURES_ENABLED) {
+              setIsAiNoticeOpen(true)
+              return
+            }
+            if (isOpen) setIsOpen(false)
+            else openPanel()
+          }}
         >
           <span className={styles.buttonLabel}>AI</span>
           <SparkleIcon className={styles.buttonIcon} />
         </button>
       </div>
+      {isAiNoticeOpen && (
+        <AiFeatureNoticeModal onClose={() => setIsAiNoticeOpen(false)} />
+      )}
     </>
   )
 }

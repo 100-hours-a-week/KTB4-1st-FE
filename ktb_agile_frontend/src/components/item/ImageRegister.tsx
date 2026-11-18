@@ -1,6 +1,10 @@
 'use client'
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
+import {
+  AI_FEATURE_IN_DEVELOPMENT_SUFFIX,
+  AI_FEATURES_ENABLED,
+} from '@/constants/aiFeature'
 import { useRef, useState } from 'react'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
@@ -9,10 +13,7 @@ import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import { uploadImagesToS3 } from '@/utils/itemImageUpload'
-import type {
-  ItemRegisterFormValues,
-  SelectedImage,
-} from '@/types/item'
+import type { ItemRegisterFormValues, SelectedImage } from '@/types/item'
 import styles from './ImageRegister.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
@@ -291,6 +292,7 @@ export default function ImageRegister({
         className={styles.fillFromPhotoButton}
         type="button"
         disabled={
+          !AI_FEATURES_ENABLED ||
           !isPhotoUploaded ||
           hasExistingImages ||
           isAnalyzing ||
@@ -300,6 +302,7 @@ export default function ImageRegister({
         onClick={handleFillFromPhoto}
       >
         사진으로 내용 채우기
+        {!AI_FEATURES_ENABLED && AI_FEATURE_IN_DEVELOPMENT_SUFFIX}
       </button>
       {isRejectionModalOpen && rejectionReason !== null && (
         <ModalDefault
