@@ -223,11 +223,7 @@ it('삭제 성공 시 기억한 사진 주소를 지운다', async () => {
 })
 
 it('등록 성공 시 목록 캐시를 무효화하고 목록으로 이동한다', async () => {
-  vi.spyOn(axios, 'post')
-    .mockResolvedValueOnce({
-      data: { data: { isAppropriate: true, checkId: 'check' } },
-    })
-    .mockResolvedValueOnce({ status: 201 })
+  vi.spyOn(axios, 'post').mockResolvedValueOnce({ status: 201 })
   render(
     <QueryClientProvider client={client}>
       <ItemRegister />
@@ -236,14 +232,17 @@ it('등록 성공 시 목록 캐시를 무효화하고 목록으로 이동한다
   fireEvent.click(await screen.findByRole('button', { name: '테스트 저장' }))
   await waitFor(() => expect(router.push).toHaveBeenCalledWith('/pages/items'))
   expectInvalidated()
+  // 내용 검수 API 없이 물품 등록만 요청합니다.
+  expect(axios.post).toHaveBeenCalledOnce()
+  expect(axios.post).toHaveBeenCalledWith(
+    expect.stringContaining('/items'),
+    expect.not.objectContaining({ moderationCheckId: expect.anything() }),
+    expect.anything(),
+  )
 })
 
 it('등록 시 첫 사진의 별도 썸네일 키를 전송한다', async () => {
-  vi.spyOn(axios, 'post')
-    .mockResolvedValueOnce({
-      data: { data: { isAppropriate: true, checkId: 'check' } },
-    })
-    .mockResolvedValueOnce({ status: 201 })
+  vi.spyOn(axios, 'post').mockResolvedValueOnce({ status: 201 })
   render(
     <QueryClientProvider client={client}>
       <ItemRegister />
@@ -268,11 +267,7 @@ it('등록 시 모든 사진의 상세용 썸네일 키를 원본 업로드 결�
     id,
     preview: id,
   }))
-  vi.spyOn(axios, 'post')
-    .mockResolvedValueOnce({
-      data: { data: { isAppropriate: true, checkId: 'check' } },
-    })
-    .mockResolvedValueOnce({ status: 201 })
+  vi.spyOn(axios, 'post').mockResolvedValueOnce({ status: 201 })
   render(
     <QueryClientProvider client={client}>
       <ItemRegister />
@@ -304,9 +299,7 @@ it('상세용 썸네일 업로드에 실패하면 물품 등록 요청을 보내
     new Error('upload failed'),
   )
   vi.spyOn(console, 'error').mockImplementation(() => {})
-  const post = vi.spyOn(axios, 'post').mockResolvedValueOnce({
-    data: { data: { isAppropriate: true, checkId: 'check' } },
-  })
+  const post = vi.spyOn(axios, 'post')
   render(
     <QueryClientProvider client={client}>
       <ItemRegister />
@@ -315,7 +308,7 @@ it('상세용 썸네일 업로드에 실패하면 물품 등록 요청을 보내
   fireEvent.click(await screen.findByRole('button', { name: '테스트 저장' }))
   await waitFor(() => expect(uploadItemDetailThumbnail).toHaveBeenCalledOnce())
   await waitFor(() => expect(console.error).toHaveBeenCalled())
-  expect(post).toHaveBeenCalledTimes(1)
+  expect(post).not.toHaveBeenCalled()
   expect(router.push).not.toHaveBeenCalled()
 })
 
