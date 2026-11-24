@@ -21,14 +21,6 @@ import styles from './page.module.css'
 import type { JoinedGroupOption } from '@/types/group'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
-type ModerationResponse = {
-  data: {
-    isAppropriate: boolean
-    rejectionReason: string | null
-    checkId: string | null
-  }
-}
-
 function ItemRegisterContent() {
   const [groups, setGroups] = useState<JoinedGroupOption[]>([])
   const [isLoadingGroups, setIsLoadingGroups] = useState(true)
@@ -79,30 +71,6 @@ function ItemRegisterContent() {
       // 이미 업로드한 사진은 다시 올리지 않고 objectKey만 가져옵니다.
       const objectKeys = await uploadImagesToS3(images, setImages, accessToken)
 
-      // 사용자가 최종 확인한 제목과 내용을 먼저 검수합니다.
-      const moderationResponse = await axios.post<ModerationResponse>(
-        `${API_BASE_URL}/moderation-checks`,
-        { title: values.title, content: values.content },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-        },
-      )
-      const moderation = moderationResponse.data.data
-
-      if (!moderation.isAppropriate) {
-        setModalMessage(
-          moderation.rejectionReason ?? ITEM_ERRORS.CONTENT_REJECTED,
-        )
-        return
-      }
-      if (!moderation.checkId) {
-        throw new Error(ITEM_ERRORS.MODERATION_ID_MISSING)
-      }
-
       const thumbnailObjectKey = await uploadItemThumbnail(
         images[0],
         setImages,
@@ -116,13 +84,11 @@ function ItemRegisterContent() {
         accessToken,
       )
 
-      // 검수를 통과한 경우에만 물품 등록을 요청합니다.
       await axios.post(
         `${API_BASE_URL}/items`,
         {
           title: values.title,
           content: values.content,
-          moderationCheckId: moderation.checkId,
           quantity: values.quantity,
           itemState: values.itemState,
           exchangeUrgencyScore: Number((values.pace / 100).toFixed(2)),
