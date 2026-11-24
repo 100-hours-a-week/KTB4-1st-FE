@@ -23,8 +23,6 @@ export const ITEM_ERRORS = {
   EXISTING_IMAGE_UPLOAD_UNSUPPORTED:
     '기존 사진은 이미지 ID를 사용하는 수정 API로 처리해야 합니다.',
   UPLOAD_URL_COUNT_MISMATCH: '발급된 업로드 URL 개수가 이미지 개수와 다릅니다.',
-  CONTENT_REJECTED: '등록할 수 없는 내용입니다.',
-  MODERATION_ID_MISSING: '검수 ID가 반환되지 않았습니다.',
   REGISTER_FAILED: '물품 등록에 실패했습니다. 다시 시도해주세요.',
   NOT_FOUND: '물품을 찾을 수 없습니다.',
   DETAIL_LOAD_FAILED:
