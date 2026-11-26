@@ -3,6 +3,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { redirectToLogin } from '@/utils/auth'
+import { getAccessToken } from '@/utils/tokenStore'
 
 //sessionStorage는 같은 탭 안에서 변경 이벤트가 없어 구독할 대상이 없음
 function subscribe() {
@@ -10,7 +11,7 @@ function subscribe() {
 }
 
 function getHasAccessToken() {
-  return Boolean(window.sessionStorage.getItem('accessToken'))
+  return Boolean(getAccessToken())
 }
 
 //서버에서는 토큰을 알 수 없으므로 확인 전 상태(null)로 둠

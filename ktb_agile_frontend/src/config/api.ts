@@ -1,6 +1,11 @@
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import axios, { type InternalAxiosRequestConfig } from 'axios'
 import { LOGIN_PATH } from '@/utils/auth'
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from '@/utils/tokenStore'
 
 // 배포 환경에서는 Nginx가 /api 요청을 백엔드로 전달합니다.
 // NEXT_PUBLIC_API_BASE_URL을 지정하면 환경별 기본 주소보다 우선합니다.
@@ -44,7 +49,7 @@ function isAuthenticatedRequest(request: InternalAxiosRequestConfig) {
 }
 
 function showLoginExpiredModal() {
-  window.sessionStorage.removeItem('accessToken')
+  clearAccessToken()
   window.dispatchEvent(new Event('auth-expired'))
 }
 
@@ -60,7 +65,7 @@ async function getNewAccessToken() {
     throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
   }
 
-  window.sessionStorage.setItem('accessToken', accessToken)
+  setAccessToken(accessToken)
   return accessToken
 }
 
@@ -89,7 +94,7 @@ async function handleRequestError(error: {
   }
 
   if (error.response.headers?.get('X-Auth-Required') === 'true') {
-    window.sessionStorage.removeItem('accessToken')
+    clearAccessToken()
     if (window.location.pathname !== LOGIN_PATH) {
       window.location.replace(LOGIN_PATH)
     }
@@ -105,7 +110,7 @@ async function handleRequestError(error: {
   request.retried = true
 
   try {
-    let accessToken = window.sessionStorage.getItem('accessToken')
+    let accessToken = getAccessToken()
     const requestToken = request.headers.get('Authorization')
 
     // 다른 요청이 이미 토큰을 갱신했으면 저장된 새 토큰을 사용합니다.
@@ -130,7 +135,7 @@ async function handleRequestError(error: {
 if (typeof window !== 'undefined') {
   axios.interceptors.request.use((request) => {
     if (isBffRequest(request) || isAuthenticatedRequest(request)) {
-      const accessToken = window.sessionStorage.getItem('accessToken')
+      const accessToken = getAccessToken()
 
       if (accessToken) {
         request.headers.set('Authorization', `Bearer ${accessToken}`)

@@ -17,6 +17,7 @@ import type { ItemListItem, ItemListResponse } from '@/types/item'
 import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
+import { getAccessToken } from '@/utils/tokenStore'
 
 type SearchCriteria = {
   keyword: string
@@ -102,7 +103,7 @@ function SearchPageContent() {
   }, [router])
 
   useEffect(() => {
-    const token = window.sessionStorage.getItem('accessToken')
+    const token = getAccessToken()
     const controller = new AbortController()
 
     async function loadSearchHistories() {

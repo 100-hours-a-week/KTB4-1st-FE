@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import styles from './callback.module.css'
+import { setAccessToken } from '@/utils/tokenStore'
 
 type RefreshResponse = {
   data: {
@@ -48,7 +49,7 @@ export default function LoginCallback() {
           throw new Error(AUTH_ERRORS.ACCESS_TOKEN_MISSING)
         }
 
-        window.sessionStorage.setItem('accessToken', accessToken)
+        setAccessToken(accessToken)
         router.replace(needsPreferenceSetup ? '/pages/favor' : '/pages/items')
       } catch {
         if (isActive) {

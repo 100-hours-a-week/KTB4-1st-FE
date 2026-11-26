@@ -9,23 +9,15 @@ import type {
   ExchangeHistory,
   ExchangedItemsResponse,
 } from '@/types/exchangedItem'
-import {
-  getUserIdFromAccessToken,
-  getAccessTokenOrRedirect,
-  redirectToLogin,
-} from '@/utils/auth'
+import { getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
 import '@/config/api'
 import styles from './page.module.css'
+import { getCurrentUserId } from '@/utils/tokenStore'
 
 export default function ExchangeItemsPage() {
   const router = useRouter()
   const [exchanges, setExchanges] = useState<ExchangeHistory[]>([])
-  const currentUserId =
-    typeof window === 'undefined'
-      ? null
-      : getUserIdFromAccessToken(
-          window.sessionStorage.getItem('accessToken') ?? '',
-        )
+  const currentUserId = getCurrentUserId()
   const [cursor, setCursor] = useState<string | null>(null)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [hasNext, setHasNext] = useState(false)

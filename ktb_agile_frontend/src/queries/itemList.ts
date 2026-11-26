@@ -7,10 +7,8 @@ import {
 } from '@tanstack/react-query'
 import { fetchItems } from '@/api/items'
 import type { ItemListItem, ItemSort, ItemState } from '@/types/item'
-import {
-  getAccessTokenOrRedirect,
-  getUserIdFromAccessToken,
-} from '@/utils/auth'
+import { getAccessTokenOrRedirect } from '@/utils/auth'
+import { getAccessToken, getCurrentUserId } from '@/utils/tokenStore'
 
 export const itemListKeys = {
   all: ['items'] as const,
@@ -91,11 +89,7 @@ export function useItemList(
   sort: ItemSort = 'latest',
   itemState: ItemState | null = null,
 ) {
-  const token =
-    typeof window === 'undefined'
-      ? null
-      : window.sessionStorage.getItem('accessToken')
-  const userId = token ? (getUserIdFromAccessToken(token) ?? token) : null
+  const userId = getCurrentUserId() ?? getAccessToken()
   const queryKey = useMemo(
     () => itemListKeys.list(groupId, userId, sort, itemState),
     [groupId, userId, sort, itemState],
