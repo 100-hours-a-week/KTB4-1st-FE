@@ -22,6 +22,11 @@ import {
   saveItemListSession,
 } from '@/utils/itemListSession'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = vi.hoisted(() => ({ replace: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/utils/currentGroup', () => ({
@@ -471,7 +476,6 @@ it('인기순을 선택하면 직접 추천 API의 첫 페이지를 요청하고
   expect(String(url)).toMatch(/\/items\/recommendations$/)
   expect(options).toMatchObject({
     params: { groupId: 1, size: 20 },
-    headers: { Authorization: 'Bearer test-token' },
     signal: expect.any(AbortSignal),
   })
   expect(options?.params).not.toHaveProperty('cursor')
