@@ -2,7 +2,7 @@
 
 import axios, { type AxiosResponse } from 'axios'
 import { useEffect, useState } from 'react'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import type { JoinedGroupListResponse, JoinedGroupOption } from '@/types/group'
 import { useSmartSearch } from './SmartSearchProvider'
@@ -29,7 +29,7 @@ export default function AiSmartSearchGroupDropdown() {
 
         while (true) {
           const response: AxiosResponse<JoinedGroupListResponse> =
-            await axios.get<JoinedGroupListResponse>('/bff/me/groups', {
+            await apiClient.get<JoinedGroupListResponse>('/bff/me/groups', {
               params: cursor ? { cursor } : undefined,
               headers: { Accept: 'application/json' },
               signal: controller.signal,
