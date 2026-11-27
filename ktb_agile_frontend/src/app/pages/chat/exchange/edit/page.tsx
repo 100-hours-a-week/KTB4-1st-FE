@@ -4,6 +4,7 @@ import { EXCHANGE_STATUS } from '@/constants/exchange'
 
 import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
 import ExchangeForm, {
@@ -54,11 +55,10 @@ function ExchangeEditContent() {
         ) {
           throw new Error(EXCHANGE_ERRORS.REQUEST_INVALID)
         }
-        const response = await axios.get<ExchangeRequestDetailsResponse>(
+        const response = await apiClient.get<ExchangeRequestDetailsResponse>(
           `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -95,16 +95,12 @@ function ExchangeEditContent() {
     return () => controller.abort()
   }, [exchangeRequestId, itemId, router])
 
-  async function updateExchangeRequest(
-    values: ExchangeFormValues,
-    accessToken: string,
-  ) {
-    await axios.put(
+  async function updateExchangeRequest(values: ExchangeFormValues) {
+    await apiClient.put(
       `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
       values,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },

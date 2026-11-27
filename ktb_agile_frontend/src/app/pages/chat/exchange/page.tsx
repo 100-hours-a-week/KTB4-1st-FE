@@ -1,6 +1,6 @@
 'use client'
 
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import ExchangeForm, {
@@ -14,16 +14,12 @@ function ExchangePageContent() {
   const searchParams = useSearchParams()
   const itemId = Number(searchParams.get('itemId'))
 
-  async function sendExchangeRequest(
-    values: ExchangeFormValues,
-    accessToken: string,
-  ) {
-    await axios.post(
+  async function sendExchangeRequest(values: ExchangeFormValues) {
+    await apiClient.post(
       `${API_BASE_URL}/items/${itemId}/exchange-requests`,
       values,
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
