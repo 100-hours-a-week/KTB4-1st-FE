@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import GroupCard from './GroupCard'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import { RECOMMENDED_GROUP_DESCRIPTION } from '@/constants/group'
@@ -34,15 +34,13 @@ export default function RecommendedGroupList({
       if (!accessToken) return
 
       try {
-        const response = await axios.get<{ data: { groups: GroupCardData[] } }>(
-          `${API_BASE_URL}/groups/recommendations`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              Accept: 'application/json',
-            },
+        const response = await apiClient.get<{
+          data: { groups: GroupCardData[] }
+        }>(`${API_BASE_URL}/groups/recommendations`, {
+          headers: {
+            Accept: 'application/json',
           },
-        )
+        })
         if (active) setGroups(response.data.data.groups)
       } catch (error) {
         if (active) setHasError(true)
