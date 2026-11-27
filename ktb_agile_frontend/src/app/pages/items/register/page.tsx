@@ -4,6 +4,7 @@ import { ITEM_ERRORS } from '@/constants/errors/item'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import { Suspense, useEffect, useState } from 'react'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys } from '@/queries/itemList'
 import { API_BASE_URL } from '@/config/api'
@@ -35,7 +36,7 @@ function ItemRegisterContent() {
     const controller = new AbortController()
     async function loadGroups() {
       try {
-        const response = await axios.get<{
+        const response = await apiClient.get<{
           data: { groups: JoinedGroupOption[] }
         }>('/bff/me/groups', {
           headers: {
@@ -62,29 +63,23 @@ function ItemRegisterContent() {
     { images, setImages }: ItemRegisterSubmitContext,
   ) {
     if (isSubmitting) return
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
+    if (!getAccessTokenOrRedirect(router)) return
 
     setIsSubmitting(true)
 
     try {
       // 이미 업로드한 사진은 다시 올리지 않고 objectKey만 가져옵니다.
-      const objectKeys = await uploadImagesToS3(images, setImages, accessToken)
+      const objectKeys = await uploadImagesToS3(images, setImages)
 
-      const thumbnailObjectKey = await uploadItemThumbnail(
-        images[0],
-        setImages,
-        accessToken,
-      )
+      const thumbnailObjectKey = await uploadItemThumbnail(images[0], setImages)
 
       const imageDetailThumbnails = await uploadItemDetailThumbnails(
         images,
         objectKeys,
         setImages,
-        accessToken,
       )
 
-      await axios.post(
+      await apiClient.post(
         `${API_BASE_URL}/items`,
         {
           title: values.title,
@@ -100,7 +95,6 @@ function ItemRegisterContent() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },

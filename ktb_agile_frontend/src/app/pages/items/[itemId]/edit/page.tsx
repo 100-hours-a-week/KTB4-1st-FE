@@ -2,6 +2,7 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { forgetCachedListThumbnail, itemListKeys } from '@/queries/itemList'
 import { forgetItemDetailImage } from '@/utils/itemDetailPreview'
@@ -44,14 +45,13 @@ export default function ItemEditPage() {
 
       try {
         const headers = {
-          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
         }
         const [itemResponse, groupResponse] = await Promise.all([
-          axios.get<ItemDetailResponse>(`${API_BASE_URL}/items/${itemId}`, {
+          apiClient.get<ItemDetailResponse>(`${API_BASE_URL}/items/${itemId}`, {
             headers,
           }),
-          axios.get<{ data: { groups: JoinedGroupOption[] } }>(
+          apiClient.get<{ data: { groups: JoinedGroupOption[] } }>(
             '/bff/me/groups',
             { headers: { Accept: 'application/json' } },
           ),
@@ -103,8 +103,7 @@ export default function ItemEditPage() {
     context: ItemRegisterSubmitContext,
   ) {
     if (isSubmitting) return
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
+    if (!getAccessTokenOrRedirect(router)) return
 
     setIsSubmitting(true)
     try {
@@ -118,24 +117,19 @@ export default function ItemEditPage() {
       }
       const objectKeys =
         newImages.length > 0
-          ? await uploadImagesToS3(newImages, context.setImages, accessToken)
+          ? await uploadImagesToS3(newImages, context.setImages)
           : []
       const imageDetailThumbnails = await uploadItemDetailThumbnails(
         newImages,
         objectKeys,
         context.setImages,
-        accessToken,
       )
       const firstImage = context.images[0]
       const thumbnailObjectKey =
         firstImage && firstImage.id !== initialImages[0]?.id
-          ? await uploadItemThumbnail(
-              firstImage,
-              context.setImages,
-              accessToken,
-            )
+          ? await uploadItemThumbnail(firstImage, context.setImages)
           : undefined
-      await axios.put(
+      await apiClient.put(
         `${API_BASE_URL}/items/${itemId}`,
         {
           title: values.title,
@@ -152,7 +146,6 @@ export default function ItemEditPage() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },

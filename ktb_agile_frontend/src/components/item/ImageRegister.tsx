@@ -9,7 +9,7 @@ import { useRef, useState } from 'react'
 import type { ChangeEvent, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import { useFormContext } from 'react-hook-form'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { API_BASE_URL } from '@/config/api'
 import ModalDefault from '@/components/common/modal/Default'
 import { uploadImagesToS3 } from '@/utils/itemImageUpload'
@@ -115,16 +115,15 @@ export default function ImageRegister({
     )
       return
 
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
+    if (!getAccessTokenOrRedirect(router)) return
 
     setIsAnalyzing(true)
     onAnalysisStateChange(true)
     setImageError('')
 
     try {
-      const objectKeys = await uploadImagesToS3(images, setImages, accessToken)
-      const analysis = await requestAIAnalysis(accessToken, objectKeys)
+      const objectKeys = await uploadImagesToS3(images, setImages)
+      const analysis = await requestAIAnalysis(objectKeys)
 
       if (!analysis.isAppropriate) {
         setRejectionReason(
@@ -157,15 +156,13 @@ export default function ImageRegister({
   }
 
   async function requestAIAnalysis(
-    accessToken: string,
     objectKeys: string[],
   ): Promise<ImageAnalysisResult> {
-    const response = await axios.post<ImageAnalysisResult>(
+    const response = await apiClient.post<ImageAnalysisResult>(
       `${API_BASE_URL}/images/ai-analysis`,
       { objectKeys },
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
