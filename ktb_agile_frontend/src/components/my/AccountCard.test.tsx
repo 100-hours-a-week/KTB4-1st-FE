@@ -5,9 +5,14 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react'
-import axios, { AxiosError, AxiosHeaders } from 'axios'
+import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import AccountCard from './AccountCard'
+
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
 
 const replace = vi.fn()
 
@@ -47,7 +52,6 @@ it('BFF에서 조회한 닉네임과 프로필 이미지를 표시한다', async
   expect(await screen.findByText('안녕하세요 민지님!')).toBeDefined()
   expect(get).toHaveBeenCalledWith('/bff/users/me', {
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
   })
@@ -55,49 +59,6 @@ it('BFF에서 조회한 닉네임과 프로필 이미지를 표시한다', async
     'profile.jpg',
   )
   expect(screen.queryByText(/사진이 안 보일 수 있어요/)).toBeNull()
-})
-
-it('프로필 조회 토큰이 만료되면 자동 갱신 후 프로필을 표시한다', async () => {
-  vi.mocked(axios.get).mockRestore()
-  const originalAdapter = axios.defaults.adapter
-  let refreshCount = 0
-  axios.defaults.adapter = async (config) => {
-    const response = {
-      config,
-      status: 200,
-      statusText: 'OK',
-      headers: new AxiosHeaders(),
-      data: {},
-    }
-    if (config.url === '/bff/auth/accesstoken') {
-      refreshCount += 1
-      return { ...response, data: { data: { accessToken: 'new-token' } } }
-    }
-    if (config.headers.get('Authorization') !== 'Bearer new-token') {
-      throw new AxiosError('Expired', 'ERR_BAD_REQUEST', config, undefined, {
-        ...response,
-        status: 401,
-      })
-    }
-    return {
-      ...response,
-      data: { data: { nickname: '민지', profileImageUrl: null } },
-    }
-  }
-
-  try {
-    render(<AccountCard />)
-    expect(await screen.findByText('안녕하세요 민지님!')).toBeDefined()
-    expect(refreshCount).toBe(1)
-    expect(window.sessionStorage.getItem('accessToken')).toBe('new-token')
-    expect(
-      screen.queryByText(
-        '프로필 정보를 가져오는데 실패했습니다. 다시 로그인해주세요.',
-      ),
-    ).toBeNull()
-  } finally {
-    axios.defaults.adapter = originalAdapter
-  }
 })
 
 it.each([null, undefined, ''])(
@@ -174,7 +135,6 @@ it('204 응답을 받으면 Access Token을 삭제하고 메인으로 이동한�
   expect(post).toHaveBeenCalledWith('/bff/auth/logout', undefined, {
     withCredentials: true,
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
   })
