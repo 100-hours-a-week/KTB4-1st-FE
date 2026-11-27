@@ -4,6 +4,11 @@ import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import NotificationList from './NotificationList'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = { replace: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/config/api', () => ({ API_BASE_URL: 'http://127.0.0.1:8080' }))
@@ -63,7 +68,6 @@ it('인증된 GET으로 조회하고 각 알림의 문구와 상대 시간을 �
     expect.objectContaining({
       params: { size: 10 },
       headers: {
-        Authorization: 'Bearer test-token',
         Accept: 'application/json',
       },
     }),
