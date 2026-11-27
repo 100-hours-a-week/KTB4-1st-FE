@@ -12,6 +12,11 @@ import type { ItemListItem } from '@/types/item'
 import * as dateUtils from '@/utils/date'
 import ItemCardList from './ItemCardList'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 let client: QueryClient
 beforeEach(() => {
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
