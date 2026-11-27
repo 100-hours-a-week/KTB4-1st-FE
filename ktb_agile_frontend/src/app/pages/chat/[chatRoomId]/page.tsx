@@ -8,6 +8,7 @@ import {
 import { EXCHANGE_STATUS } from '@/constants/exchange'
 import { CHAT_ERRORS } from '@/constants/errors/chat'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Fragment, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import ChatMessageBubble, {
@@ -178,11 +179,10 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         ) {
           throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
         }
-        const response = await axios.get<ChatRoomDetailResponse>(
+        const response = await apiClient.get<ChatRoomDetailResponse>(
           `/bff/chat-rooms/${chatRoomId}`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -283,11 +283,10 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
         ) {
           throw new Error(CHAT_ERRORS.ROOM_ID_INVALID)
         }
-        const response = await axios.get<ChatMessageResponse>(
+        const response = await apiClient.get<ChatMessageResponse>(
           `/bff/chat/rooms/${chatRoomId}/messages`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -333,12 +332,11 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setIsLoadingMore(true)
     setMessageError(null)
     try {
-      const response = await axios.get<ChatMessageResponse>(
+      const response = await apiClient.get<ChatMessageResponse>(
         `/bff/chat/rooms/${chatRoomId}/messages`,
         {
           params: { cursor: nextCursor },
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: 'application/json',
           },
         },
@@ -369,25 +367,23 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     }
   }
 
-  async function cancelExchangeRequest(token: string) {
-    await axios.delete(
+  async function cancelExchangeRequest() {
+    await apiClient.delete(
       `${API_BASE_URL}/exchange-requests/${exchangeRequestId}`,
       {
         headers: {
-          Authorization: `Bearer ${token}`,
           Accept: 'application/json',
         },
       },
     )
   }
 
-  async function markMessagesRead(token: string) {
+  async function markMessagesRead() {
     let messageId = lastMessageIdRef.current
     while (messageId !== null) {
-      await axios.put(
+      await apiClient.put(
         `${API_BASE_URL}/chat/rooms/${chatRoomId}/read-cursor`,
         { messageId },
-        { headers: { Authorization: `Bearer ${token}` } },
       )
       // 응답을 기다리는 동안 화면에 추가된 메시지도 읽음 처리합니다.
       const latestMessageId = lastMessageIdRef.current
@@ -404,7 +400,7 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setIsReturning(true)
     setActionError(null)
     try {
-      await markMessagesRead(token)
+      await markMessagesRead()
       router.push('/pages/chat')
     } catch {
       setActionError(CHAT_ERRORS.READ_CURSOR_FAILED)
@@ -428,25 +424,24 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setActionError(null)
     try {
       if (!detail) throw new Error(CHAT_ERRORS.LEAVE_FAILED)
-      await markMessagesRead(token)
+      await markMessagesRead()
       if (exchangeRequest?.exchangeStatus === EXCHANGE_STATUS.PENDING) {
         const status = isSeller
           ? EXCHANGE_STATUS.REJECTED
           : EXCHANGE_STATUS.CANCELED
         if (isSeller) {
-          await axios.patch(
+          await apiClient.patch(
             `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
             { status },
             {
               headers: {
-                Authorization: `Bearer ${token}`,
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
               },
             },
           )
         } else {
-          await cancelExchangeRequest(token)
+          await cancelExchangeRequest()
         }
         setRoomDetail((current) =>
           current?.chatRoomId === Number(chatRoomId)
@@ -461,11 +456,10 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
             : current,
         )
       }
-      await axios.delete(
+      await apiClient.delete(
         `${API_BASE_URL}/chat-rooms/${chatRoomId}/members/me`,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: 'application/json',
           },
         },
@@ -496,12 +490,11 @@ function ChatRoomContent({ direction }: { direction: ChatRoom['direction'] }) {
     setIsUpdatingExchange(true)
     setActionError(null)
     try {
-      await axios.patch(
+      await apiClient.patch(
         `${API_BASE_URL}/exchange-requests/${exchangeRequestId}/status`,
         { status },
         {
           headers: {
-            Authorization: `Bearer ${token}`,
             Accept: 'application/json',
             'Content-Type': 'application/json',
           },
