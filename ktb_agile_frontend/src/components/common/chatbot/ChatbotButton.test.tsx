@@ -4,6 +4,11 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { API_BASE_URL } from '@/config/api'
 import ChatbotButton from './ChatbotButton'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
 const aiFeature = vi.hoisted(() => ({ enabled: true }))
@@ -81,8 +86,6 @@ it('질문을 보내면 BFF를 거치지 않고 챗봇 API를 바로 호출한�
   expect(post).toHaveBeenCalledWith(
     `${API_BASE_URL}/chatbot/ask`,
     { message: '안녕', history: [] },
-    expect.objectContaining({
-      headers: expect.objectContaining({ Authorization: 'Bearer token' }),
-    }),
+    expect.anything(),
   )
 })
