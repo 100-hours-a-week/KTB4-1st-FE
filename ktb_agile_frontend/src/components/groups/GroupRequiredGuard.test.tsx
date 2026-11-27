@@ -5,6 +5,11 @@ import { afterEach, expect, it, vi } from 'vitest'
 import { GROUP_ERRORS } from '@/constants/errors/group'
 import GroupRequiredGuard from './GroupRequiredGuard'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const replace = vi.fn()
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }))
