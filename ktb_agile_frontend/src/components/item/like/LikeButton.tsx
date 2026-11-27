@@ -1,6 +1,6 @@
 'use client'
 
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { itemListKeys } from '@/queries/itemList'
@@ -46,8 +46,7 @@ export default function LikeButton({
   async function toggleLike() {
     if (isPending) return
 
-    const accessToken = getAccessToken()
-    if (!accessToken) {
+    if (!getAccessToken()) {
       window.dispatchEvent(new Event('auth-expired'))
       return
     }
@@ -60,17 +59,13 @@ export default function LikeButton({
 
     try {
       if (nextLiked) {
-        const response = await axios.post(`/bff/like/${itemId}`, undefined, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        const response = await apiClient.post(`/bff/like/${itemId}`)
         const serverLikeCount = response.data?.data?.likeCount
         if (typeof serverLikeCount === 'number') {
           setCount(serverLikeCount)
         }
       } else {
-        await axios.delete(`/bff/like/${itemId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
+        await apiClient.delete(`/bff/like/${itemId}`)
       }
       void queryClient.invalidateQueries({ queryKey: itemListKeys.all })
     } catch {
