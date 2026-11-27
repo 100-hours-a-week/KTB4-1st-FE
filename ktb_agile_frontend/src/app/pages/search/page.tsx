@@ -1,6 +1,7 @@
 'use client'
 
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useState } from 'react'
@@ -17,7 +18,6 @@ import type { ItemListItem, ItemListResponse } from '@/types/item'
 import type { SearchHistoryResponse } from '@/types/searchHistory'
 import styles from './page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
-import { getAccessToken } from '@/utils/tokenStore'
 
 type SearchCriteria = {
   keyword: string
@@ -103,16 +103,14 @@ function SearchPageContent() {
   }, [router])
 
   useEffect(() => {
-    const token = getAccessToken()
     const controller = new AbortController()
 
     async function loadSearchHistories() {
       try {
-        const response = await axios.get<SearchHistoryResponse>(
+        const response = await apiClient.get<SearchHistoryResponse>(
           '/bff/search-histories',
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -156,7 +154,7 @@ function SearchPageContent() {
       if (!token) return
 
       try {
-        const response = await axios.get<ItemListResponse>(
+        const response = await apiClient.get<ItemListResponse>(
           `${API_BASE_URL}/items`,
           {
             params: {
@@ -166,7 +164,6 @@ function SearchPageContent() {
               ...(cursor ? { cursor } : {}),
             },
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
@@ -211,10 +208,9 @@ function SearchPageContent() {
           setHistoryError(false)
 
           // History is saved asynchronously; keep the local entry until its ID is available.
-          void axios
+          void apiClient
             .get<SearchHistoryResponse>('/bff/search-histories', {
               headers: {
-                Authorization: `Bearer ${token}`,
                 Accept: 'application/json',
               },
               signal: controller.signal,
@@ -313,9 +309,8 @@ function SearchPageContent() {
     const token = getAccessTokenOrRedirect(router)
     if (!token) return false
 
-    const response = await axios.delete(path, {
+    const response = await apiClient.delete(path, {
       headers: {
-        Authorization: `Bearer ${token}`,
         Accept: 'application/json',
       },
     })
@@ -332,11 +327,10 @@ function SearchPageContent() {
       if (searchHistoryId === null) {
         const token = getAccessTokenOrRedirect(router)
         if (!token) return
-        const response = await axios.get<SearchHistoryResponse>(
+        const response = await apiClient.get<SearchHistoryResponse>(
           '/bff/search-histories',
           {
             headers: {
-              Authorization: `Bearer ${token}`,
               Accept: 'application/json',
             },
           },
