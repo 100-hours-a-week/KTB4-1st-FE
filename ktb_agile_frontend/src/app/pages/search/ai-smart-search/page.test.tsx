@@ -11,6 +11,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import SmartSearchProvider from '@/components/smart-search/SmartSearchProvider'
 import AiSmartSearchPage from './page'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 type ListRequestConfig = AxiosRequestConfig<unknown, unknown>
 
 function listParams(config?: ListRequestConfig) {
@@ -396,7 +401,6 @@ it('물품과 조건을 보내고 성공하면 결과 페이지로 이동한다'
     },
     {
       headers: {
-        Authorization: 'Bearer access-token',
         Accept: 'application/json',
       },
     },

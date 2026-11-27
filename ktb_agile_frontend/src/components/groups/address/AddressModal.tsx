@@ -4,9 +4,7 @@ import { GROUP_ERRORS } from '@/constants/errors/group'
 import { useEffect, useState, type AnimationEvent, type SubmitEvent } from 'react'
 import type { GroupAddressResponse, GroupAddressResult } from '@/types/group'
 import styles from './address.module.css'
-import axios from 'axios'
-import '@/config/api'
-import { getAccessToken } from '@/utils/tokenStore'
+import { apiClient } from '@/config/apiClient'
 
 export default function AddressModal({
   onClose,
@@ -75,12 +73,8 @@ export default function AddressModal({
   }
 
   async function getAddress(keyword: string): Promise<GroupAddressResponse> {
-    const accessToken = getAccessToken()
-    const response = await axios.get<GroupAddressResponse>(
+    const response = await apiClient.get<GroupAddressResponse>(
       `/bff/group?query=${encodeURIComponent(keyword)}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken || ''}` },
-      },
     )
 
     return response.data

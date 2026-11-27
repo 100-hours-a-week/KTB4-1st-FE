@@ -1,5 +1,6 @@
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { API_BASE_URL } from '@/config/api'
 import type { Dispatch, SetStateAction } from 'react'
 import type { SelectedImage } from '@/types/item'
@@ -18,7 +19,6 @@ type PresignedUpload = {
 export async function uploadImagesToS3(
   images: SelectedImage[],
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
-  accessToken: string,
 ): Promise<string[]> {
   if (images.length === 0 || images.length > 3) {
     throw new Error(ITEM_ERRORS.IMAGE_COUNT_INVALID)
@@ -52,7 +52,7 @@ export async function uploadImagesToS3(
 
   // 아직 S3에 올리지 않은 사진의 업로드 URL만 발급받습니다.
   if (pendingImages.length > 0) {
-    const response = await axios.post<{ data: PresignedUpload[] }>(
+    const response = await apiClient.post<{ data: PresignedUpload[] }>(
       `${API_BASE_URL}/images/presigned-urls`,
       {
         images: pendingImages.map((image) => {
@@ -61,7 +61,6 @@ export async function uploadImagesToS3(
       },
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },

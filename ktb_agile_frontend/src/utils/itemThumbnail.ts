@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { createThumbnail, type ThumbnailOptions } from './thumbnail'
 import type { Dispatch, SetStateAction } from 'react'
 import { API_BASE_URL } from '@/config/api'
@@ -27,9 +28,8 @@ export async function createItemThumbnail(
 export async function uploadItemThumbnail(
   image: SelectedImage,
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
-  accessToken: string,
 ): Promise<string> {
-  return uploadThumbnail(image, setImages, accessToken, 'thumbnailObjectKey', {
+  return uploadThumbnail(image, setImages, 'thumbnailObjectKey', {
     maxSize: ITEM_THUMBNAIL_MAX_SIZE,
     quality: ITEM_THUMBNAIL_QUALITY,
     fileName: 'item-thumbnail.webp',
@@ -39,19 +39,12 @@ export async function uploadItemThumbnail(
 export async function uploadItemDetailThumbnail(
   image: SelectedImage,
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
-  accessToken: string,
 ): Promise<string> {
-  return uploadThumbnail(
-    image,
-    setImages,
-    accessToken,
-    'detailThumbnailObjectKey',
-    {
-      maxSize: ITEM_DETAIL_THUMBNAIL_MAX_SIZE,
-      quality: ITEM_DETAIL_THUMBNAIL_QUALITY,
-      fileName: 'item-detail-thumbnail.webp',
-    },
-  )
+  return uploadThumbnail(image, setImages, 'detailThumbnailObjectKey', {
+    maxSize: ITEM_DETAIL_THUMBNAIL_MAX_SIZE,
+    quality: ITEM_DETAIL_THUMBNAIL_QUALITY,
+    fileName: 'item-detail-thumbnail.webp',
+  })
 }
 
 // 원본 업로드 결과는 현재 렌더의 images에 아직 반영되지 않을 수 있습니다.
@@ -60,14 +53,12 @@ export async function uploadItemDetailThumbnails(
   images: SelectedImage[],
   objectKeys: string[],
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
-  accessToken: string,
 ): Promise<ItemDetailThumbnailInput[]> {
   const imageDetailThumbnails: ItemDetailThumbnailInput[] = []
   for (const [index, image] of images.entries()) {
     const detailThumbnailObjectKey = await uploadItemDetailThumbnail(
       image,
       setImages,
-      accessToken,
     )
     imageDetailThumbnails.push({
       objectKey: objectKeys[index],
@@ -80,7 +71,6 @@ export async function uploadItemDetailThumbnails(
 async function uploadThumbnail(
   image: SelectedImage,
   setImages: Dispatch<SetStateAction<SelectedImage[]>>,
-  accessToken: string,
   keyField: 'thumbnailObjectKey' | 'detailThumbnailObjectKey',
   options: ThumbnailOptions,
 ): Promise<string> {
@@ -97,7 +87,7 @@ async function uploadThumbnail(
     source = await response.blob()
   }
   const thumbnail = await createItemThumbnail(source, options)
-  const response = await axios.post<{
+  const response = await apiClient.post<{
     data: {
       uploadUrl: string
       objectKey: string
@@ -110,7 +100,6 @@ async function uploadThumbnail(
     },
     {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
       },

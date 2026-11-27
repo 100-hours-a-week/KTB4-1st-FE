@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { API_BASE_URL } from '@/config/api'
 import { MESSAGE_REFINE_ERRORS } from '@/constants/errors/messageRefine'
 import type { MessageRefineResponse } from '@/types/messageRefine'
@@ -6,22 +7,16 @@ import type { MessageRefineResponse } from '@/types/messageRefine'
 export const MESSAGE_REFINE_MAX_LENGTH = 500
 
 type RefineMessageParams = {
-  accessToken: string
   message: string
   signal?: AbortSignal
 }
 
-export async function refineMessage({
-  accessToken,
-  message,
-  signal,
-}: RefineMessageParams) {
-  const response = await axios.post<MessageRefineResponse>(
+export async function refineMessage({ message, signal }: RefineMessageParams) {
+  const response = await apiClient.post<MessageRefineResponse>(
     `${API_BASE_URL}/message-refine/refine`,
     { message },
     {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },

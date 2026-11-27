@@ -11,6 +11,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { MyItemListItem } from '@/types/item'
 import ExchangeForm from './ExchangeForm'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = { back: vi.fn(), push: vi.fn(), replace: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/config/api', () => ({ API_BASE_URL: 'http://api.test' }))

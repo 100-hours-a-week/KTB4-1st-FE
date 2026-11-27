@@ -1,6 +1,6 @@
 'use client'
 
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useRouter } from 'next/navigation'
 import { CHATBOT_ROUTE, CHATBOT_SCREEN_LABEL } from '@/constants/chatbot'
 import { useEffect, useRef, useState } from 'react'
@@ -165,12 +165,11 @@ export default function ChatbotButton() {
     setIsSending(true)
 
     try {
-      const response = await axios.post<ChatbotAskResponse>(
+      const response = await apiClient.post<ChatbotAskResponse>(
         `${API_BASE_URL}/chatbot/ask`,
         { message, history: previousHistory },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
           signal: controller.signal,

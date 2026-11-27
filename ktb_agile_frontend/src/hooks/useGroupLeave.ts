@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { joinedGroupKeys } from '@/queries/joinedGroups'
 import { API_BASE_URL } from '@/config/api'
@@ -50,11 +51,10 @@ export function useGroupLeave({ onSuccess }: UseGroupLeaveOptions) {
 
     setIsLeaving(true)
     try {
-      await axios.delete(
+      await apiClient.delete(
         `${API_BASE_URL}/groups/${leaveTarget.groupId}/members/me`,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
         },

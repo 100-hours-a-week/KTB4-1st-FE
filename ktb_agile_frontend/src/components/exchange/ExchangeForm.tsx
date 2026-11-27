@@ -2,6 +2,7 @@
 
 import { EXCHANGE_ERRORS } from '@/constants/errors/exchange'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
@@ -43,7 +44,7 @@ type ExchangeFormProps = {
   itemId: number
   includeGroupId?: boolean
   submitLabel: string
-  onSubmit: (values: ExchangeFormValues, accessToken: string) => Promise<void>
+  onSubmit: (values: ExchangeFormValues) => Promise<void>
   initialValues?: ExchangeFormValues
   closeHref?: string
 }
@@ -99,7 +100,6 @@ function ExchangeFormContent({
         return
       }
       const headers = {
-        Authorization: `Bearer ${accessToken}`,
         Accept: 'application/json',
       }
       setIsLoading(true)
@@ -108,7 +108,7 @@ function ExchangeFormContent({
         if (!Number.isSafeInteger(itemId) || itemId <= 0) {
           throw new Error(EXCHANGE_ERRORS.ITEM_ID_INVALID)
         }
-        const response = await axios.get<ItemDetailResponse>(
+        const response = await apiClient.get<ItemDetailResponse>(
           `${API_BASE_URL}/items/${itemId}`,
           { headers, signal: controller.signal },
         )
@@ -119,7 +119,7 @@ function ExchangeFormContent({
         // 수정할 기존 제안의 물품은 그룹 목록을 불러오기 전에도 선택 상태로 보여줍니다.
         const initialSelected = await Promise.all(
           initialOfferedIds.current.map(async (id): Promise<OfferableItem> => {
-            const response = await axios.get<ItemDetailResponse>(
+            const response = await apiClient.get<ItemDetailResponse>(
               `${API_BASE_URL}/items/${id}`,
               { headers, signal: controller.signal },
             )
@@ -173,8 +173,7 @@ function ExchangeFormContent({
   async function handleRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!canRequest || !item || submitting.current) return
-    const accessToken = getAccessToken()
-    if (!accessToken || !getCurrentUserId()) {
+    if (!getAccessToken() || !getCurrentUserId()) {
       redirectToLogin(router)
       return
     }
@@ -201,14 +200,11 @@ function ExchangeFormContent({
     setIsSubmitting(true)
     setError(null)
     try {
-      await onSubmit(
-        {
-          ...(includeGroupId ? { groupId: groupId! } : {}),
-          requestedQuantity,
-          offeredItems,
-        },
-        accessToken,
-      )
+      await onSubmit({
+        ...(includeGroupId ? { groupId: groupId! } : {}),
+        requestedQuantity,
+        offeredItems,
+      })
     } catch (cause) {
       setError(getErrorMessage(cause, EXCHANGE_ERRORS.PROCESS_FAILED))
     } finally {

@@ -40,8 +40,7 @@ export function useMessageRefine(message: string) {
       })
       return
     }
-    const accessToken = getAccessTokenOrRedirect(router)
-    if (!accessToken) return
+    if (!getAccessTokenOrRedirect(router)) return
 
     controllerRef.current?.abort()
     const controller = new AbortController()
@@ -49,7 +48,6 @@ export function useMessageRefine(message: string) {
     setState({ status: 'loading', source })
     try {
       const refined = await refineMessage({
-        accessToken,
         message: source,
         signal: controller.signal,
       })

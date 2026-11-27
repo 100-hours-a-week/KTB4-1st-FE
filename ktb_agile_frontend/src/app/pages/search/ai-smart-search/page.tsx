@@ -1,6 +1,7 @@
 'use client'
 
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
@@ -47,12 +48,11 @@ export default function Page() {
     }
 
     try {
-      const response = await axios.post<SmartSearchResponse>(
+      const response = await apiClient.post<SmartSearchResponse>(
         `${API_BASE_URL}/search/rank-candidates`,
         request,
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
         },

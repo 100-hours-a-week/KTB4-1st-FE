@@ -3,7 +3,7 @@ import { CHAT_ERRORS } from '@/constants/errors/chat'
 import { Client, type IMessage, type StompSubscription } from '@stomp/stompjs'
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL } from '@/config/api'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { getAccessToken } from '@/utils/tokenStore'
 
 type ChatRoomSocketMessage = Pick<
@@ -66,7 +66,7 @@ export function useChatRoomSocket({
       beforeConnect: async () => {
         try {
           // HTTP 인증 요청에서 401을 처리한 뒤 최신 토큰으로 연결합니다.
-          await axios.get('/bff/me/groups', {
+          await apiClient.get('/bff/me/groups', {
             headers: { Accept: 'application/json' },
           })
           const latestToken = getAccessToken()

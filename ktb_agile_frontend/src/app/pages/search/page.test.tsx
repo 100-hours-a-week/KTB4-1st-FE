@@ -9,6 +9,11 @@ import axios from 'axios'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import SearchPage from './page'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = { replace: vi.fn(), back: vi.fn() }
 const groups = JSON.stringify([{ groupId: 12, groupName: '우리 동네' }])
 
@@ -54,7 +59,6 @@ it('검색 페이지를 열면 검색 기록을 조회해 검색창 아래에 �
   expect(screen.getAllByText('×')).toHaveLength(2)
   expect(get).toHaveBeenCalledWith('/bff/search-histories', {
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
     signal: expect.any(AbortSignal),
@@ -241,7 +245,6 @@ it('x를 누르면 해당 검색 기록만 삭제한다', async () => {
   expect(screen.getByText('자전거')).toBeDefined()
   expect(remove).toHaveBeenCalledWith('/bff/search-histories/802', {
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
   })
@@ -300,7 +303,6 @@ it('전체 삭제를 누르면 모든 검색 기록을 삭제한다', async () =
   expect(screen.queryByText('전체 삭제')).toBeNull()
   expect(remove).toHaveBeenCalledWith('/bff/search-histories', {
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
   })
@@ -353,9 +355,7 @@ it('삭제 직전에 토큰이 없으면 삭제 요청 없이 로그인으로 �
   window.sessionStorage.removeItem('accessToken')
   fireEvent.click(screen.getByText('×'))
 
-  await waitFor(() =>
-    expect(router.replace).toHaveBeenCalledWith('/'),
-  )
+  await waitFor(() => expect(router.replace).toHaveBeenCalledWith('/'))
   expect(remove).not.toHaveBeenCalled()
   expect(screen.getByText('충전기')).toBeDefined()
 })

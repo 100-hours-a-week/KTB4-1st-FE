@@ -13,6 +13,11 @@ import type { ChatMessageDto } from '@/types/chatMessage'
 import type { useChatRoomSocket } from '@/hooks/useChatRoomSocket'
 import ChatRoomPage from './page'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = { replace: vi.fn(), push: vi.fn() }
 const useChatRoomSocketMock = vi.hoisted(() =>
   vi.fn<typeof useChatRoomSocket>(() => ({
@@ -129,7 +134,6 @@ it('상세 API의 물품·수량과 목록의 그룹·상대방을 표시하고 
     '/bff/chat-rooms/22',
     expect.objectContaining({
       headers: {
-        Authorization: 'Bearer access-token',
         Accept: 'application/json',
       },
     }),
@@ -318,7 +322,6 @@ it('메시지 이력을 BFF로 조회하고 SYSTEM 본문을 일반 말풍선과
     '/bff/chat/rooms/22/messages',
     expect.objectContaining({
       headers: {
-        Authorization: 'Bearer access-token',
         Accept: 'application/json',
       },
     }),
@@ -723,7 +726,6 @@ it('물품 보유자는 교환 거절 응답을 받은 뒤에만 방을 나간�
     { status: 'REJECTED' },
     expect.objectContaining({
       headers: {
-        Authorization: 'Bearer access-token',
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
@@ -840,7 +842,6 @@ it('뒤로가기는 가장 큰 메시지 ID의 읽음 응답을 기다리고 중
   expect(put).toHaveBeenCalledExactlyOnceWith(
     '/api/chat/rooms/22/read-cursor',
     { messageId: 104 },
-    { headers: { Authorization: 'Bearer access-token' } },
   )
   expect(router.push).not.toHaveBeenCalled()
   await act(async () => resolveRead({ status: 204 }))
@@ -862,12 +863,9 @@ it('읽음 요청 중 새 메시지를 표시하면 추가 읽음 응답까지 �
   clickBack()
   receive(historyMessage(102, '새 메시지'))
   await act(async () => pending[0]({ status: 204 }))
-  expect(put).toHaveBeenNthCalledWith(
-    2,
-    '/api/chat/rooms/22/read-cursor',
-    { messageId: 102 },
-    expect.anything(),
-  )
+  expect(put).toHaveBeenNthCalledWith(2, '/api/chat/rooms/22/read-cursor', {
+    messageId: 102,
+  })
   expect(router.push).not.toHaveBeenCalled()
   await act(async () => pending[1]({ status: 204 }))
   expect(router.push).toHaveBeenCalledWith('/pages/chat')

@@ -2,7 +2,7 @@
 
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import Loading from '@/components/common/Loading'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -31,7 +31,7 @@ export default function LoginCallback() {
       try {
         // Effect가 재실행돼도 토큰을 교체하는 요청은 한 번만 보냅니다.
         if (loginRequestRef.current === null) {
-          loginRequestRef.current = axios
+          loginRequestRef.current = apiClient
             .post<RefreshResponse>('/bff/auth/accesstoken', undefined, {
               withCredentials: true,
               headers: { Accept: 'application/json' },

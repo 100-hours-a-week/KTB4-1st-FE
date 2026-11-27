@@ -8,7 +8,7 @@ import { GroupAddressResult } from '@/types/group'
 import Navbar from '@/components/common/navbar/Navbar'
 import AddressModal from '@/components/groups/address/AddressModal'
 import styles from './creategroup.module.css'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { joinedGroupKeys } from '@/queries/joinedGroups'
 import { API_BASE_URL } from '@/config/api'
@@ -56,7 +56,7 @@ export default function CreateGroup() {
     }
 
     try{
-      await axios.post(
+      await apiClient.post(
         `${API_BASE_URL}/groups`,
         {
           groupName : groupName,
@@ -67,7 +67,6 @@ export default function CreateGroup() {
         },
         {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
             Accept: 'application/json',
           },

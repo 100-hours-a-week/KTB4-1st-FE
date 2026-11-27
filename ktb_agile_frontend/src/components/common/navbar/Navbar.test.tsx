@@ -4,6 +4,11 @@ import axios from 'axios'
 import { afterEach, expect, it, vi } from 'vitest'
 import Navbar from './Navbar'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 vi.mock('next/navigation', () => ({ usePathname: () => '/pages/items' }))
 vi.mock('axios')
 

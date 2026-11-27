@@ -2,6 +2,7 @@
 
 import { ITEM_ERRORS } from '@/constants/errors/item'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { findCachedListThumbnail, itemListKeys } from '@/queries/itemList'
 import { useParams, useRouter } from 'next/navigation'
@@ -50,11 +51,10 @@ export default function ItemDetailsPage() {
 
     const loadItemDetails = async () => {
       try {
-        const response = await axios.get<ItemDetailResponse>(
+        const response = await apiClient.get<ItemDetailResponse>(
           `${API_BASE_URL}/items/${itemId}`,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
           },
@@ -98,9 +98,8 @@ export default function ItemDetailsPage() {
     setIsDeleting(true)
 
     try {
-      await axios.delete(`${API_BASE_URL}/items/${item.itemId}`, {
+      await apiClient.delete(`${API_BASE_URL}/items/${item.itemId}`, {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
         },
       })

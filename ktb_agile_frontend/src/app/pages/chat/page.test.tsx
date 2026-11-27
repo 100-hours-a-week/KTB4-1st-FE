@@ -11,6 +11,11 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import type { ChatRoom } from '@/types/chatRoom'
 import Chat from './page'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = { replace: vi.fn(), push: vi.fn() }
 vi.mock('next/navigation', () => ({ useRouter: () => router }))
 vi.mock('@/config/api', () => ({}))

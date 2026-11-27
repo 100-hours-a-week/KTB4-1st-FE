@@ -9,6 +9,11 @@ import axios, { AxiosError, type AxiosResponse } from 'axios'
 import { afterEach, expect, it, vi } from 'vitest'
 import PreferenceSetup from './page'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const replace = vi.hoisted(() => vi.fn())
 
 vi.mock('next/navigation', () => ({
@@ -92,9 +97,7 @@ it('저장 실패 모달을 확인으로 닫고 재시도하면 선택값을 유
       '/bff/preferences',
       { answers: expectedAnswers },
       expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: 'Bearer test-token',
-        }),
+        headers: expect.objectContaining({}),
       }),
     )
   }

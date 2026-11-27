@@ -10,7 +10,7 @@ import ChatRoomCard from '@/components/chat/ChatRoomCard'
 import Loading from '@/components/common/Loading'
 import { useElasticPull } from '@/hooks/useElasticPull'
 import type { ChatRoom, ChatRoomResponse } from '@/types/chatRoom'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import styles from './page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
@@ -44,18 +44,20 @@ export default function Chat() {
       const cancel = () => controller.abort()
       signal?.addEventListener('abort', cancel, { once: true })
       try {
-        const response = await axios.get<ChatRoomResponse>('/bff/chat-rooms', {
-          params: {
-            size: 20,
-            ...(tab !== 'ALL' ? { direction: tab } : {}),
-            ...(requestedCursor ? { cursor: requestedCursor } : {}),
+        const response = await apiClient.get<ChatRoomResponse>(
+          '/bff/chat-rooms',
+          {
+            params: {
+              size: 20,
+              ...(tab !== 'ALL' ? { direction: tab } : {}),
+              ...(requestedCursor ? { cursor: requestedCursor } : {}),
+            },
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
           },
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-          },
-          signal: controller.signal,
-        })
+        )
         if (response.data.error || !response.data.data) {
           throw new Error(
             response.data.error?.message || CHAT_ERRORS.ROOM_LIST_LOAD_FAILED,

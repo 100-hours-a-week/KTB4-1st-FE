@@ -1,4 +1,4 @@
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQuery } from '@tanstack/react-query'
 import type { JoinedGroupListResponse } from '@/types/group'
 
@@ -11,7 +11,7 @@ export function useHasJoinedGroup() {
   const { data, isFetching } = useQuery({
     queryKey: joinedGroupKeys.all,
     queryFn: async ({ signal }) => {
-      const response = await axios.get<JoinedGroupListResponse>(
+      const response = await apiClient.get<JoinedGroupListResponse>(
         '/bff/me/groups',
         { headers: { Accept: 'application/json' }, signal },
       )

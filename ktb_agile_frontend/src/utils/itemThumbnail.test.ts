@@ -8,6 +8,11 @@ import {
 import { createThumbnail } from './thumbnail'
 import type { SelectedImage } from '@/types/item'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const bitmap = { width: 4000, height: 3000, close: vi.fn() }
 let drawImage: ReturnType<typeof vi.fn>
 beforeEach(() => {
@@ -151,7 +156,7 @@ it.each(['image/webp'])(
     const setImages = vi.fn((update) => {
       images = typeof update === 'function' ? update(images) : update
     })
-    await uploadItemThumbnail(images[0], setImages, 'token')
+    await uploadItemThumbnail(images[0], setImages)
     expect(images[0].objectKey).toBe('images/1/original.png')
     expect(images[0].thumbnailObjectKey).toBe(`images/1/thumb.${extension}`)
     expect(post).toHaveBeenCalledWith(
@@ -167,7 +172,7 @@ it.each(['image/webp'])(
       }),
       { headers: { 'Content-Type': contentType } },
     )
-    await uploadItemThumbnail(images[0], setImages, 'token')
+    await uploadItemThumbnail(images[0], setImages)
     expect(post).toHaveBeenCalledOnce()
     expect(put).toHaveBeenCalledOnce()
   },
@@ -187,7 +192,6 @@ it('기존 대표 이미지로 바뀌면 URL에서 원본을 읽어 썸네일을
   await uploadItemThumbnail(
     { id: 'existing', imageId: 2, preview: 'https://s3.example/original' },
     vi.fn(),
-    'token',
   )
   expect(fetchMock).toHaveBeenCalledWith('https://s3.example/original')
   expect(createImageBitmap).toHaveBeenCalledWith(original)
@@ -220,7 +224,7 @@ it('모든 사진의 상세용 썸네일을 1280px, 화질 0.6으로 생성하�
     images = typeof update === 'function' ? update(images) : update
   })
   for (const image of images) {
-    await uploadItemDetailThumbnail(image, setImages, 'token')
+    await uploadItemDetailThumbnail(image, setImages)
   }
   expect(drawImage).toHaveBeenCalledTimes(3)
   expect(drawImage).toHaveBeenCalledWith(bitmap, 0, 0, 1280, 960)
@@ -249,7 +253,7 @@ it('모든 사진의 상세용 썸네일을 1280px, 화질 0.6으로 생성하�
     'images/1/detail-3.webp',
   ])
   for (const image of images) {
-    await uploadItemDetailThumbnail(image, setImages, 'token')
+    await uploadItemDetailThumbnail(image, setImages)
   }
   expect(post).toHaveBeenCalledTimes(3)
   expect(put).toHaveBeenCalledTimes(3)
@@ -268,8 +272,8 @@ it('상세용 업로드 실패 시 키를 저장하지 않아 다시 시도할 �
   })
   vi.spyOn(axios, 'put').mockRejectedValue(new Error('upload failed'))
   const setImages = vi.fn()
-  await expect(
-    uploadItemDetailThumbnail(image, setImages, 'token'),
-  ).rejects.toThrow('upload failed')
+  await expect(uploadItemDetailThumbnail(image, setImages)).rejects.toThrow(
+    'upload failed',
+  )
   expect(setImages).not.toHaveBeenCalled()
 })

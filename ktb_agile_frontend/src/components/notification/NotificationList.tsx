@@ -19,9 +19,10 @@ export default function NotificationList() {
     enabled: Boolean(token),
     initialPageParam: '',
     queryFn: async ({ pageParam, signal }) => {
-      const accessToken = getAccessTokenOrRedirect(router)
-      if (!accessToken) throw new Error('로그인이 필요합니다.')
-      return fetchNotifications({ accessToken, cursor: pageParam, signal })
+      if (!getAccessTokenOrRedirect(router)) {
+        throw new Error('로그인이 필요합니다.')
+      }
+      return fetchNotifications({ cursor: pageParam, signal })
     },
     getNextPageParam: (page) =>
       page.hasNext && page.nextCursor ? page.nextCursor : undefined,

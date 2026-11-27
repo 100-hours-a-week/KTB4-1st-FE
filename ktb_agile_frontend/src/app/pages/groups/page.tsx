@@ -10,7 +10,7 @@ import type { GroupCardData } from '@/types/group'
 import GroupCard from '@/components/groups/GroupCard'
 import LeaveConfirmModal from '@/components/groups/modal/LeaveConfirmModal'
 import LeaveFinalConfirmModal from '@/components/groups/modal/LeaveFinalConfirmModal'
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { API_BASE_URL } from '@/config/api'
 import { setCurrentGroupId } from '@/utils/currentGroup'
 import GroupJoinModal from '@/components/groups/modal/GroupJoinModal'
@@ -43,7 +43,7 @@ export default function GroupListPage() {
         const trimmedKeyword = keyword.trim()
 
         if (!trimmedKeyword) {
-          const response = await axios.get<GroupListResponse>(
+          const response = await apiClient.get<GroupListResponse>(
             '/bff/me/groups',
             {
               headers: {
@@ -60,11 +60,10 @@ export default function GroupListPage() {
         const accessToken = getAccessTokenOrRedirect(router)
         if (!accessToken) return
 
-        const response = await axios.get<GroupListResponse>(
+        const response = await apiClient.get<GroupListResponse>(
           `${API_BASE_URL}/groups?keyword=${encodeURIComponent(trimmedKeyword)}&size=30&cursor=`,
           {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
           },
