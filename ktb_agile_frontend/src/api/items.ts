@@ -1,4 +1,4 @@
-import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { API_BASE_URL } from '@/config/api'
 import type { ItemListResponse, ItemSort, ItemState } from '@/types/item'
 
@@ -9,7 +9,6 @@ type FetchItemsParams = {
   itemState?: ItemState | null
   cursor?: string
   size?: number
-  accessToken: string
   signal?: AbortSignal
 }
 
@@ -19,25 +18,26 @@ export async function fetchItems({
   itemState,
   cursor,
   size = 20,
-  accessToken,
   signal,
 }: FetchItemsParams) {
   const isRecommended = sort === 'recommended'
   const path = isRecommended
     ? '/items/recommendations'
     : `/groups/${groupId}/items`
-  const response = await axios.get<ItemListResponse>(`${API_BASE_URL}${path}`, {
-    params: {
-      ...(isRecommended ? { groupId } : {}),
-      ...(itemState ? { itemState } : {}),
-      size,
-      ...(cursor ? { cursor } : {}),
+  const response = await apiClient.get<ItemListResponse>(
+    `${API_BASE_URL}${path}`,
+    {
+      params: {
+        ...(isRecommended ? { groupId } : {}),
+        ...(itemState ? { itemState } : {}),
+        size,
+        ...(cursor ? { cursor } : {}),
+      },
+      headers: {
+        Accept: 'application/json',
+      },
+      signal,
     },
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    signal,
-  })
+  )
   return response.data.data
 }

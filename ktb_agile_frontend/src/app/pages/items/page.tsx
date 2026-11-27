@@ -12,6 +12,7 @@ import {
   type MouseEvent,
 } from 'react'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import Navbar from '@/components/common/navbar/Navbar'
 import ChatbotButton from '@/components/common/chatbot/ChatbotButton'
 import FloatingInquiryButton from '@/components/common/inquiry/FloatingInquiryButton'
@@ -246,12 +247,15 @@ export default function ItemList() {
 
     async function fetchJoinedGroups() {
       try {
-        const response = await axios.get<GroupListResponse>('/bff/me/groups', {
-          headers: {
-            Accept: 'application/json',
+        const response = await apiClient.get<GroupListResponse>(
+          '/bff/me/groups',
+          {
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
           },
-          signal: controller.signal,
-        })
+        )
         const groups = response.data.data.groups.map(
           ({ groupId, groupName }) => ({
             groupId,

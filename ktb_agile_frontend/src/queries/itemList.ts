@@ -99,15 +99,15 @@ export function useItemList(
     enabled: groupId !== null,
     initialPageParam: '',
     queryFn: async ({ pageParam, signal }) => {
-      const accessToken = getAccessTokenOrRedirect(router)
-      if (!accessToken) throw new Error('로그인이 필요합니다.')
+      if (!getAccessTokenOrRedirect(router)) {
+        throw new Error('로그인이 필요합니다.')
+      }
       if (groupId === null) throw new Error('그룹을 선택해주세요.')
       return fetchItems({
         groupId,
         sort,
         itemState,
         cursor: pageParam,
-        accessToken,
         signal,
       })
     },
