@@ -1,7 +1,6 @@
 'use client'
 
-import axios from 'axios'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import ModalDefault from '@/components/common/modal/Default'
@@ -32,9 +31,8 @@ export default function AccountCard() {
         const accessToken = getAccessToken()
         if (!accessToken) throw new Error('Access token is missing')
 
-        const response = await axios.get('/bff/users/me', {
+        const response = await apiClient.get('/bff/users/me', {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
         })
@@ -87,10 +85,9 @@ export default function AccountCard() {
       const accessToken = getAccessToken()
       if (!accessToken) throw new Error('재로그인이 필요합니니다.')
 
-      const response = await axios.post('/bff/auth/logout', undefined, {
+      const response = await apiClient.post('/bff/auth/logout', undefined, {
         withCredentials: true,
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
         },
       })
