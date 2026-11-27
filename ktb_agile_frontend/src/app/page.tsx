@@ -2,6 +2,7 @@
 
 import { AUTH_ERRORS } from '@/constants/errors/auth'
 import Image from 'next/image'
+import Link from 'next/link'
 import styles from './login.module.css'
 import axios from 'axios'
 import { API_BASE_URL } from '@/config/api'
@@ -101,6 +102,9 @@ export default function Login() {
         </h1>
         <p className={styles.tagline}>쓰지 않는 물건을, 필요한 물건으로</p>
         <div className={styles.loginArea}>
+          <Link className={styles.browseButton} href="/pages/items">
+            둘러보기
+          </Link>
           <button
             className={styles.kakaoLoginButton}
             type="button"
