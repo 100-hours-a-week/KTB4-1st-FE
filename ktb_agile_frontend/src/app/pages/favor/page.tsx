@@ -8,7 +8,7 @@ import PreferenceForm from '@/components/preference/PreferenceForm'
 import type { PreferenceAnswer } from '@/types/preference'
 import axios from 'axios'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 
 function isPreferenceNotFound(error: unknown) {
   return (
@@ -33,12 +33,11 @@ export default function PreferenceSetup() {
     const controller = new AbortController()
     async function checkPreferences() {
       try {
-        const response = await axios.get<{
+        const response = await apiClient.get<{
           data: { answers: PreferenceAnswer[] } | null
           error?: { message: string } | null
         } | null>('/bff/preferences', {
           headers: {
-            Authorization: `Bearer ${accessToken}`,
             Accept: 'application/json',
           },
           signal: controller.signal,
@@ -70,13 +69,12 @@ export default function PreferenceSetup() {
     const accessToken = getAccessTokenOrRedirect(router)
     if (!accessToken) throw new Error('로그인이 필요합니다.')
 
-    const save = isEditMode ? axios.put : axios.post
+    const save = isEditMode ? apiClient.put : apiClient.post
     await save(
       '/bff/preferences',
       { answers },
       {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
