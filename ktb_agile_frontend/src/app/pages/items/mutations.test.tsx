@@ -22,6 +22,11 @@ import {
   startItemDetailImage,
 } from '@/utils/itemDetailPreview'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 const router = vi.hoisted(() => ({
   replace: vi.fn(),
   push: vi.fn(),
@@ -253,7 +258,6 @@ it('등록 시 첫 사진의 별도 썸네일 키를 전송한다', async () => 
   expect(uploadItemThumbnail).toHaveBeenCalledWith(
     expect.objectContaining({ id: 'new' }),
     expect.any(Function),
-    expect.any(String),
   )
   expect(axios.post).toHaveBeenLastCalledWith(
     expect.stringContaining('/items'),
@@ -343,7 +347,6 @@ it('대표 사진을 다른 기존 사진으로 바꾸면 새 썸네일을 전�
   expect(uploadItemThumbnail).toHaveBeenCalledWith(
     formState.images[0],
     expect.any(Function),
-    expect.any(String),
   )
   expect(axios.put).toHaveBeenCalledWith(
     expect.any(String),
@@ -402,7 +405,6 @@ it('기존 사진을 모두 지우고 새 사진만 남기면 새 첫 사진으�
   expect(uploadItemThumbnail).toHaveBeenCalledWith(
     formState.images[0],
     expect.any(Function),
-    expect.any(String),
   )
   expect(axios.put).toHaveBeenCalledWith(
     expect.any(String),
