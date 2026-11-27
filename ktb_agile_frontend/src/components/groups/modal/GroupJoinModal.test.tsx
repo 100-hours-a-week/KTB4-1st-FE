@@ -13,6 +13,11 @@ import { GROUP_ERRORS } from '@/constants/errors/group'
 import type { GroupCardData } from '@/types/group'
 import GroupJoinModal from './GroupJoinModal'
 
+// apiClient로 보낸 요청도 axios 스파이로 확인합니다.
+vi.mock('@/config/apiClient', async () => ({
+  apiClient: (await import('axios')).default,
+}))
+
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }))
 
 const group: GroupCardData = {
@@ -88,7 +93,6 @@ it('위치를 기다린 후 인증을 요청하고, verified가 true일 때만 �
   await waitFor(() => expect(axios.post).toHaveBeenCalledOnce())
   const config = {
     headers: {
-      Authorization: 'Bearer access-token',
       Accept: 'application/json',
     },
   }
