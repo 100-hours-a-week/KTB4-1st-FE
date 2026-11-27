@@ -2,7 +2,7 @@
 
 import axios from 'axios'
 import { useCallback } from 'react'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import { useCursorPagination } from '@/hooks/useCursorPagination'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
 import { isItemAvailable } from '@/utils/item'
@@ -35,11 +35,14 @@ export function useMyGroupItems({
 }: UseMyGroupItemsOptions) {
   const fetchPage = useCallback(
     async (cursor: string | null, signal: AbortSignal) => {
-      const response = await axios.get<MyItemListResponse>('/bff/my-items', {
-        params: { groupId, ...(cursor ? { cursor } : {}) },
-        headers: { Accept: 'application/json' },
-        signal,
-      })
+      const response = await apiClient.get<MyItemListResponse>(
+        '/bff/my-items',
+        {
+          params: { groupId, ...(cursor ? { cursor } : {}) },
+          headers: { Accept: 'application/json' },
+          signal,
+        },
+      )
       const page = response.data.data
       if (!page || response.data.error) {
         throw new Error(response.data.error?.message || errorMessage)

@@ -10,7 +10,7 @@ import type {
   ExchangedItemsResponse,
 } from '@/types/exchangedItem'
 import { getAccessTokenOrRedirect, redirectToLogin } from '@/utils/auth'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import styles from './page.module.css'
 import { getCurrentUserId } from '@/utils/tokenStore'
 
@@ -41,12 +41,11 @@ export default function ExchangeItemsPage() {
       setErrorMessage(null)
 
       try {
-        const response = await axios.get<ExchangedItemsResponse>(
+        const response = await apiClient.get<ExchangedItemsResponse>(
           '/bff/exchanged-items',
           {
             params: { ...(cursor ? { cursor } : {}) },
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
             signal: controller.signal,

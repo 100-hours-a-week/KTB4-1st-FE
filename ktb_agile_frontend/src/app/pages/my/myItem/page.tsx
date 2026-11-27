@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 import Navbar from '@/components/common/navbar/Navbar'
 import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { MyItemListItem, MyItemListResponse } from '@/types/item'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import styles from './page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
@@ -32,14 +32,16 @@ export default function MyItemPage() {
       setErrorMessage(null)
 
       try {
-        const response = await axios.get<MyItemListResponse>('/bff/my-items', {
-          params: { ...(cursor ? { cursor } : {}) },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            Accept: 'application/json',
+        const response = await apiClient.get<MyItemListResponse>(
+          '/bff/my-items',
+          {
+            params: { ...(cursor ? { cursor } : {}) },
+            headers: {
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
           },
-          signal: controller.signal,
-        })
+        )
         const page = response.data.data
 
         if (!page || response.data.error) {

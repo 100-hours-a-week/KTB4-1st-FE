@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ActivityItemCard from '@/components/my/ActivityItemCard'
 import type { LikedItem, LikedItemsResponse } from '@/types/likedItem'
-import '@/config/api'
+import { apiClient } from '@/config/apiClient'
 import styles from './page.module.css'
 import { getAccessTokenOrRedirect } from '@/utils/auth'
 
@@ -32,12 +32,11 @@ export default function LikedItemPage() {
       setErrorMessage(null)
 
       try {
-        const response = await axios.get<LikedItemsResponse>(
+        const response = await apiClient.get<LikedItemsResponse>(
           '/bff/liked-items',
           {
             params: { ...(cursor ? { cursor } : {}) },
             headers: {
-              Authorization: `Bearer ${accessToken}`,
               Accept: 'application/json',
             },
             signal: controller.signal,
