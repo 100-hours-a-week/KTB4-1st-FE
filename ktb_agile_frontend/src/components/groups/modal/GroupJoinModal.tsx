@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
+import { apiClient } from '@/config/apiClient'
 import { useQueryClient } from '@tanstack/react-query'
 import { joinedGroupKeys } from '@/queries/joinedGroups'
 import ModalDefault from '@/components/common/modal/Default'
@@ -85,12 +86,11 @@ export default function GroupJoinModal({
 
       const config = {
         headers: {
-          Authorization: `Bearer ${accessToken}`,
           Accept: 'application/json',
         },
       }
 
-      const verification = await axios.post<LocationVerificationResponse>(
+      const verification = await apiClient.post<LocationVerificationResponse>(
         `${API_BASE_URL}/groups/${group.groupId}/location-verifications`,
         { latitude, longitude, accuracy },
         config,
@@ -122,7 +122,7 @@ export default function GroupJoinModal({
         return
       }
 
-      await axios.post(
+      await apiClient.post(
         `${API_BASE_URL}/groups/${group.groupId}/members`,
         undefined,
         config,
